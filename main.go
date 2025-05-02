@@ -9,41 +9,57 @@ import (
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
-	"github.com/kongsakchai/gotemplate/internal/ping"
+	"github.com/kongsakchai/gotemplate/logger"
 )
 
-func main() {
-	conf := config.Load()
-	e := app.NewEcho(conf.App.LogLevel)
+var (
+	conf config.Config
+)
 
-	{
-		pingHandler := ping.NewHandler()
-
-		e.GET("/ping", pingHandler.Ping)
-	}
-
-	go func() {
-		if err := e.Start(":" + conf.App.Port); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal("shutting down the server", err)
-		}
-	}()
-
-	gracefulShutdown(func(ctx context.Context) {
-		e.Logger.Info("gracefully shutting down the server")
-
-		if err := e.Shutdown(ctx); err != nil {
-			e.Logger.Fatal("gracefully shutting down the server", err)
-		}
-	})
+func init() {
+	conf = config.Load()
+	logger.SetLevel(conf.App.LogLevel)
 }
 
-func gracefulShutdown(close func(context.Context)) {
+func main() {
+	log := logger.New()
+	r := setupRoutes(app.NewEchoRoute(log))
+
+	idle := make(chan struct{})
+	go gracefulShutdown(func(ctx context.Context) error {
+		defer close(idle)
+		return r.Shutdown(ctx)
+	})
+
+	if err := r.Start(":" + conf.App.Port); err != nil && err != http.ErrServerClosed {
+		log.Error("shutting down the server: " + err.Error())
+		return
+	}
+
+	<-idle
+	log.Info("bye bye")
+}
+
+func setupRoutes(r app.Router) app.Router {
+	r.GET("/ping", func(c app.Context) error {
+		return c.JSON(http.StatusOK, "pong")
+	})
+
+	return r
+}
+
+func gracefulShutdown(close func(context.Context) error) {
 	sig, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 	<-sig.Done()
 
+	logger.Info("shutting down the server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	close(ctx)
+	if err := close(ctx); err != nil {
+		logger.Error("graceful shutdown failed: " + err.Error())
+		return
+	}
+	logger.Info("graceful shutdown completed")
 }
