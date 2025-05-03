@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log/slog"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -83,6 +84,22 @@ func (e *echoContext) Next(ctx Context) error {
 	}
 
 	return e.next(ctx.(*echoContext).Context)
+}
+
+func (e *echoContext) Store() map[string]any {
+	return nil
+}
+
+func (e *echoContext) Request() *http.Request {
+	return e.Context.Request()
+}
+
+func (e *echoContext) Writer() http.ResponseWriter {
+	return e.Context.Response().Writer
+}
+
+func (e *echoContext) SetWriter(w http.ResponseWriter) {
+	e.Context.Response().Writer = w
 }
 
 func newEchoHandler(handler Handler, logger *slog.Logger) echo.HandlerFunc {

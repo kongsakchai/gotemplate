@@ -41,6 +41,9 @@ func main() {
 }
 
 func setupRoutes(r app.Router) app.Router {
+	r.Use(logger.LoggerRequest())
+	r.Use(logger.LoggerResponse())
+
 	r.GET("/ping", func(c app.Context) error {
 		return c.JSON(http.StatusOK, "pong")
 	})

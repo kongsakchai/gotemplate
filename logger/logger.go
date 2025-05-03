@@ -50,14 +50,30 @@ func Debug(msg string, args ...any) {
 	log(context.Background(), slog.LevelDebug, msg, args...)
 }
 
+func DebugCtx(ctx context.Context, msg string, args ...any) {
+	log(ctx, slog.LevelDebug, msg, args...)
+}
+
 func Info(msg string, args ...any) {
 	log(context.Background(), slog.LevelInfo, msg, args...)
+}
+
+func InfoCtx(ctx context.Context, msg string, args ...any) {
+	log(ctx, slog.LevelInfo, msg, args...)
 }
 
 func Warn(msg string, args ...any) {
 	log(context.Background(), slog.LevelWarn, msg, args...)
 }
 
+func WarnCtx(ctx context.Context, msg string, args ...any) {
+	log(ctx, slog.LevelWarn, msg, args...)
+}
+
 func Error(msg string, args ...any) {
 	log(context.Background(), slog.LevelError, msg, args...)
+}
+
+func ErrorCtx(ctx context.Context, msg string, args ...any) {
+	log(ctx, slog.LevelError, msg, args...)
 }
