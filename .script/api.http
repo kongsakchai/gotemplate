@@ -1,1 +1,8 @@
+### GEt
 GET http://localhost:8888/ping
+
+### Post
+POST http://localhost:8888/ping
+
+{
+}

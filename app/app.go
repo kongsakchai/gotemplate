@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log/slog"
 )
 
 type Context interface {
@@ -21,13 +22,9 @@ type Context interface {
 	Ctx() context.Context
 	Get(key string) any
 	Set(key string, value any)
-}
 
-type Response struct {
-	Code    string `json:"success"`
-	Status  string `json:"status"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
+	CtxLogger() *slog.Logger
+	SetCtxLogger(logger *slog.Logger)
 }
 
 type Handler func(ctx Context) error
@@ -40,4 +37,12 @@ type Router interface {
 	Use(middleware ...Handler)
 	Shutdown(ctx context.Context) error
 	Start(addr string) error
+}
+
+type Response struct {
+	Code    string `json:"code"`
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }

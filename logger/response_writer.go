@@ -9,19 +9,20 @@ import (
 type responseWriter struct {
 	http.ResponseWriter
 	code int
-	meta map[string]string
+	meta map[string]any
 }
 
 func (w *responseWriter) Write(b []byte) (int, error) {
 	go func() {
 		Info(
-			fmt.Sprintf("response info %s", w.meta["path"]),
+			fmt.Sprintf("response info status=%d %s", w.code, w.meta["path"]),
+			slog.String("traceId", w.meta["traceId"].(string)),
 			slog.Group(
 				"response",
-				"id", w.meta["request_id"],
 				"method", w.meta["method"],
 				"body", string(b),
 				"status", w.code,
+				"latency", w.meta["latency"],
 			),
 		)
 	}()

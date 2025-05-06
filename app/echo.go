@@ -10,8 +10,22 @@ import (
 )
 
 type echoContext struct {
-	next echo.HandlerFunc
+	logger *slog.Logger
+	next   echo.HandlerFunc
 	echo.Context
+}
+
+func newEchoContext(logger *slog.Logger, ctx echo.Context, next echo.HandlerFunc) *echoContext {
+	if reuse, ok := ctx.(*echoContext); ok {
+		reuse.next = next
+		return reuse
+	}
+
+	return &echoContext{
+		next:    next,
+		Context: ctx,
+		logger:  logger,
+	}
 }
 
 func (e *echoContext) Query(key string) string {
@@ -43,6 +57,7 @@ func (e *echoContext) Created(obj any) error {
 }
 
 func (e *echoContext) NotFound(err Error) error {
+	e.logger.Error(err.Error())
 	return e.Context.JSON(404, Response{
 		Status:  ErrorStatus,
 		Code:    err.Code,
@@ -51,6 +66,7 @@ func (e *echoContext) NotFound(err Error) error {
 }
 
 func (e *echoContext) InternalServer(err Error) error {
+	e.logger.Error(err.Error())
 	return e.Context.JSON(500, Response{
 		Status:  ErrorStatus,
 		Code:    err.Code,
@@ -59,6 +75,7 @@ func (e *echoContext) InternalServer(err Error) error {
 }
 
 func (e *echoContext) BadRequest(err Error) error {
+	e.logger.Error(err.Error())
 	return e.Context.JSON(400, Response{
 		Status:  ErrorStatus,
 		Code:    err.Code,
@@ -83,11 +100,7 @@ func (e *echoContext) Next(ctx Context) error {
 		return nil
 	}
 
-	return e.next(ctx.(*echoContext).Context)
-}
-
-func (e *echoContext) Store() map[string]any {
-	return nil
+	return e.next(ctx.(*echoContext))
 }
 
 func (e *echoContext) Request() *http.Request {
@@ -102,12 +115,17 @@ func (e *echoContext) SetWriter(w http.ResponseWriter) {
 	e.Context.Response().Writer = w
 }
 
+func (e *echoContext) CtxLogger() *slog.Logger {
+	return e.logger
+}
+
+func (e *echoContext) SetCtxLogger(logger *slog.Logger) {
+	e.logger = logger
+}
+
 func newEchoHandler(handler Handler, logger *slog.Logger) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return handler(&echoContext{
-			next:    nil,
-			Context: ctx,
-		})
+		return handler(newEchoContext(logger, ctx, nil))
 	}
 }
 
@@ -150,27 +168,24 @@ func (e *echoRouter) PATCH(path string, handler Handler) {
 	e.Echo.PATCH(path, newEchoHandler(handler, e.logger))
 }
 
-func newEchoMiddleware(handler Handler) echo.MiddlewareFunc {
+func newEchoMiddleware(logger *slog.Logger, handler Handler) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			return handler(&echoContext{
-				next:    next,
-				Context: ctx,
-			})
+			return handler(newEchoContext(logger, ctx, next))
 		}
 	}
 }
 
-func newEchoMiddlewares(handler ...Handler) []echo.MiddlewareFunc {
+func newEchoMiddlewares(logger *slog.Logger, handler ...Handler) []echo.MiddlewareFunc {
 	m := make([]echo.MiddlewareFunc, len(handler))
 	for i, h := range handler {
-		m[i] = newEchoMiddleware(h)
+		m[i] = newEchoMiddleware(logger, h)
 	}
 	return m
 }
 
 func (e *echoRouter) Use(m ...Handler) {
-	e.Echo.Use(newEchoMiddlewares(m...)...)
+	e.Echo.Use(newEchoMiddlewares(e.logger, m...)...)
 }
 
 type echoGroup struct {
@@ -209,5 +224,5 @@ func (g *echoGroup) Group(prefix string, m ...echo.MiddlewareFunc) *echoGroup {
 }
 
 func (g *echoGroup) Use(m ...Handler) {
-	g.EchoGroup.Use(newEchoMiddlewares(m...)...)
+	g.EchoGroup.Use(newEchoMiddlewares(g.logger, m...)...)
 }

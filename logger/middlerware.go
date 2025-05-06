@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kongsakchai/gotemplate/app"
@@ -19,7 +20,8 @@ type httpContext interface {
 
 func LoggerRequest() app.Handler {
 	return func(ctx app.Context) error {
-		ctx.Set("request_id", uuid.NewString())
+		traceID := uuid.NewString()
+		ctx.SetCtxLogger(ctx.CtxLogger().With(slog.String("traceId", traceID)))
 
 		httpCtx, ok := ctx.(httpContext)
 		if !ok {
@@ -34,21 +36,23 @@ func LoggerRequest() app.Handler {
 				Message: err.Error(),
 			})
 		}
-		req.Body.Close()
 
 		go func() {
-			InfoCtx(
+			ctx.CtxLogger().InfoContext(
 				req.Context(),
 				fmt.Sprintf("request info %s", req.URL.Path),
 				slog.Group(
 					"request",
-					"id", ctx.Get("request_id"),
 					"method", req.Method,
 					"body", string(body),
 				),
 			)
 		}()
 
+		ctx.Set("traceId", traceID)
+		ctx.Set("startTime", time.Now())
+
+		req.Body.Close()
 		req.Body = io.NopCloser(bytes.NewBuffer(body))
 		return ctx.Next(ctx)
 	}
@@ -61,11 +65,15 @@ func LoggerResponse() app.Handler {
 			return ctx.Next(ctx)
 		}
 
+		traceID := ctx.Get("traceId").(string)
+		startTime := ctx.Get("startTime").(time.Time)
+
 		req := httpCtx.Request()
-		meta := map[string]string{
-			"request_id": ctx.Get("request_id").(string),
-			"method":     req.Method,
-			"path":       req.URL.Path,
+		meta := map[string]any{
+			"method":  req.Method,
+			"path":    req.URL.Path,
+			"traceId": traceID,
+			"latency": time.Since(startTime).String(),
 		}
 
 		httpCtx.SetWriter(&responseWriter{
