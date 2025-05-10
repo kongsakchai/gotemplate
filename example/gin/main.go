@@ -23,7 +23,7 @@ func init() {
 
 func main() {
 	log := logger.New()
-	r := setupRoutes(nil) // Initialize your router here
+	r := setupRoutes(app.NewGinRoute(log)) // Initialize your router here
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
@@ -43,6 +43,18 @@ func main() {
 func setupRoutes(r app.Router) app.Router {
 	r.Use(logger.LoggerRequest())
 	r.Use(logger.LoggerResponse())
+
+	r.GET("/ping", func(c app.Context) error {
+		return c.JSON(http.StatusOK, "pong")
+	})
+	r.POST("/ping", func(c app.Context) error {
+		var data map[string]any
+		if err := c.Bind(&data); err != nil {
+			return c.BadRequest(app.NewError("4000", "bad request", err))
+		}
+
+		return c.JSON(http.StatusOK, data)
+	})
 
 	return r
 }

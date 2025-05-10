@@ -6,8 +6,6 @@ import (
 )
 
 type Context interface {
-	Next(ctx Context) error
-
 	Query(key string) string
 	Param(key string) string
 	Bind(obj any) error
@@ -23,20 +21,34 @@ type Context interface {
 	Get(key string) any
 	Set(key string, value any)
 
-	CtxLogger() *slog.Logger
-	SetCtxLogger(logger *slog.Logger)
+	Logger() *slog.Logger
+	SetLogger(logger *slog.Logger)
 }
 
 type Handler func(ctx Context) error
 
+type Middleware func(next Handler) Handler
+
 type Router interface {
+	Origin() any
 	GET(path string, handler Handler)
 	POST(path string, handler Handler)
 	PUT(path string, handler Handler)
 	DELETE(path string, handler Handler)
-	Use(middleware ...Handler)
+	Use(middlewares ...Middleware)
 	Shutdown(ctx context.Context) error
 	Start(addr string) error
+	Group(prefix string, middlewares ...Middleware) RouterGroup
+}
+
+type RouterGroup interface {
+	Origin() any
+	GET(path string, handler Handler)
+	POST(path string, handler Handler)
+	PUT(path string, handler Handler)
+	DELETE(path string, handler Handler)
+	Use(middlewares ...Middleware)
+	Group(prefix string, middlewares ...Middleware) RouterGroup
 }
 
 type Response struct {
@@ -45,4 +57,15 @@ type Response struct {
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
 	Data    any    `json:"data,omitempty"`
+}
+
+func applyMiddleware(h Handler, middlewares []Middleware) Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
+	}
+	return h
+}
+
+func copyMiddlewares(middlewares []Middleware, ap ...Middleware) []Middleware {
+	return append([]Middleware{}, middlewares...)
 }

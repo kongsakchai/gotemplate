@@ -16,11 +16,6 @@ type echoContext struct {
 }
 
 func newEchoContext(logger *slog.Logger, ctx echo.Context, next echo.HandlerFunc) *echoContext {
-	if reuse, ok := ctx.(*echoContext); ok {
-		reuse.next = next
-		return reuse
-	}
-
 	return &echoContext{
 		next:    next,
 		Context: ctx,
@@ -62,6 +57,7 @@ func (e *echoContext) NotFound(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
+		Error:   err.Error(),
 	})
 }
 
@@ -71,6 +67,7 @@ func (e *echoContext) InternalServer(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
+		Error:   err.Error(),
 	})
 }
 
@@ -80,6 +77,7 @@ func (e *echoContext) BadRequest(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
+		Error:   err.Error(),
 	})
 }
 
@@ -95,16 +93,16 @@ func (e *echoContext) Set(key string, value any) {
 	e.Context.Set(key, value)
 }
 
-func (e *echoContext) Next(ctx Context) error {
-	if e.next == nil {
-		return nil
-	}
-
-	return e.next(ctx.(*echoContext))
-}
-
 func (e *echoContext) Request() *http.Request {
 	return e.Context.Request()
+}
+
+func (e *echoContext) Logger() *slog.Logger {
+	return e.logger
+}
+
+func (e *echoContext) SetLogger(logger *slog.Logger) {
+	e.logger = logger
 }
 
 func (e *echoContext) Writer() http.ResponseWriter {
@@ -115,23 +113,17 @@ func (e *echoContext) SetWriter(w http.ResponseWriter) {
 	e.Context.Response().Writer = w
 }
 
-func (e *echoContext) CtxLogger() *slog.Logger {
-	return e.logger
-}
-
-func (e *echoContext) SetCtxLogger(logger *slog.Logger) {
-	e.logger = logger
-}
-
-func newEchoHandler(handler Handler, logger *slog.Logger) echo.HandlerFunc {
+func newEchoHandler(handler Handler, middlewares []Middleware, logger *slog.Logger) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return handler(newEchoContext(logger, ctx, nil))
+		h := applyMiddleware(handler, middlewares)
+		return h(newEchoContext(logger, ctx, nil))
 	}
 }
 
 type echoRouter struct {
 	*echo.Echo
-	logger *slog.Logger
+	logger      *slog.Logger
+	middlewares []Middleware
 }
 
 func NewEchoRoute(logger *slog.Logger) *echoRouter {
@@ -145,84 +137,88 @@ func NewEchoRoute(logger *slog.Logger) *echoRouter {
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.PATCH},
 	}))
 
-	return &echoRouter{e, logger}
+	return &echoRouter{
+		Echo:   e,
+		logger: logger,
+	}
+}
+
+func (e *echoRouter) Origin() any {
+	return e.Echo
 }
 
 func (e *echoRouter) GET(path string, handler Handler) {
-	e.Echo.GET(path, newEchoHandler(handler, e.logger))
+	e.Echo.GET(path, newEchoHandler(handler, e.middlewares, e.logger))
 }
 
 func (e *echoRouter) POST(path string, handler Handler) {
-	e.Echo.POST(path, newEchoHandler(handler, e.logger))
+	e.Echo.POST(path, newEchoHandler(handler, e.middlewares, e.logger))
 }
 
 func (e *echoRouter) PUT(path string, handler Handler) {
-	e.Echo.PUT(path, newEchoHandler(handler, e.logger))
+	e.Echo.PUT(path, newEchoHandler(handler, e.middlewares, e.logger))
 }
 
 func (e *echoRouter) DELETE(path string, handler Handler) {
-	e.Echo.DELETE(path, newEchoHandler(handler, e.logger))
+	e.Echo.DELETE(path, newEchoHandler(handler, e.middlewares, e.logger))
 }
 
 func (e *echoRouter) PATCH(path string, handler Handler) {
-	e.Echo.PATCH(path, newEchoHandler(handler, e.logger))
+	e.Echo.PATCH(path, newEchoHandler(handler, e.middlewares, e.logger))
 }
 
-func newEchoMiddleware(logger *slog.Logger, handler Handler) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			return handler(newEchoContext(logger, ctx, next))
-		}
-	}
-}
-
-func newEchoMiddlewares(logger *slog.Logger, handler ...Handler) []echo.MiddlewareFunc {
-	m := make([]echo.MiddlewareFunc, len(handler))
-	for i, h := range handler {
-		m[i] = newEchoMiddleware(logger, h)
-	}
-	return m
-}
-
-func (e *echoRouter) Use(m ...Handler) {
-	e.Echo.Use(newEchoMiddlewares(e.logger, m...)...)
+func (e *echoRouter) Use(middlewares ...Middleware) {
+	e.middlewares = append(e.middlewares, middlewares...)
 }
 
 type echoGroup struct {
-	EchoGroup *echo.Group
-	logger    *slog.Logger
+	EchoGroup   *echo.Group
+	logger      *slog.Logger
+	middlewares []Middleware
 }
 
-func (e *echoRouter) Group(prefix string, m ...echo.MiddlewareFunc) *echoGroup {
-	g := e.Echo.Group(prefix, m...)
-	return &echoGroup{g, e.logger}
+func (e *echoRouter) Group(prefix string, middlewares ...Middleware) RouterGroup {
+	g := e.Echo.Group(prefix)
+	return &echoGroup{
+		EchoGroup:   g,
+		logger:      e.logger,
+		middlewares: append(copyMiddlewares(e.middlewares, middlewares...), middlewares...),
+	}
+}
+
+func (g *echoGroup) Origin() any {
+	return g.EchoGroup
 }
 
 func (g *echoGroup) GET(path string, handler Handler) {
-	g.EchoGroup.GET(path, newEchoHandler(handler, g.logger))
+	g.EchoGroup.GET(path, newEchoHandler(handler, g.middlewares, g.logger))
 }
 
 func (g *echoGroup) POST(path string, handler Handler) {
-	g.EchoGroup.POST(path, newEchoHandler(handler, g.logger))
+	g.EchoGroup.POST(path, newEchoHandler(handler, g.middlewares, g.logger))
 }
 
 func (g *echoGroup) PUT(path string, handler Handler) {
-	g.EchoGroup.PUT(path, newEchoHandler(handler, g.logger))
+	g.EchoGroup.PUT(path, newEchoHandler(handler, g.middlewares, g.logger))
 }
 
 func (g *echoGroup) DELETE(path string, handler Handler) {
-	g.EchoGroup.DELETE(path, newEchoHandler(handler, g.logger))
+	g.EchoGroup.DELETE(path, newEchoHandler(handler, g.middlewares, g.logger))
 }
 
 func (g *echoGroup) PATCH(path string, handler Handler) {
-	g.EchoGroup.PATCH(path, newEchoHandler(handler, g.logger))
+	g.EchoGroup.PATCH(path, newEchoHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *echoGroup) Group(prefix string, m ...echo.MiddlewareFunc) *echoGroup {
-	g2 := g.EchoGroup.Group(prefix, m...)
-	return &echoGroup{g2, g.logger}
+func (g *echoGroup) Group(prefix string, middlewares ...Middleware) RouterGroup {
+	g2 := g.EchoGroup.Group(prefix)
+	return &echoGroup{
+		EchoGroup:   g2,
+		logger:      g.logger,
+		middlewares: append(copyMiddlewares(g.middlewares, middlewares...), middlewares...),
+	}
 }
 
-func (g *echoGroup) Use(m ...Handler) {
-	g.EchoGroup.Use(newEchoMiddlewares(g.logger, m...)...)
+func (g *echoGroup) Use(middlewares ...Middleware) {
+	g.middlewares = append(g.middlewares, middlewares...)
 }
