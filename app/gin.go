@@ -13,10 +13,10 @@ type ginContext struct {
 	*gin.Context
 }
 
-func newGinContext(logger *slog.Logger, ctx context.Context) *ginContext {
+func newGinContext(logger *slog.Logger, ctx *gin.Context) *ginContext {
 	return &ginContext{
 		logger:  logger,
-		Context: ctx.(*gin.Context),
+		Context: ctx,
 	}
 }
 
@@ -96,11 +96,6 @@ func (g *ginContext) Set(key string, value any) {
 	g.Context.Set(key, value)
 }
 
-func (g *ginContext) Next() error {
-	g.Context.Next()
-	return nil
-}
-
 func (g *ginContext) Request() *http.Request {
 	return g.Context.Request
 }
@@ -144,28 +139,28 @@ func newGinHandler(handler Handler, middlewares []Middleware, logger *slog.Logge
 	}
 }
 
-type ginRoute struct {
+type ginRouter struct {
 	*gin.Engine
 	middlewares []Middleware
 	logger      *slog.Logger
 	serv        *http.Server
 }
 
-func NewGinRoute(logger *slog.Logger) *ginRoute {
+func NewGinRouter(logger *slog.Logger) *ginRouter {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	return &ginRoute{
+	return &ginRouter{
 		Engine: r,
 		logger: logger,
 	}
 }
 
-func (g *ginRoute) Origin() any {
+func (g *ginRouter) Origin() any {
 	return g.Engine
 }
 
-func (g *ginRoute) Shutdown(ctx context.Context) error {
+func (g *ginRouter) Shutdown(ctx context.Context) error {
 	if g.serv == nil {
 		return nil
 	}
@@ -173,7 +168,7 @@ func (g *ginRoute) Shutdown(ctx context.Context) error {
 	return g.serv.Shutdown(ctx)
 }
 
-func (g *ginRoute) Start(addr string) error {
+func (g *ginRouter) Start(addr string) error {
 	g.serv = &http.Server{
 		Addr:    addr,
 		Handler: g.Engine,
@@ -182,27 +177,27 @@ func (g *ginRoute) Start(addr string) error {
 	return g.serv.ListenAndServe()
 }
 
-func (g *ginRoute) GET(path string, handler Handler) {
+func (g *ginRouter) GET(path string, handler Handler) {
 	g.Engine.GET(path, newGinHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *ginRoute) POST(path string, handler Handler) {
+func (g *ginRouter) POST(path string, handler Handler) {
 	g.Engine.POST(path, newGinHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *ginRoute) PUT(path string, handler Handler) {
+func (g *ginRouter) PUT(path string, handler Handler) {
 	g.Engine.PUT(path, newGinHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *ginRoute) DELETE(path string, handler Handler) {
+func (g *ginRouter) DELETE(path string, handler Handler) {
 	g.Engine.DELETE(path, newGinHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *ginRoute) PATCH(path string, handler Handler) {
+func (g *ginRouter) PATCH(path string, handler Handler) {
 	g.Engine.PATCH(path, newGinHandler(handler, g.middlewares, g.logger))
 }
 
-func (g *ginRoute) Use(middlewares ...Middleware) {
+func (g *ginRouter) Use(middlewares ...Middleware) {
 	g.middlewares = append(g.middlewares, middlewares...)
 }
 
@@ -212,7 +207,7 @@ type ginGroup struct {
 	logger      *slog.Logger
 }
 
-func (g *ginRoute) Group(prefix string, middlewares ...Middleware) RouterGroup {
+func (g *ginRouter) Group(prefix string, middlewares ...Middleware) RouterGroup {
 	grp := g.Engine.Group(prefix)
 	return &ginGroup{
 		RouterGroup: grp,

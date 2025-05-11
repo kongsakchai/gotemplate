@@ -25,7 +25,7 @@ func init() {
 
 func main() {
 	log := logger.New()
-	r := setupRoutes(app.NewGinRoute(log)) // Initialize your router here
+	r := setupRoutes(app.NewGinRouter(log)) // Initialize your router here
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {

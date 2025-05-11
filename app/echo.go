@@ -11,13 +11,11 @@ import (
 
 type echoContext struct {
 	logger *slog.Logger
-	next   echo.HandlerFunc
 	echo.Context
 }
 
-func newEchoContext(logger *slog.Logger, ctx echo.Context, next echo.HandlerFunc) *echoContext {
+func newEchoContext(logger *slog.Logger, ctx echo.Context) *echoContext {
 	return &echoContext{
-		next:    next,
 		Context: ctx,
 		logger:  logger,
 	}
@@ -113,7 +111,7 @@ func (e *echoContext) SetWriter(w http.ResponseWriter) {
 func newEchoHandler(handler Handler, middlewares []Middleware, logger *slog.Logger) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		h := applyMiddleware(handler, middlewares)
-		return h(newEchoContext(logger, ctx, nil))
+		return h(newEchoContext(logger, ctx))
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 )
 
 type httpContext interface {
-	Request() *http.Request
+	Request() *(http.Request)
 	Writer() http.ResponseWriter
 	SetWriter(http.ResponseWriter)
 }
