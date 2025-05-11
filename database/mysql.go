@@ -8,8 +8,8 @@ import (
 	"github.com/kongsakchai/gotemplate/config"
 )
 
-func NewMySQL(conf config.Config) (*sql.DB, func()) {
-	db, err := sql.Open("mysql", conf.Database.MySQLURI)
+func NewMySQL(conf config.Database) (*sql.DB, func()) {
+	db, err := sql.Open("mysql", conf.MySQLURI)
 	if err != nil {
 		log.Fatal("Connect to database error", err)
 	}
