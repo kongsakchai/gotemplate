@@ -112,21 +112,12 @@ func (g *ginContext) Writer() http.ResponseWriter {
 	return g.Context.Writer
 }
 
-type ginResponseWriter struct {
-	gin.ResponseWriter
-	custom http.ResponseWriter
-}
+func (g *ginContext) AddWriter(w Writer) {
+	if w == nil {
+		return
+	}
 
-func (g *ginResponseWriter) Write(b []byte) (int, error) {
-	return g.custom.Write(b)
-}
-
-func (g *ginResponseWriter) WriteHeader(code int) {
-	g.custom.WriteHeader(code)
-}
-
-func (g *ginContext) SetWriter(w http.ResponseWriter) {
-	g.Context.Writer = &ginResponseWriter{
+	g.Context.Writer = &ginWriter{
 		ResponseWriter: g.Context.Writer,
 		custom:         w,
 	}
@@ -212,7 +203,7 @@ func (g *ginRouter) Group(prefix string, middlewares ...Middleware) RouterGroup 
 	return &ginGroup{
 		RouterGroup: grp,
 		logger:      g.logger,
-		middlewares: append(copyMiddlewares(g.middlewares), middlewares...),
+		middlewares: copyMiddlewares(g.middlewares, middlewares...),
 	}
 }
 
@@ -249,6 +240,6 @@ func (g *ginGroup) Group(prefix string, middlewares ...Middleware) RouterGroup {
 	return &ginGroup{
 		RouterGroup: grp,
 		logger:      g.logger,
-		middlewares: append(copyMiddlewares(g.middlewares), middlewares...),
+		middlewares: copyMiddlewares(g.middlewares, middlewares...),
 	}
 }

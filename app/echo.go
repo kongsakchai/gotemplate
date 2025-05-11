@@ -100,12 +100,15 @@ func (e *echoContext) SetLogger(logger *slog.Logger) {
 	e.logger = logger
 }
 
-func (e *echoContext) Writer() http.ResponseWriter {
-	return e.Context.Response().Writer
-}
+func (e *echoContext) AddWriter(w Writer) {
+	if w == nil {
+		return
+	}
 
-func (e *echoContext) SetWriter(w http.ResponseWriter) {
-	e.Context.Response().Writer = w
+	e.Response().Writer = &echoResponseWriter{
+		ResponseWriter: e.Response().Writer,
+		custom:         w,
+	}
 }
 
 func newEchoHandler(handler Handler, middlewares []Middleware, logger *slog.Logger) echo.HandlerFunc {
@@ -177,7 +180,7 @@ func (e *echoRouter) Group(prefix string, middlewares ...Middleware) RouterGroup
 	return &echoGroup{
 		EchoGroup:   g,
 		logger:      e.logger,
-		middlewares: append(copyMiddlewares(e.middlewares, middlewares...), middlewares...),
+		middlewares: copyMiddlewares(e.middlewares, middlewares...),
 	}
 }
 
@@ -210,7 +213,7 @@ func (g *echoGroup) Group(prefix string, middlewares ...Middleware) RouterGroup 
 	return &echoGroup{
 		EchoGroup:   g2,
 		logger:      g.logger,
-		middlewares: append(copyMiddlewares(g.middlewares, middlewares...), middlewares...),
+		middlewares: copyMiddlewares(g.middlewares, middlewares...),
 	}
 }
 

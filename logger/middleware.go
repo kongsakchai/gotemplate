@@ -14,8 +14,6 @@ import (
 
 type httpContext interface {
 	Request() *(http.Request)
-	Writer() http.ResponseWriter
-	SetWriter(http.ResponseWriter)
 }
 
 func LoggerRequest() app.Middleware {
@@ -81,11 +79,7 @@ func LoggerResponse() app.Middleware {
 				"latency": time.Since(startTime).String(),
 			}
 
-			httpCtx.SetWriter(&responseWriter{
-				ResponseWriter: httpCtx.Writer(),
-				meta:           meta,
-			})
-
+			ctx.AddWriter(&responseWriter{meta: meta})
 			return next(ctx)
 		}
 	}

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log/slog"
+	"slices"
 )
 
 type Context interface {
@@ -23,6 +24,8 @@ type Context interface {
 
 	Logger() *slog.Logger
 	SetLogger(logger *slog.Logger)
+
+	AddWriter(w Writer)
 }
 
 type Handler func(ctx Context) error
@@ -66,5 +69,5 @@ func applyMiddleware(h Handler, middlewares []Middleware) Handler {
 }
 
 func copyMiddlewares(middlewares []Middleware, ap ...Middleware) []Middleware {
-	return append([]Middleware{}, middlewares...)
+	return append(slices.Clone(middlewares), ap...)
 }

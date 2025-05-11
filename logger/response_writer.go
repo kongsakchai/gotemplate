@@ -3,16 +3,14 @@ package logger
 import (
 	"fmt"
 	"log/slog"
-	"net/http"
 )
 
 type responseWriter struct {
-	http.ResponseWriter
 	code int
 	meta map[string]any
 }
 
-func (w *responseWriter) Write(b []byte) (int, error) {
+func (w *responseWriter) Write(b []byte) {
 	go func() {
 		Info(
 			fmt.Sprintf("response info status=%d %s", w.code, w.meta["path"]),
@@ -26,11 +24,8 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 			),
 		)
 	}()
-
-	return w.ResponseWriter.Write(b)
 }
 
 func (w *responseWriter) WriteHeader(code int) {
 	w.code = code
-	w.ResponseWriter.WriteHeader(code)
 }
