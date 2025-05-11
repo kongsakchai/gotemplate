@@ -59,7 +59,6 @@ func (g *ginContext) NotFound(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 
@@ -69,7 +68,6 @@ func (g *ginContext) InternalServer(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 
@@ -79,7 +77,6 @@ func (g *ginContext) BadRequest(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 

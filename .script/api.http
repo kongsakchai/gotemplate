@@ -1,9 +1,3 @@
-### GEt
-GET http://localhost:8888/ping
+### GET
+GET http://localhost:8888/hello
 
-### Post
-POST http://localhost:8888/ping
-Content-Type: application/json
-
-    "name": "test"
-}

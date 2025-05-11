@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
@@ -17,6 +18,7 @@ var (
 )
 
 func init() {
+	runtime.GOMAXPROCS(1)
 	conf = config.Load()
 	logger.SetLevel(conf.App.LogLevel)
 }
@@ -44,16 +46,8 @@ func setupRoutes(r app.Router) app.Router {
 	r.Use(logger.LoggerRequest())
 	r.Use(logger.LoggerResponse())
 
-	r.GET("/ping", func(c app.Context) error {
-		return c.JSON(http.StatusOK, "pong")
-	})
-	r.POST("/ping", func(c app.Context) error {
-		var data map[string]any
-		if err := c.Bind(&data); err != nil {
-			return c.BadRequest(app.NewError("4000", "bad request", err))
-		}
-
-		return c.JSON(http.StatusOK, data)
+	r.GET("/hello", func(c app.Context) error {
+		return c.JSON(http.StatusOK, "Hello, World")
 	})
 
 	return r

@@ -23,8 +23,10 @@ func LoggerRequest() app.Middleware {
 		return func(ctx app.Context) error {
 			traceID := uuid.NewString()
 			startTime := time.Now()
+
 			ctx.Set("traceId", traceID)
 			ctx.Set("startTime", startTime)
+			ctx.SetLogger(ctx.Logger().With(slog.String("traceId", traceID)))
 
 			httpCtx, ok := ctx.(httpContext)
 			if !ok {
@@ -44,6 +46,7 @@ func LoggerRequest() app.Middleware {
 				ctx.Logger().InfoContext(
 					req.Context(),
 					fmt.Sprintf("request info %s", req.URL.Path),
+					slog.String("traceId", traceID),
 					slog.Group(
 						"request",
 						"method", req.Method,

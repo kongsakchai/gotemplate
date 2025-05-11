@@ -57,7 +57,6 @@ func (e *echoContext) NotFound(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 
@@ -67,7 +66,6 @@ func (e *echoContext) InternalServer(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 
@@ -77,7 +75,6 @@ func (e *echoContext) BadRequest(err Error) error {
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,
-		Error:   err.Error(),
 	})
 }
 

@@ -55,7 +55,6 @@ type Response struct {
 	Code    string `json:"code"`
 	Status  string `json:"status"`
 	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
 	Data    any    `json:"data,omitempty"`
 }
 
