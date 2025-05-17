@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"log/slog"
-	"slices"
 )
 
 type Context interface {
@@ -23,35 +22,13 @@ type Context interface {
 	Set(key string, value any)
 
 	Logger() *slog.Logger
-	SetLogger(logger *slog.Logger)
-
-	AddWriter(w Writer)
 }
 
 type Handler func(ctx Context) error
 
-type Middleware func(next Handler) Handler
-
 type Router interface {
-	Origin() any
-	GET(path string, handler Handler)
-	POST(path string, handler Handler)
-	PUT(path string, handler Handler)
-	DELETE(path string, handler Handler)
-	Use(middlewares ...Middleware)
-	Shutdown(ctx context.Context) error
 	Start(addr string) error
-	Group(prefix string, middlewares ...Middleware) RouterGroup
-}
-
-type RouterGroup interface {
-	Origin() any
-	GET(path string, handler Handler)
-	POST(path string, handler Handler)
-	PUT(path string, handler Handler)
-	DELETE(path string, handler Handler)
-	Use(middlewares ...Middleware)
-	Group(prefix string, middlewares ...Middleware) RouterGroup
+	Shutdown(ctx context.Context) error
 }
 
 type Response struct {
@@ -59,15 +36,4 @@ type Response struct {
 	Status  string `json:"status"`
 	Message string `json:"message,omitempty"`
 	Data    any    `json:"data,omitempty"`
-}
-
-func applyMiddleware(h Handler, middlewares []Middleware) Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		h = middlewares[i](h)
-	}
-	return h
-}
-
-func copyMiddlewares(middlewares []Middleware, ap ...Middleware) []Middleware {
-	return append(slices.Clone(middlewares), ap...)
 }

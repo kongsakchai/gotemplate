@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,11 +14,25 @@ type ginContext struct {
 	*gin.Context
 }
 
+var ginContextPool = &sync.Pool{
+	New: func() any {
+		return &ginContext{}
+	},
+}
+
+func putGinContext(ctx *ginContext) {
+	ginContextPool.Put(ctx)
+}
+
 func newGinContext(logger *slog.Logger, ctx *gin.Context) *ginContext {
-	return &ginContext{
-		logger:  logger,
-		Context: ctx,
-	}
+	c := ginContextPool.Get().(*ginContext)
+	c.reset(ctx, logger)
+	return c
+}
+
+func (g *ginContext) reset(ctx *gin.Context, logger *slog.Logger) {
+	g.Context = ctx
+	g.logger = logger.With(slog.String("traceID", ctx.GetString("traceID")))
 }
 
 func (g *ginContext) Query(key string) string {
@@ -96,45 +111,22 @@ func (g *ginContext) Set(key string, value any) {
 	g.Context.Set(key, value)
 }
 
-func (g *ginContext) Request() *http.Request {
-	return g.Context.Request
-}
-
 func (g *ginContext) Logger() *slog.Logger {
 	return g.logger
 }
 
-func (g *ginContext) SetLogger(logger *slog.Logger) {
-	g.logger = logger
-}
-
-func (g *ginContext) Writer() http.ResponseWriter {
-	return g.Context.Writer
-}
-
-func (g *ginContext) AddWriter(w Writer) {
-	if w == nil {
-		return
-	}
-
-	g.Context.Writer = &ginWriter{
-		ResponseWriter: g.Context.Writer,
-		custom:         w,
-	}
-}
-
-func newGinHandler(handler Handler, middlewares []Middleware, logger *slog.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		h := applyMiddleware(handler, middlewares)
-		h(newGinContext(logger, c))
+func newGinHandler(handler Handler, logger *slog.Logger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		c := newGinContext(logger, ctx)
+		defer putGinContext(c)
+		handler(c)
 	}
 }
 
 type ginRouter struct {
 	*gin.Engine
-	middlewares []Middleware
-	logger      *slog.Logger
-	serv        *http.Server
+	logger *slog.Logger
+	serv   *http.Server
 }
 
 func NewGinRouter(logger *slog.Logger) *ginRouter {
@@ -145,10 +137,6 @@ func NewGinRouter(logger *slog.Logger) *ginRouter {
 		Engine: r,
 		logger: logger,
 	}
-}
-
-func (g *ginRouter) Origin() any {
-	return g.Engine
 }
 
 func (g *ginRouter) Shutdown(ctx context.Context) error {
@@ -168,78 +156,68 @@ func (g *ginRouter) Start(addr string) error {
 	return g.serv.ListenAndServe()
 }
 
-func (g *ginRouter) GET(path string, handler Handler) {
-	g.Engine.GET(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginRouter) GET(path string, handler Handler, m ...gin.HandlerFunc) {
+	m = append(m, newGinHandler(handler, g.logger))
+	g.Engine.GET(path, m...)
 }
 
-func (g *ginRouter) POST(path string, handler Handler) {
-	g.Engine.POST(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginRouter) POST(path string, handler Handler, m ...gin.HandlerFunc) {
+	m = append(m, newGinHandler(handler, g.logger))
+	g.Engine.POST(path, m...)
 }
 
-func (g *ginRouter) PUT(path string, handler Handler) {
-	g.Engine.PUT(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginRouter) PUT(path string, handler Handler, m ...gin.HandlerFunc) {
+	m = append(m, newGinHandler(handler, g.logger))
+	g.Engine.PUT(path, m...)
 }
 
-func (g *ginRouter) DELETE(path string, handler Handler) {
-	g.Engine.DELETE(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginRouter) DELETE(path string, handler Handler, m ...gin.HandlerFunc) {
+	m = append(m, newGinHandler(handler, g.logger))
+	g.Engine.DELETE(path, m...)
 }
 
-func (g *ginRouter) PATCH(path string, handler Handler) {
-	g.Engine.PATCH(path, newGinHandler(handler, g.middlewares, g.logger))
-}
-
-func (g *ginRouter) Use(middlewares ...Middleware) {
-	g.middlewares = append(g.middlewares, middlewares...)
+func (g *ginRouter) PATCH(path string, handler Handler, m ...gin.HandlerFunc) {
+	m = append(m, newGinHandler(handler, g.logger))
+	g.Engine.PATCH(path, m...)
 }
 
 type ginGroup struct {
 	*gin.RouterGroup
-	middlewares []Middleware
-	logger      *slog.Logger
+	logger *slog.Logger
 }
 
-func (g *ginRouter) Group(prefix string, middlewares ...Middleware) RouterGroup {
-	grp := g.Engine.Group(prefix)
+func (g *ginRouter) Group(prefix string, m ...gin.HandlerFunc) *ginGroup {
+	grp := g.Engine.Group(prefix, m...)
 	return &ginGroup{
 		RouterGroup: grp,
 		logger:      g.logger,
-		middlewares: copyMiddlewares(g.middlewares, middlewares...),
 	}
 }
 
-func (g *ginGroup) Origin() any {
-	return g.RouterGroup
+func (g *ginGroup) GET(path string, handler Handler, m ...gin.HandlerFunc) {
+	g.RouterGroup.GET(path, newGinHandler(handler, g.logger))
 }
 
-func (g *ginGroup) GET(path string, handler Handler) {
-	g.RouterGroup.GET(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginGroup) POST(path string, handler Handler, m ...gin.HandlerFunc) {
+	g.RouterGroup.POST(path, newGinHandler(handler, g.logger))
 }
 
-func (g *ginGroup) POST(path string, handler Handler) {
-	g.RouterGroup.POST(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginGroup) PUT(path string, handler Handler, m ...gin.HandlerFunc) {
+	g.RouterGroup.PUT(path, newGinHandler(handler, g.logger))
 }
 
-func (g *ginGroup) PUT(path string, handler Handler) {
-	g.RouterGroup.PUT(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginGroup) DELETE(path string, handler Handler, m ...gin.HandlerFunc) {
+	g.RouterGroup.DELETE(path, newGinHandler(handler, g.logger))
 }
 
-func (g *ginGroup) DELETE(path string, handler Handler) {
-	g.RouterGroup.DELETE(path, newGinHandler(handler, g.middlewares, g.logger))
+func (g *ginGroup) PATCH(path string, handler Handler, m ...gin.HandlerFunc) {
+	g.RouterGroup.PATCH(path, newGinHandler(handler, g.logger))
 }
 
-func (g *ginGroup) PATCH(path string, handler Handler) {
-	g.RouterGroup.PATCH(path, newGinHandler(handler, g.middlewares, g.logger))
-}
-
-func (g *ginGroup) Use(middleware ...Middleware) {
-	g.middlewares = append(g.middlewares, middleware...)
-}
-
-func (g *ginGroup) Group(prefix string, middlewares ...Middleware) RouterGroup {
-	grp := g.RouterGroup.Group(prefix)
+func (g *ginGroup) Group(prefix string, m ...gin.HandlerFunc) *ginGroup {
+	grp := g.RouterGroup.Group(prefix, m...)
 	return &ginGroup{
 		RouterGroup: grp,
 		logger:      g.logger,
-		middlewares: copyMiddlewares(g.middlewares, middlewares...),
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +24,7 @@ func init() {
 
 func main() {
 	log := logger.New()
-	r := setupRoutes(nil) // Initialize your router here
+	r := setupRoutes(log) // Initialize your router here
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
@@ -40,11 +41,8 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(r app.Router) app.Router {
-	r.Use(logger.LoggerRequest())
-	r.Use(logger.LoggerResponse())
-
-	return r
+func setupRoutes(log *slog.Logger) app.Router {
+	return nil
 }
 
 func gracefulShutdown(close func(context.Context) error) {

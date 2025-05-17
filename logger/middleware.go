@@ -5,82 +5,87 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kongsakchai/gotemplate/app"
+	"github.com/labstack/echo/v4"
 )
 
-type httpContext interface {
-	Request() *(http.Request)
-}
+func GinLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		traceID := uuid.NewString()
+		c.Set("traceID", traceID)
 
-func LoggerRequest() app.Middleware {
-	return func(next app.Handler) app.Handler {
-		return func(ctx app.Context) error {
-			traceID := uuid.NewString()
-			startTime := time.Now()
-
-			ctx.Set("traceId", traceID)
-			ctx.Set("startTime", startTime)
-			ctx.SetLogger(ctx.Logger().With(slog.String("traceId", traceID)))
-
-			httpCtx, ok := ctx.(httpContext)
-			if !ok {
-				return next(ctx)
-			}
-
-			req := httpCtx.Request()
-			body, err := io.ReadAll(req.Body)
-			if err != nil {
-				return ctx.InternalServer(app.Error{
-					Code:    app.InternalServerCode,
-					Message: err.Error(),
-				})
-			}
-
-			go func() {
-				ctx.Logger().InfoContext(
-					req.Context(),
-					fmt.Sprintf("request info %s", req.URL.Path),
-					slog.String("traceId", traceID),
-					slog.Group(
-						"request",
-						"method", req.Method,
-						"body", string(body),
-					),
-				)
-			}()
-
-			req.Body.Close()
-			req.Body = io.NopCloser(bytes.NewBuffer(body))
-			return next(ctx)
+		body, err := c.GetRawData()
+		if err != nil {
+			c.String(500, "failed to read request body")
+			return
 		}
+
+		method := c.Request.Method
+		path := c.Request.URL.Path
+		go func() {
+
+			InfoCtx(c,
+				fmt.Sprintf("request info %s", path),
+				slog.String("traceId", traceID),
+				slog.Group(
+					"request",
+					"method", method,
+					"body", string(body),
+				))
+		}()
+
+		c.Writer = &ginWriter{
+			ResponseWriter: c.Writer,
+			path:           path,
+			method:         method,
+			traceID:        traceID,
+			start:          time.Now(),
+		}
+
+		c.Request.Body.Close()
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+		c.Next()
 	}
 }
 
-func LoggerResponse() app.Middleware {
-	return func(next app.Handler) app.Handler {
-		return func(ctx app.Context) error {
-			httpCtx, ok := ctx.(httpContext)
-			if !ok {
-				return next(ctx)
+func EchoLogger() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			traceID := uuid.NewString()
+			c.Set("traceID", traceID)
+
+			body, err := io.ReadAll(c.Request().Body)
+			if err != nil {
+				return c.String(500, "failed to read request body")
 			}
 
-			traceID := ctx.Get("traceId").(string)
-			startTime := ctx.Get("startTime").(time.Time)
+			method := c.Request().Method
+			path := c.Request().URL.Path
+			go func() {
+				InfoCtx(c.Request().Context(),
+					fmt.Sprintf("request info %s", path),
+					slog.String("traceId", traceID),
+					slog.Group(
+						"request",
+						"method", method,
+						"body", string(body),
+					))
+			}()
 
-			req := httpCtx.Request()
-			meta := map[string]any{
-				"method":  req.Method,
-				"path":    req.URL.Path,
-				"traceId": traceID,
-				"latency": time.Since(startTime).String(),
+			c.Response().Writer = &echoWriter{
+				ResponseWriter: c.Response().Writer,
+				path:           path,
+				method:         method,
+				traceID:        traceID,
+				start:          time.Now(),
 			}
 
-			ctx.AddWriter(&responseWriter{meta: meta})
-			return next(ctx)
+			c.Request().Body.Close()
+			c.Request().Body = io.NopCloser(bytes.NewBuffer(body))
+			return next(c)
 		}
 	}
 }

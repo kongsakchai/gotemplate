@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
@@ -18,14 +18,13 @@ var (
 )
 
 func init() {
-	runtime.GOMAXPROCS(1)
 	conf = config.Load()
 	logger.SetLevel(conf.App.LogLevel)
 }
 
 func main() {
 	log := logger.New()
-	r := setupRoutes(app.NewGinRouter(log)) // Initialize your router here
+	r := setupRoutes(log)
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
@@ -42,9 +41,9 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(r app.Router) app.Router {
-	r.Use(logger.LoggerRequest())
-	r.Use(logger.LoggerResponse())
+func setupRoutes(log *slog.Logger) app.Router {
+	r := app.NewGinRouter(log)
+	r.Use(logger.GinLogger())
 
 	r.GET("/hello", func(c app.Context) error {
 		return c.JSON(http.StatusOK, "Hello, World")
