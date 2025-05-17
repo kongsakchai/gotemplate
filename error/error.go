@@ -18,13 +18,13 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.at)
 }
 
-func New(err error) error {
+func New(err error) *Error {
 	if err == nil {
 		return nil
 	}
 
 	var errType *Error
-	if errors.Is(err, errType) {
+	if errors.As(err, &errType) {
 		return errType
 	}
 

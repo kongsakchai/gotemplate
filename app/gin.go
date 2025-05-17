@@ -86,7 +86,7 @@ func (g *ginContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (g *ginContext) NotFound(err Error) error {
+func (g *ginContext) NotFound(err *Error) error {
 	g.logger.Error(err.Error())
 	return g.JSON(404, Response{
 		Status:  ErrorStatus,
@@ -95,7 +95,7 @@ func (g *ginContext) NotFound(err Error) error {
 	})
 }
 
-func (g *ginContext) InternalServer(err Error) error {
+func (g *ginContext) InternalServer(err *Error) error {
 	g.logger.Error(err.Error())
 	return g.JSON(500, Response{
 		Status:  ErrorStatus,
@@ -104,7 +104,7 @@ func (g *ginContext) InternalServer(err Error) error {
 	})
 }
 
-func (g *ginContext) BadRequest(err Error) error {
+func (g *ginContext) BadRequest(err *Error) error {
 	g.logger.Error(err.Error())
 	return g.JSON(400, Response{
 		Status:  ErrorStatus,
