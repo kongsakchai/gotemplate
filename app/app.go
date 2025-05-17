@@ -12,7 +12,9 @@ type Context interface {
 
 	JSON(code int, obj any) error
 	OK(obj any) error
+	OKWithMessage(message string, obj any) error
 	Created(obj any) error
+	CreatedWithMessage(message string, obj any) error
 	NotFound(err Error) error
 	InternalServer(err Error) error
 	BadRequest(err Error) error

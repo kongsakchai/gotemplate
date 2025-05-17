@@ -59,11 +59,29 @@ func (e *echoContext) OK(obj any) error {
 	})
 }
 
+func (e *echoContext) OKWithMessage(message string, obj any) error {
+	return e.JSON(200, Response{
+		Status:  SuccessStatus,
+		Code:    SuccessCode,
+		Message: message,
+		Data:    obj,
+	})
+}
+
 func (e *echoContext) Created(obj any) error {
 	return e.JSON(201, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
 		Data:   obj,
+	})
+}
+
+func (e *echoContext) CreatedWithMessage(message string, obj any) error {
+	return e.JSON(201, Response{
+		Status:  SuccessStatus,
+		Code:    SuccessCode,
+		Message: message,
+		Data:    obj,
 	})
 }
 

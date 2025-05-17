@@ -4,6 +4,7 @@ const (
 	SuccessStatus = "SUCCESS"
 	SuccessCode   = "0000"
 
-	ErrorStatus        = "ERROR"
-	InternalServerCode = "9999"
+	ErrorStatus     = "ERROR"
+	UnknowErrorCode = "9999"
+	UnknowErrorMsg  = "Unknown error"
 )

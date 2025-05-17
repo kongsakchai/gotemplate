@@ -60,11 +60,29 @@ func (g *ginContext) OK(obj any) error {
 	})
 }
 
+func (g *ginContext) OKWithMessage(message string, obj any) error {
+	return g.JSON(200, Response{
+		Status:  SuccessStatus,
+		Code:    SuccessCode,
+		Message: message,
+		Data:    obj,
+	})
+}
+
 func (g *ginContext) Created(obj any) error {
 	return g.JSON(201, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
 		Data:   obj,
+	})
+}
+
+func (g *ginContext) CreatedWithMessage(message string, obj any) error {
+	return g.JSON(201, Response{
+		Status:  SuccessStatus,
+		Code:    SuccessCode,
+		Message: message,
+		Data:    obj,
 	})
 }
 
