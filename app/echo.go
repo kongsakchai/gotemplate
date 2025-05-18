@@ -85,27 +85,9 @@ func (e *echoContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *echoContext) NotFound(err *Error) error {
+func (e *echoContext) Error(err *Error) error {
 	e.logger.Error(err.Error())
-	return e.JSON(404, Response{
-		Status:  ErrorStatus,
-		Code:    err.Code,
-		Message: err.Message,
-	})
-}
-
-func (e *echoContext) InternalServer(err *Error) error {
-	e.logger.Error(err.Error())
-	return e.JSON(500, Response{
-		Status:  ErrorStatus,
-		Code:    err.Code,
-		Message: err.Message,
-	})
-}
-
-func (e *echoContext) BadRequest(err *Error) error {
-	e.logger.Error(err.Error())
-	return e.JSON(400, Response{
+	return e.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,
 		Code:    err.Code,
 		Message: err.Message,

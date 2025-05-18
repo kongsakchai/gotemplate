@@ -53,17 +53,7 @@ func (c *Context) CreatedWithMessage(message string, obj any) error {
 	return args.Error(0)
 }
 
-func (c *Context) NotFound(err *app.Error) error {
-	args := c.Called(err)
-	return args.Error(0)
-}
-
-func (c *Context) InternalServer(err *app.Error) error {
-	args := c.Called(err)
-	return args.Error(0)
-}
-
-func (c *Context) BadRequest(err *app.Error) error {
+func (c *Context) Error(err *app.Error) error {
 	args := c.Called(err)
 	return args.Error(0)
 }

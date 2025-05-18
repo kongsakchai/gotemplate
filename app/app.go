@@ -15,9 +15,7 @@ type Context interface {
 	OKWithMessage(message string, obj any) error
 	Created(obj any) error
 	CreatedWithMessage(message string, obj any) error
-	NotFound(err *Error) error
-	InternalServer(err *Error) error
-	BadRequest(err *Error) error
+	Error(err *Error) error
 
 	Ctx() context.Context
 	Get(key string) any
