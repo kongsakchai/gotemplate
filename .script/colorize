@@ -1,0 +1,35 @@
+#!/usr/bin/awk -f
+
+# usage:
+#   go test ./... | ./colorize
+
+BEGIN {
+    # Set color codes
+    NORMAL = "\033[0m"
+    GREEN = "\033[38;2;166;218;149m"
+    OVERLAY = "\033[38;2;165;173;203m"
+    RED = "\033[38;2;237;135;160m"
+    SAPPHIRE = "\033[38;2;125;196;228m"
+    MAUVE = "\033[38;2;198;160;246m"
+    YELLOW = "\033[38;2;238;212;159m"
+}
+
+{color=NORMAL}
+
+/ok/ { color=GREEN }
+/PASS/ { color=GREEN }
+/=== RUN/ { color=OVERLAY }
+/FAIL/ { color=RED }
+/SKIP/ { color=SAPPHIRE }
+
+/.*_test\.go/ { color=MAUVE }
+
+/Error:/ { color=YELLOW }
+/Error Trace:/ { color=YELLOW }
+
+/--- Expected/ { color=TEAL }
+/[^a-zA-Z]expected *:/ { color=TEAL }
+/\+\+\+ Actual/ { color=MAROON }
+/[^a-zA-Z](actual) *:/ { color=MAROON }
+
+{print color $0 NORMAL}
