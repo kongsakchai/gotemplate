@@ -3,31 +3,30 @@ package app
 import (
 	"context"
 	"log/slog"
-	"sync"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+var (
+	echoContextPool *pool[*echoContext]
+)
+
+func init() {
+	echoContextPool = createPool[*echoContext](func() any {
+		return &echoContext{}
+	})
+}
 
 type echoContext struct {
 	logger *slog.Logger
 	echo.Context
 }
 
-var echoContextPool = &sync.Pool{
-	New: func() any {
-		return &echoContext{}
-	},
-}
-
 func newEchoContext(logger *slog.Logger, ctx echo.Context) *echoContext {
-	c := echoContextPool.Get().(*echoContext)
+	c := echoContextPool.Get()
 	c.reset(ctx, logger)
 	return c
-}
-
-func putEchoContext(ctx *echoContext) {
-	echoContextPool.Put(ctx)
 }
 
 func (e *echoContext) reset(ctx echo.Context, logger *slog.Logger) {
@@ -49,6 +48,10 @@ func (e *echoContext) Bind(obj any) error {
 
 func (e *echoContext) JSON(code int, obj any) error {
 	return e.Context.JSON(code, obj)
+}
+
+func (e *echoContext) Validate(obj any) error {
+	return e.Context.Validate(obj)
 }
 
 func (e *echoContext) OK(obj any) error {
@@ -113,7 +116,7 @@ func (e *echoContext) Logger() *slog.Logger {
 func newEchoHandler(handler Handler, logger *slog.Logger) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		c := newEchoContext(logger, ctx)
-		defer putEchoContext(c)
+		defer echoContextPool.Put(c)
 		return handler(c)
 	}
 }

@@ -5,7 +5,13 @@ import (
 	"log/slog"
 )
 
+type Validator interface {
+	Validate(obj any) error
+}
+
 type Context interface {
+	Validator
+
 	Query(key string) string
 	Param(key string) string
 	Bind(obj any) error

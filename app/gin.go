@@ -4,35 +4,36 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
-type ginContext struct {
-	logger *slog.Logger
-	*gin.Context
-}
+var (
+	ginContextPool *pool[*ginContext]
+)
 
-var ginContextPool = &sync.Pool{
-	New: func() any {
+func init() {
+	ginContextPool = createPool[*ginContext](func() any {
 		return &ginContext{}
-	},
+	})
 }
 
-func putGinContext(ctx *ginContext) {
-	ginContextPool.Put(ctx)
+type ginContext struct {
+	*gin.Context
+	logger    *slog.Logger
+	validator Validator
 }
 
-func newGinContext(logger *slog.Logger, ctx *gin.Context) *ginContext {
-	c := ginContextPool.Get().(*ginContext)
-	c.reset(ctx, logger)
+func newGinContext(logger *slog.Logger, ctx *gin.Context, validator Validator) *ginContext {
+	c := ginContextPool.Get()
+	c.reset(ctx, logger, validator)
 	return c
 }
 
-func (g *ginContext) reset(ctx *gin.Context, logger *slog.Logger) {
+func (g *ginContext) reset(ctx *gin.Context, logger *slog.Logger, validator Validator) {
 	g.Context = ctx
 	g.logger = logger.With(slog.String("traceID", ctx.GetString("traceID")))
+	g.validator = validator
 }
 
 func (g *ginContext) Query(key string) string {
@@ -45,6 +46,13 @@ func (g *ginContext) Param(key string) string {
 
 func (g *ginContext) Bind(obj any) error {
 	return g.Context.Bind(obj)
+}
+
+func (g *ginContext) Validate(obj any) error {
+	if g.validator == nil {
+		return nil
+	}
+	return g.validator.Validate(obj)
 }
 
 func (g *ginContext) JSON(code int, obj any) error {
@@ -115,10 +123,10 @@ func (g *ginContext) Logger() *slog.Logger {
 	return g.logger
 }
 
-func newGinHandler(handler Handler, logger *slog.Logger) gin.HandlerFunc {
+func newGinHandler(handler Handler, logger *slog.Logger, validator Validator) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		c := newGinContext(logger, ctx)
-		defer putGinContext(c)
+		c := newGinContext(logger, ctx, validator)
+		defer ginContextPool.Put(c)
 		handler(c)
 	}
 }
@@ -127,6 +135,8 @@ type ginRouter struct {
 	*gin.Engine
 	logger *slog.Logger
 	serv   *http.Server
+
+	Validator Validator
 }
 
 func NewGinRouter(logger *slog.Logger) *ginRouter {
@@ -157,33 +167,35 @@ func (g *ginRouter) Start(addr string) error {
 }
 
 func (g *ginRouter) GET(path string, handler Handler, m ...gin.HandlerFunc) {
-	m = append(m, newGinHandler(handler, g.logger))
+	m = append(m, newGinHandler(handler, g.logger, g.Validator))
 	g.Engine.GET(path, m...)
 }
 
 func (g *ginRouter) POST(path string, handler Handler, m ...gin.HandlerFunc) {
-	m = append(m, newGinHandler(handler, g.logger))
+	m = append(m, newGinHandler(handler, g.logger, g.Validator))
 	g.Engine.POST(path, m...)
 }
 
 func (g *ginRouter) PUT(path string, handler Handler, m ...gin.HandlerFunc) {
-	m = append(m, newGinHandler(handler, g.logger))
+	m = append(m, newGinHandler(handler, g.logger, g.Validator))
 	g.Engine.PUT(path, m...)
 }
 
 func (g *ginRouter) DELETE(path string, handler Handler, m ...gin.HandlerFunc) {
-	m = append(m, newGinHandler(handler, g.logger))
+	m = append(m, newGinHandler(handler, g.logger, g.Validator))
 	g.Engine.DELETE(path, m...)
 }
 
 func (g *ginRouter) PATCH(path string, handler Handler, m ...gin.HandlerFunc) {
-	m = append(m, newGinHandler(handler, g.logger))
+	m = append(m, newGinHandler(handler, g.logger, g.Validator))
 	g.Engine.PATCH(path, m...)
 }
 
 type ginGroup struct {
 	*gin.RouterGroup
 	logger *slog.Logger
+
+	validator Validator
 }
 
 func (g *ginRouter) Group(prefix string, m ...gin.HandlerFunc) *ginGroup {
@@ -191,27 +203,28 @@ func (g *ginRouter) Group(prefix string, m ...gin.HandlerFunc) *ginGroup {
 	return &ginGroup{
 		RouterGroup: grp,
 		logger:      g.logger,
+		validator:   g.Validator,
 	}
 }
 
 func (g *ginGroup) GET(path string, handler Handler, m ...gin.HandlerFunc) {
-	g.RouterGroup.GET(path, newGinHandler(handler, g.logger))
+	g.RouterGroup.GET(path, newGinHandler(handler, g.logger, g.validator))
 }
 
 func (g *ginGroup) POST(path string, handler Handler, m ...gin.HandlerFunc) {
-	g.RouterGroup.POST(path, newGinHandler(handler, g.logger))
+	g.RouterGroup.POST(path, newGinHandler(handler, g.logger, g.validator))
 }
 
 func (g *ginGroup) PUT(path string, handler Handler, m ...gin.HandlerFunc) {
-	g.RouterGroup.PUT(path, newGinHandler(handler, g.logger))
+	g.RouterGroup.PUT(path, newGinHandler(handler, g.logger, g.validator))
 }
 
 func (g *ginGroup) DELETE(path string, handler Handler, m ...gin.HandlerFunc) {
-	g.RouterGroup.DELETE(path, newGinHandler(handler, g.logger))
+	g.RouterGroup.DELETE(path, newGinHandler(handler, g.logger, g.validator))
 }
 
 func (g *ginGroup) PATCH(path string, handler Handler, m ...gin.HandlerFunc) {
-	g.RouterGroup.PATCH(path, newGinHandler(handler, g.logger))
+	g.RouterGroup.PATCH(path, newGinHandler(handler, g.logger, g.validator))
 }
 
 func (g *ginGroup) Group(prefix string, m ...gin.HandlerFunc) *ginGroup {
