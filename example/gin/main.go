@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/app/todo"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/logger"
 )
@@ -48,6 +49,17 @@ func setupRoutes(log *slog.Logger) app.Router {
 	r.GET("/hello", func(c app.Context) error {
 		return c.JSON(http.StatusOK, "Hello, World")
 	})
+
+	{
+		service := todo.NewService()
+		h := todo.NewHandler(service)
+
+		r.GET("/todos", h.Todos)
+		r.GET("/todos/:id", h.Todo)
+		r.POST("/todos", h.Create)
+		r.PUT("/todos/:id", h.Update)
+		r.DELETE("/todos/:id", h.Delete)
+	}
 
 	return r
 }

@@ -1,21 +1,21 @@
-PHONY: gin
+.PHONY: gin
 gin:
 	@echo "Starting Example Gin server..."
 	@go run ./example/gin
 
-PHONY: echo
+.PHONY: echo
 echo:
 	@echo "Starting Example Echo server..."
 	@go run ./example/echo
 
 
-PHONY: test
+.PHONY: test
 test:
 	@echo "Running tests..."
-	@go test -v -tags=test ./... 
+	@go test -v -cover -tags=test ./... 
 	@echo "Tests completed."
 
-PHONY: coverage
+.PHONY: coverage
 coverage:
 	@echo "Running tests with coverage..."
 	@go test -tags=test -coverprofile=coverage.out ./... 

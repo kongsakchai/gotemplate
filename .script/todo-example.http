@@ -1,0 +1,29 @@
+### GET
+GET http://localhost:8888/hello
+
+### GET todos
+GET http://localhost:8888/todos
+
+### Get todo
+GET http://localhost:8888/todos/
+
+### Create todo
+POST http://localhost:8888/todos
+Content-Type: application/json
+
+{
+  "title": "New Todo",
+  "completed": false
+}
+
+### Update todo
+PUT http://localhost:8888/todos/1
+Content-Type: application/json
+
+{
+  "title": "Updated Todo",
+  "completed": true
+}
+
+### Delete todo
+DELETE http://localhost:8888/todos/1
