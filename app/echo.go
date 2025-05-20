@@ -4,57 +4,61 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/kongsakchai/gotemplate/pkg/generate"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 var (
-	echoContextPool *pool[*echoContext]
+	echoContextPool *pool[*EchoContext]
 )
 
 func init() {
-	echoContextPool = createPool[*echoContext](func() any {
-		return &echoContext{}
+	echoContextPool = createPool[*EchoContext](func() any {
+		return &EchoContext{}
 	})
 }
 
-type echoContext struct {
+type EchoContext struct {
 	logger *slog.Logger
 	echo.Context
+	next func(c echo.Context) error
 }
 
-func newEchoContext(logger *slog.Logger, ctx echo.Context) *echoContext {
-	c := echoContextPool.Get()
-	c.reset(ctx, logger)
-	return c
-}
-
-func (e *echoContext) reset(ctx echo.Context, logger *slog.Logger) {
+func (e *EchoContext) reset(ctx echo.Context, logger *slog.Logger) {
 	e.Context = ctx
-	e.logger = logger.With("traceID", ctx.Get("traceID"))
+	e.logger = logger
+	e.next = nil
 }
 
-func (e *echoContext) Query(key string) string {
+func (e *EchoContext) Next() error {
+	if e.next != nil {
+		return e.next(e.Context)
+	}
+	return nil
+}
+
+func (e *EchoContext) Query(key string) string {
 	return e.Context.QueryParam(key)
 }
 
-func (e *echoContext) Param(key string) string {
+func (e *EchoContext) Param(key string) string {
 	return e.Context.Param(key)
 }
 
-func (e *echoContext) Bind(obj any) error {
+func (e *EchoContext) Bind(obj any) error {
 	return e.Context.Bind(obj)
 }
 
-func (e *echoContext) JSON(code int, obj any) error {
+func (e *EchoContext) JSON(code int, obj any) error {
 	return e.Context.JSON(code, obj)
 }
 
-func (e *echoContext) Validate(obj any) error {
+func (e *EchoContext) Validate(obj any) error {
 	return e.Context.Validate(obj)
 }
 
-func (e *echoContext) OK(obj any) error {
+func (e *EchoContext) OK(obj any) error {
 	return e.JSON(200, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -62,7 +66,7 @@ func (e *echoContext) OK(obj any) error {
 	})
 }
 
-func (e *echoContext) OKWithMessage(message string, obj any) error {
+func (e *EchoContext) OKWithMessage(message string, obj any) error {
 	return e.JSON(200, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -71,7 +75,7 @@ func (e *echoContext) OKWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *echoContext) Created(obj any) error {
+func (e *EchoContext) Created(obj any) error {
 	return e.JSON(201, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -79,7 +83,7 @@ func (e *echoContext) Created(obj any) error {
 	})
 }
 
-func (e *echoContext) CreatedWithMessage(message string, obj any) error {
+func (e *EchoContext) CreatedWithMessage(message string, obj any) error {
 	return e.JSON(201, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -88,7 +92,7 @@ func (e *echoContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *echoContext) Error(err *Error) error {
+func (e *EchoContext) Error(err *Error) error {
 	e.logger.Error(err.Error())
 	return e.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,
@@ -97,28 +101,54 @@ func (e *echoContext) Error(err *Error) error {
 	})
 }
 
-func (e *echoContext) Ctx() context.Context {
+func (e *EchoContext) Ctx() context.Context {
 	return e.Context.Request().Context()
 }
 
-func (e *echoContext) Get(key string) any {
+func (e *EchoContext) Get(key string) any {
 	return e.Context.Get(key)
 }
 
-func (e *echoContext) Set(key string, value any) {
+func (e *EchoContext) Set(key string, value any) {
 	e.Context.Set(key, value)
 }
 
-func (e *echoContext) Logger() *slog.Logger {
+func (e *EchoContext) Logger() *slog.Logger {
 	return e.logger
 }
 
-func newEchoHandler(handler Handler, logger *slog.Logger) echo.HandlerFunc {
+func newEchoMiddleware(logger *slog.Logger, handler Handler) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			c := echoContextPool.Get()
+			defer echoContextPool.Put(c)
+			c.reset(ctx, logger)
+			c.next = next
+
+			return handler(c)
+		}
+	}
+}
+
+func newEchoMiddlewares(logger *slog.Logger, handlers ...Handler) []echo.MiddlewareFunc {
+	m := make([]echo.MiddlewareFunc, len(handlers))
+	for i, handler := range handlers {
+		m[i] = newEchoMiddleware(logger, handler)
+	}
+	return m
+}
+
+func newEchoHandler(logger *slog.Logger, handler Handler) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		c := newEchoContext(logger, ctx)
+		c := echoContextPool.Get()
+		c.reset(ctx, logger)
 		defer echoContextPool.Put(c)
 		return handler(c)
 	}
+}
+
+func newEchoHandlers(logger *slog.Logger, handlers ...Handler) (echo.HandlerFunc, []echo.MiddlewareFunc) {
+	return newEchoHandler(logger, handlers[len(handlers)-1]), newEchoMiddlewares(logger, handlers[:len(handlers)-1]...)
 }
 
 type echoRouter struct {
@@ -136,6 +166,12 @@ func NewEchoRoute(logger *slog.Logger) *echoRouter {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.PATCH},
 	}))
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("traceID", generate.UUID())
+			return next(c)
+		}
+	})
 
 	return &echoRouter{
 		Echo:   e,
@@ -143,24 +179,33 @@ func NewEchoRoute(logger *slog.Logger) *echoRouter {
 	}
 }
 
-func (e *echoRouter) GET(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	e.Echo.GET(path, newEchoHandler(handler, e.logger), m...)
+func (e *echoRouter) GET(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(e.logger, handlers...)
+	e.Echo.GET(path, h, m...)
 }
 
-func (e *echoRouter) POST(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	e.Echo.POST(path, newEchoHandler(handler, e.logger), m...)
+func (e *echoRouter) POST(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(e.logger, handlers...)
+	e.Echo.POST(path, h, m...)
 }
 
-func (e *echoRouter) PUT(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	e.Echo.PUT(path, newEchoHandler(handler, e.logger), m...)
+func (e *echoRouter) PUT(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(e.logger, handlers...)
+	e.Echo.PUT(path, h, m...)
 }
 
-func (e *echoRouter) DELETE(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	e.Echo.DELETE(path, newEchoHandler(handler, e.logger), m...)
+func (e *echoRouter) DELETE(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(e.logger, handlers...)
+	e.Echo.DELETE(path, h, m...)
 }
 
-func (e *echoRouter) PATCH(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	e.Echo.PATCH(path, newEchoHandler(handler, e.logger), m...)
+func (e *echoRouter) PATCH(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(e.logger, handlers...)
+	e.Echo.PATCH(path, h, m...)
+}
+
+func (e *echoRouter) Use(middlewares ...Handler) {
+	e.Echo.Use(newEchoMiddlewares(e.logger, middlewares...)...)
 }
 
 type echoGroup struct {
@@ -168,38 +213,47 @@ type echoGroup struct {
 	logger    *slog.Logger
 }
 
-func (e *echoRouter) Group(prefix string, m ...echo.MiddlewareFunc) *echoGroup {
-	grp := e.Echo.Group(prefix, m...)
+func (e *echoRouter) Group(prefix string, m ...Handler) RouterGroup {
+	grp := e.Echo.Group(prefix, newEchoMiddlewares(e.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,
 		logger:    e.logger,
 	}
 }
 
-func (g *echoGroup) GET(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	g.EchoGroup.GET(path, newEchoHandler(handler, g.logger), m...)
+func (g *echoGroup) GET(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(g.logger, handlers...)
+	g.EchoGroup.GET(path, h, m...)
 }
 
-func (g *echoGroup) POST(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	g.EchoGroup.POST(path, newEchoHandler(handler, g.logger), m...)
+func (g *echoGroup) POST(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(g.logger, handlers...)
+	g.EchoGroup.POST(path, h, m...)
 }
 
-func (g *echoGroup) PUT(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	g.EchoGroup.PUT(path, newEchoHandler(handler, g.logger), m...)
+func (g *echoGroup) PUT(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(g.logger, handlers...)
+	g.EchoGroup.PUT(path, h, m...)
 }
 
-func (g *echoGroup) DELETE(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	g.EchoGroup.DELETE(path, newEchoHandler(handler, g.logger), m...)
+func (g *echoGroup) DELETE(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(g.logger, handlers...)
+	g.EchoGroup.DELETE(path, h, m...)
 }
 
-func (g *echoGroup) PATCH(path string, handler Handler, m ...echo.MiddlewareFunc) {
-	g.EchoGroup.PATCH(path, newEchoHandler(handler, g.logger), m...)
+func (g *echoGroup) PATCH(path string, handlers ...Handler) {
+	h, m := newEchoHandlers(g.logger, handlers...)
+	g.EchoGroup.PATCH(path, h, m...)
 }
 
-func (g *echoGroup) Group(prefix string, m ...echo.MiddlewareFunc) *echoGroup {
-	grp := g.EchoGroup.Group(prefix, m...)
+func (g *echoGroup) Group(prefix string, m ...Handler) RouterGroup {
+	grp := g.EchoGroup.Group(prefix, newEchoMiddlewares(g.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,
 		logger:    g.logger,
 	}
+}
+
+func (g *echoGroup) Use(middlewares ...Handler) {
+	g.EchoGroup.Use(newEchoMiddlewares(g.logger, middlewares...)...)
 }

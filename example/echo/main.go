@@ -46,7 +46,6 @@ func main() {
 func setupRoutes(log *slog.Logger) app.Router {
 	r := app.NewEchoRoute(log)
 	r.Validator = middleware.NewReqValidator()
-
 	r.Use(logger.EchoLogger())
 
 	r.GET("/hello", func(c app.Context) error {

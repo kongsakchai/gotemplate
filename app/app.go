@@ -12,6 +12,7 @@ type Validator interface {
 type Context interface {
 	Validator
 
+	Next() error
 	Query(key string) string
 	Param(key string) string
 	Bind(obj any) error
@@ -35,6 +36,23 @@ type Handler func(ctx Context) error
 type Router interface {
 	Start(addr string) error
 	Shutdown(ctx context.Context) error
+	Use(middlewares ...Handler)
+	GET(path string, handler ...Handler)
+	POST(path string, handler ...Handler)
+	PUT(path string, handler ...Handler)
+	DELETE(path string, handler ...Handler)
+	PATCH(path string, handler ...Handler)
+	Group(path string, handlers ...Handler) RouterGroup
+}
+
+type RouterGroup interface {
+	Use(middlewares ...Handler)
+	GET(path string, handler ...Handler)
+	POST(path string, handler ...Handler)
+	PUT(path string, handler ...Handler)
+	DELETE(path string, handler ...Handler)
+	PATCH(path string, handler ...Handler)
+	Group(path string, handlers ...Handler) RouterGroup
 }
 
 type Response struct {
