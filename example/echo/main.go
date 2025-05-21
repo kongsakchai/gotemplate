@@ -48,19 +48,19 @@ func setupRoutes(log *slog.Logger) app.App {
 	r.Validator = middleware.NewReqValidator()
 	r.Use(logger.EchoLogger())
 
-	r.GET("/hello", func(c app.Context) error {
-		return c.JSON(http.StatusOK, "Hello, World")
-	})
+	r.GET("/hello", r.NewHandler(func(ctx app.Context) error {
+		return ctx.OK("hello world")
+	}))
 
 	{
 		service := todo.NewService()
 		h := todo.NewHandler(service)
 
-		r.GET("/todos", h.Todos)
-		r.GET("/todos/:id", h.Todo)
-		r.POST("/todos", h.Create)
-		r.PUT("/todos/:id", h.Update)
-		r.DELETE("/todos/:id", h.Delete)
+		r.GET("/todos", r.NewHandler(h.Todos))
+		r.GET("/todos/:id", r.NewHandler(h.Todo))
+		r.POST("/todos", r.NewHandler(h.Create))
+		r.PUT("/todos/:id", r.NewHandler(h.Update))
+		r.DELETE("/todos/:id", r.NewHandler(h.Delete))
 	}
 
 	return r

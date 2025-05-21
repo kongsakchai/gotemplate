@@ -10,57 +10,50 @@ import (
 )
 
 var (
-	ginContextPool *pool[*GinContext]
+	ginContextPool *pool[ginContext]
 )
 
 func init() {
-	ginContextPool = createPool[*GinContext](func() any {
-		return &GinContext{}
-	})
+	ginContextPool = createPool[ginContext]()
 }
 
-type GinContext struct {
+type ginContext struct {
 	*gin.Context
 	logger    *slog.Logger
 	validator Validator
 }
 
-func (g *GinContext) reset(ctx *gin.Context, logger *slog.Logger, validator Validator) {
+func (g *ginContext) reset(ctx *gin.Context, logger *slog.Logger, validator Validator) {
 	g.Context = ctx
 	g.logger = logger
 	g.validator = validator
 }
 
-func (g *GinContext) Next() error {
-	g.Context.Next()
-	return nil
-}
-
-func (g *GinContext) Query(key string) string {
+func (g *ginContext) Query(key string) string {
 	return g.Context.Query(key)
 }
 
-func (g *GinContext) Param(key string) string {
+func (g *ginContext) Param(key string) string {
 	return g.Context.Param(key)
 }
 
-func (g *GinContext) Bind(obj any) error {
+func (g *ginContext) Bind(obj any) error {
 	return g.Context.Bind(obj)
 }
 
-func (g *GinContext) Validate(obj any) error {
+func (g *ginContext) Validate(obj any) error {
 	if g.validator == nil {
 		return nil
 	}
 	return g.validator.Validate(obj)
 }
 
-func (g *GinContext) JSON(code int, obj any) error {
+func (g *ginContext) JSON(code int, obj any) error {
 	g.Context.JSON(code, obj)
 	return nil
 }
 
-func (g *GinContext) OK(obj any) error {
+func (g *ginContext) OK(obj any) error {
 	return g.JSON(200, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -68,7 +61,7 @@ func (g *GinContext) OK(obj any) error {
 	})
 }
 
-func (g *GinContext) OKWithMessage(message string, obj any) error {
+func (g *ginContext) OKWithMessage(message string, obj any) error {
 	return g.JSON(200, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -77,7 +70,7 @@ func (g *GinContext) OKWithMessage(message string, obj any) error {
 	})
 }
 
-func (g *GinContext) Created(obj any) error {
+func (g *ginContext) Created(obj any) error {
 	return g.JSON(201, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -85,7 +78,7 @@ func (g *GinContext) Created(obj any) error {
 	})
 }
 
-func (g *GinContext) CreatedWithMessage(message string, obj any) error {
+func (g *ginContext) CreatedWithMessage(message string, obj any) error {
 	return g.JSON(201, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -94,7 +87,7 @@ func (g *GinContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (g *GinContext) Error(err *Error) error {
+func (g *ginContext) Error(err *Error) error {
 	g.logger.Error(err.Error())
 	return g.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,
@@ -103,11 +96,11 @@ func (g *GinContext) Error(err *Error) error {
 	})
 }
 
-func (g *GinContext) Ctx() context.Context {
+func (g *ginContext) Ctx() context.Context {
 	return g.Context.Request.Context()
 }
 
-func (g *GinContext) Get(key string) any {
+func (g *ginContext) Get(key string) any {
 	val, ok := g.Context.Get(key)
 	if !ok {
 		return nil
@@ -115,30 +108,12 @@ func (g *GinContext) Get(key string) any {
 	return val
 }
 
-func (g *GinContext) Set(key string, value any) {
+func (g *ginContext) Set(key string, value any) {
 	g.Context.Set(key, value)
 }
 
-func (g *GinContext) Logger() *slog.Logger {
+func (g *ginContext) Logger() *slog.Logger {
 	return g.logger
-}
-
-func newGinHandler(logger *slog.Logger, validator Validator, handler Handler) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		c := ginContextPool.Get()
-		defer ginContextPool.Put(c)
-		c.reset(ctx, logger, validator)
-
-		handler(c)
-	}
-}
-
-func newGinHandlers(logger *slog.Logger, validator Validator, handlers ...Handler) []gin.HandlerFunc {
-	ginHandlers := make([]gin.HandlerFunc, len(handlers))
-	for i, handler := range handlers {
-		ginHandlers[i] = newGinHandler(logger, validator, handler)
-	}
-	return ginHandlers
 }
 
 type ginRouter struct {
@@ -180,73 +155,11 @@ func (g *ginRouter) Start(addr string) error {
 	return g.serv.ListenAndServe()
 }
 
-func (g *ginRouter) GET(path string, handlers ...Handler) {
-	g.Engine.GET(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginRouter) POST(path string, handlers ...Handler) {
-	g.Engine.POST(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginRouter) PUT(path string, handlers ...Handler) {
-	g.Engine.PUT(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginRouter) DELETE(path string, handlers ...Handler) {
-	g.Engine.DELETE(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginRouter) PATCH(path string, handlers ...Handler) {
-	g.Engine.PATCH(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginRouter) Use(m ...Handler) {
-	g.Engine.Use(newGinHandlers(g.logger, g.Validator, m...)...)
-}
-
-type ginGroup struct {
-	*gin.RouterGroup
-	logger    *slog.Logger
-	Validator Validator
-}
-
-func (g *ginRouter) Group(prefix string, m ...Handler) AppGroup {
-	grp := g.Engine.Group(prefix, newGinHandlers(g.logger, g.Validator, m...)...)
-	return &ginGroup{
-		RouterGroup: grp,
-		logger:      g.logger,
-		Validator:   g.Validator,
+func (g *ginRouter) NewHandler(handler Handler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := ginContextPool.Get()
+		defer ginContextPool.Put(ctx)
+		ctx.reset(c, g.logger, g.Validator)
+		handler(ctx)
 	}
-}
-
-func (g *ginGroup) GET(path string, handlers ...Handler) {
-	g.RouterGroup.GET(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginGroup) POST(path string, handlers ...Handler) {
-	g.RouterGroup.POST(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginGroup) PUT(path string, handlers ...Handler) {
-	g.RouterGroup.PUT(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginGroup) DELETE(path string, handlers ...Handler) {
-	g.RouterGroup.DELETE(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginGroup) PATCH(path string, handlers ...Handler) {
-	g.RouterGroup.PATCH(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
-}
-
-func (g *ginGroup) Group(prefix string, m ...Handler) AppGroup {
-	grp := g.RouterGroup.Group(prefix, newGinHandlers(g.logger, g.Validator, m...)...)
-	return &ginGroup{
-		RouterGroup: grp,
-		logger:      g.logger,
-	}
-}
-
-func (g *ginGroup) Use(m ...Handler) {
-	g.RouterGroup.Use(newGinHandlers(g.logger, g.Validator, m...)...)
 }
