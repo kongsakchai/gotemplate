@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -129,8 +128,6 @@ func newGinHandler(logger *slog.Logger, validator Validator, handler Handler) gi
 		c := ginContextPool.Get()
 		defer ginContextPool.Put(c)
 		c.reset(ctx, logger, validator)
-		fmt.Println("traceID", c.Get("traceID"))
-		fmt.Printf("pointer of ginContext %p\n", c)
 
 		handler(c)
 	}
