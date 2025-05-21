@@ -22,9 +22,9 @@ type Context interface {
 	OKWithMessage(message string, obj any) error
 	Created(obj any) error
 	CreatedWithMessage(message string, obj any) error
-	Error(err *Error) error
+	Error(err Error) error
 
-	Ctx() context.Context
+	Original() any
 	Get(key string) any
 	Set(key string, value any)
 
@@ -33,7 +33,7 @@ type Context interface {
 
 type Handler func(ctx Context) error
 
-type App interface {
+type Route interface {
 	Start(addr string) error
 	Shutdown(ctx context.Context) error
 	Use(middlewares ...Handler)
@@ -42,17 +42,17 @@ type App interface {
 	PUT(path string, handler ...Handler)
 	DELETE(path string, handler ...Handler)
 	PATCH(path string, handler ...Handler)
-	Group(path string, handlers ...Handler) AppGroup
+	Group(path string, handlers ...Handler) RouteGroup
 }
 
-type AppGroup interface {
+type RouteGroup interface {
 	Use(middlewares ...Handler)
 	GET(path string, handler ...Handler)
 	POST(path string, handler ...Handler)
 	PUT(path string, handler ...Handler)
 	DELETE(path string, handler ...Handler)
 	PATCH(path string, handler ...Handler)
-	Group(path string, handlers ...Handler) AppGroup
+	Group(path string, handlers ...Handler) RouteGroup
 }
 
 type Response struct {

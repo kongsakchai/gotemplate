@@ -10,55 +10,55 @@ import (
 )
 
 var (
-	echoContextPool *pool[*EchoContext]
+	echoContextPool *pool[*echoContext]
 )
 
 func init() {
-	echoContextPool = createPool[*EchoContext](func() any {
-		return &EchoContext{}
+	echoContextPool = createPool[*echoContext](func() any {
+		return &echoContext{}
 	})
 }
 
-type EchoContext struct {
-	logger *slog.Logger
+type echoContext struct {
 	echo.Context
-	next func(c echo.Context) error
+	logger *slog.Logger
+	next   func(c echo.Context) error
 }
 
-func (e *EchoContext) reset(ctx echo.Context, logger *slog.Logger) {
+func (e *echoContext) reset(ctx echo.Context, logger *slog.Logger) {
 	e.Context = ctx
 	e.logger = logger
 	e.next = nil
 }
 
-func (e *EchoContext) Next() error {
+func (e *echoContext) Next() error {
 	if e.next != nil {
 		return e.next(e.Context)
 	}
 	return nil
 }
 
-func (e *EchoContext) Query(key string) string {
+func (e *echoContext) Query(key string) string {
 	return e.Context.QueryParam(key)
 }
 
-func (e *EchoContext) Param(key string) string {
+func (e *echoContext) Param(key string) string {
 	return e.Context.Param(key)
 }
 
-func (e *EchoContext) Bind(obj any) error {
+func (e *echoContext) Bind(obj any) error {
 	return e.Context.Bind(obj)
 }
 
-func (e *EchoContext) JSON(code int, obj any) error {
+func (e *echoContext) JSON(code int, obj any) error {
 	return e.Context.JSON(code, obj)
 }
 
-func (e *EchoContext) Validate(obj any) error {
+func (e *echoContext) Validate(obj any) error {
 	return e.Context.Validate(obj)
 }
 
-func (e *EchoContext) OK(obj any) error {
+func (e *echoContext) OK(obj any) error {
 	return e.JSON(200, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -66,7 +66,7 @@ func (e *EchoContext) OK(obj any) error {
 	})
 }
 
-func (e *EchoContext) OKWithMessage(message string, obj any) error {
+func (e *echoContext) OKWithMessage(message string, obj any) error {
 	return e.JSON(200, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -75,7 +75,7 @@ func (e *EchoContext) OKWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *EchoContext) Created(obj any) error {
+func (e *echoContext) Created(obj any) error {
 	return e.JSON(201, Response{
 		Status: SuccessStatus,
 		Code:   SuccessCode,
@@ -83,7 +83,7 @@ func (e *EchoContext) Created(obj any) error {
 	})
 }
 
-func (e *EchoContext) CreatedWithMessage(message string, obj any) error {
+func (e *echoContext) CreatedWithMessage(message string, obj any) error {
 	return e.JSON(201, Response{
 		Status:  SuccessStatus,
 		Code:    SuccessCode,
@@ -92,7 +92,7 @@ func (e *EchoContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *EchoContext) Error(err *Error) error {
+func (e *echoContext) Error(err Error) error {
 	e.logger.Error(err.Error())
 	return e.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,
@@ -101,19 +101,23 @@ func (e *EchoContext) Error(err *Error) error {
 	})
 }
 
-func (e *EchoContext) Ctx() context.Context {
+func (e *echoContext) Original() any {
+	return e.Context
+}
+
+func (e *echoContext) Ctx() context.Context {
 	return e.Context.Request().Context()
 }
 
-func (e *EchoContext) Get(key string) any {
+func (e *echoContext) Get(key string) any {
 	return e.Context.Get(key)
 }
 
-func (e *EchoContext) Set(key string, value any) {
+func (e *echoContext) Set(key string, value any) {
 	e.Context.Set(key, value)
 }
 
-func (e *EchoContext) Logger() *slog.Logger {
+func (e *echoContext) Logger() *slog.Logger {
 	return e.logger
 }
 
@@ -141,8 +145,8 @@ func newEchoMiddlewares(logger *slog.Logger, handlers ...Handler) []echo.Middlew
 func newEchoHandler(logger *slog.Logger, handler Handler) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		c := echoContextPool.Get()
-		c.reset(ctx, logger)
 		defer echoContextPool.Put(c)
+		c.reset(ctx, logger)
 		return handler(c)
 	}
 }
@@ -213,7 +217,7 @@ type echoGroup struct {
 	logger    *slog.Logger
 }
 
-func (e *echoRouter) Group(prefix string, m ...Handler) AppGroup {
+func (e *echoRouter) Group(prefix string, m ...Handler) RouteGroup {
 	grp := e.Echo.Group(prefix, newEchoMiddlewares(e.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,
@@ -246,7 +250,7 @@ func (g *echoGroup) PATCH(path string, handlers ...Handler) {
 	g.EchoGroup.PATCH(path, h, m...)
 }
 
-func (g *echoGroup) Group(prefix string, m ...Handler) AppGroup {
+func (g *echoGroup) Group(prefix string, m ...Handler) RouteGroup {
 	grp := g.EchoGroup.Group(prefix, newEchoMiddlewares(g.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,

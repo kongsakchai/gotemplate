@@ -41,7 +41,7 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(log *slog.Logger) app.App {
+func setupRoutes(log *slog.Logger) app.Route {
 	return nil
 }
 

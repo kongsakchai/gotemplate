@@ -7,13 +7,15 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/labstack/echo/v4"
 )
 
 func GinLogger() app.Handler {
 	return func(c app.Context) error {
 		traceID := c.Get("traceID").(string)
-		ctx, ok := c.(*app.GinContext)
+		ctx, ok := c.Original().(*gin.Context)
 		if !ok {
 			return c.Next()
 		}
@@ -55,7 +57,7 @@ func GinLogger() app.Handler {
 func EchoLogger() app.Handler {
 	return func(c app.Context) error {
 		traceID := c.Get("traceID").(string)
-		ctx, ok := c.(*app.EchoContext)
+		ctx, ok := c.Original().(echo.Context)
 		if !ok {
 			return c.Next()
 		}

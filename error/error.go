@@ -14,21 +14,17 @@ type Error struct {
 	at  string
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.at)
 }
 
-func New(err error) *Error {
-	if err == nil {
-		return nil
-	}
-
+func New(err error) Error {
 	var errType *Error
 	if errors.As(err, &errType) {
-		return errType
+		return *errType
 	}
 
-	return &Error{
+	return Error{
 		Err: err,
 		at:  caller(2),
 	}

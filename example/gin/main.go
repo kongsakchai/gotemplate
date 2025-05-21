@@ -43,7 +43,7 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(log *slog.Logger) app.App {
+func setupRoutes(log *slog.Logger) app.Route {
 	r := app.NewGinRouter(log)
 	r.Validator = middleware.NewReqValidator()
 	r.Use(logger.GinLogger())
