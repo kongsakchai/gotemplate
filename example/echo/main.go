@@ -43,7 +43,7 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(log *slog.Logger) app.Router {
+func setupRoutes(log *slog.Logger) app.App {
 	r := app.NewEchoRoute(log)
 	r.Validator = middleware.NewReqValidator()
 	r.Use(logger.EchoLogger())
