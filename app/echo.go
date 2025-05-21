@@ -213,7 +213,7 @@ type echoGroup struct {
 	logger    *slog.Logger
 }
 
-func (e *echoRouter) Group(prefix string, m ...Handler) RouterGroup {
+func (e *echoRouter) Group(prefix string, m ...Handler) AppGroup {
 	grp := e.Echo.Group(prefix, newEchoMiddlewares(e.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,
@@ -246,7 +246,7 @@ func (g *echoGroup) PATCH(path string, handlers ...Handler) {
 	g.EchoGroup.PATCH(path, h, m...)
 }
 
-func (g *echoGroup) Group(prefix string, m ...Handler) RouterGroup {
+func (g *echoGroup) Group(prefix string, m ...Handler) AppGroup {
 	grp := g.EchoGroup.Group(prefix, newEchoMiddlewares(g.logger, m...)...)
 	return &echoGroup{
 		EchoGroup: grp,

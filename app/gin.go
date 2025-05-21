@@ -210,7 +210,7 @@ type ginGroup struct {
 	Validator Validator
 }
 
-func (g *ginRouter) Group(prefix string, m ...Handler) RouterGroup {
+func (g *ginRouter) Group(prefix string, m ...Handler) AppGroup {
 	grp := g.Engine.Group(prefix, newGinHandlers(g.logger, g.Validator, m...)...)
 	return &ginGroup{
 		RouterGroup: grp,
@@ -239,7 +239,7 @@ func (g *ginGroup) PATCH(path string, handlers ...Handler) {
 	g.RouterGroup.PATCH(path, newGinHandlers(g.logger, g.Validator, handlers...)...)
 }
 
-func (g *ginGroup) Group(prefix string, m ...Handler) RouterGroup {
+func (g *ginGroup) Group(prefix string, m ...Handler) AppGroup {
 	grp := g.RouterGroup.Group(prefix, newGinHandlers(g.logger, g.Validator, m...)...)
 	return &ginGroup{
 		RouterGroup: grp,

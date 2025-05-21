@@ -33,7 +33,7 @@ type Context interface {
 
 type Handler func(ctx Context) error
 
-type Router interface {
+type App interface {
 	Start(addr string) error
 	Shutdown(ctx context.Context) error
 	Use(middlewares ...Handler)
@@ -42,17 +42,17 @@ type Router interface {
 	PUT(path string, handler ...Handler)
 	DELETE(path string, handler ...Handler)
 	PATCH(path string, handler ...Handler)
-	Group(path string, handlers ...Handler) RouterGroup
+	Group(path string, handlers ...Handler) AppGroup
 }
 
-type RouterGroup interface {
+type AppGroup interface {
 	Use(middlewares ...Handler)
 	GET(path string, handler ...Handler)
 	POST(path string, handler ...Handler)
 	PUT(path string, handler ...Handler)
 	DELETE(path string, handler ...Handler)
 	PATCH(path string, handler ...Handler)
-	Group(path string, handlers ...Handler) RouterGroup
+	Group(path string, handlers ...Handler) AppGroup
 }
 
 type Response struct {
