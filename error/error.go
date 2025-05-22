@@ -18,7 +18,7 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.at)
 }
 
-func New(err error) *Error {
+func New(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -32,6 +32,19 @@ func New(err error) *Error {
 		Err: err,
 		at:  caller(2),
 	}
+}
+
+func As(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var errType *Error
+	if errors.As(err, &errType) {
+		return true
+	}
+
+	return false
 }
 
 func caller(skip int) string {

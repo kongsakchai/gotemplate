@@ -87,7 +87,7 @@ func (g *ginContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (g *ginContext) Error(err *Error) error {
+func (g *ginContext) Error(err Error) error {
 	g.logger.Error(err.Error())
 	return g.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,

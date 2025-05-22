@@ -81,7 +81,7 @@ func (e *EchoContext) CreatedWithMessage(message string, obj any) error {
 	})
 }
 
-func (e *EchoContext) Error(err *Error) error {
+func (e *EchoContext) Error(err Error) error {
 	e.logger.Error(err.Error())
 	return e.JSON(err.StatusCd, Response{
 		Status:  ErrorStatus,

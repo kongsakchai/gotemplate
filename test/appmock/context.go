@@ -15,6 +15,11 @@ type Context struct {
 	app.Context
 }
 
+func (c *Context) Validate(obj any) error {
+	args := c.Called(obj)
+	return args.Error(0)
+}
+
 func (c *Context) Query(key string) string {
 	args := c.Called(key)
 	return args.String(0)
@@ -55,7 +60,7 @@ func (c *Context) CreatedWithMessage(message string, obj any) error {
 	return args.Error(0)
 }
 
-func (c *Context) Error(err *app.Error) error {
+func (c *Context) Error(err app.Error) error {
 	args := c.Called(err)
 	return args.Error(0)
 }
