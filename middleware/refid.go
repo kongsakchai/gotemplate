@@ -13,7 +13,7 @@ func EchoRefID(key string) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			refID := c.Request().Header.Get(key)
 			req := c.Request()
-			if refID != "" {
+			if refID == "" {
 				slog.WarnContext(req.Context(), "no refID", slog.String("key", refID))
 				refID = uuid.NewString()
 			}
