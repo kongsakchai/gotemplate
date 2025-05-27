@@ -11,6 +11,7 @@ import (
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/logger"
 	"github.com/kongsakchai/gotemplate/middleware"
+	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v4"
 )
 
@@ -35,6 +36,8 @@ func main() {
 
 func setupRoutes() app.App {
 	r := app.NewEchoApp()
+	r.Validator = validator.NewReqValidator()
+
 	r.Use(
 		middleware.EchoRefID("X-REF-ID"),
 		middleware.Logger("X-REF-ID", true, true),
