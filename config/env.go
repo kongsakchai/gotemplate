@@ -5,10 +5,7 @@ import "os"
 var Env string
 
 func init() {
-	Env = Local
-	if env := os.Getenv("ENV"); env != "" {
-		Env = env
-	}
+	Env = os.Getenv("ENV")
 }
 
 const (

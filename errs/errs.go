@@ -26,7 +26,7 @@ func New(err error) *Error {
 
 	return &Error{
 		Err: err,
-		at:  caller(2),
+		at:  caller(maxStackDepth),
 	}
 }
 

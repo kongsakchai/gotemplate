@@ -9,6 +9,7 @@ type Config struct {
 	App      App
 	Header   Header
 	Database Database
+	Redis    Redis
 }
 
 type App struct {
@@ -22,11 +23,7 @@ type Header struct {
 }
 
 type Database struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
-	DBName   string
+	URL string
 }
 
 type Redis struct {
@@ -44,8 +41,10 @@ var once sync.Once
 func Load() Config {
 	once.Do(func() {
 		config = Config{
-			App:    getAppConfig(),
-			Header: getHeaderConfig(),
+			App:      getAppConfig(),
+			Header:   getHeaderConfig(),
+			Database: getDatabaseConfig(),
+			Redis:    getRedisConfig(),
 		}
 	})
 

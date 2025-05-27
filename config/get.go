@@ -16,7 +16,7 @@ func prefix(key string) string {
 }
 
 func getDuration(key string, defaultValue time.Duration) time.Duration {
-	val := os.Getenv(prefix(key))
+	val := os.Getenv(key)
 	if val == "" {
 		return defaultValue
 	}
@@ -29,7 +29,7 @@ func getDuration(key string, defaultValue time.Duration) time.Duration {
 }
 
 func getInt(key string, defaultValue int) int {
-	val := os.Getenv(prefix(key))
+	val := os.Getenv(key)
 	if val == "" {
 		return defaultValue
 	}
@@ -57,11 +57,7 @@ func getHeaderConfig() Header {
 
 func getDatabaseConfig() Database {
 	return Database{
-		Host:     os.Getenv(prefix("DB_HOST")),
-		Port:     os.Getenv(prefix("DB_PORT")),
-		Username: os.Getenv(prefix("DB_USERNAME")),
-		Password: os.Getenv(prefix("DB_PASSWORD")),
-		DBName:   os.Getenv(prefix("DB_NAME")),
+		URL: os.Getenv(prefix("DATABASE_URL")),
 	}
 }
 
