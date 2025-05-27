@@ -44,7 +44,7 @@ func setupRoutes(cfg config.Config) app.App {
 	r.Validator = validator.NewReqValidator()
 
 	r.Use(
-		middleware.EchoRefID(cfg.Header.RefIDKey),
+		middleware.RefID(cfg.Header.RefIDKey),
 		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 

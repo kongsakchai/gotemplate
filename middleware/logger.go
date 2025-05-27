@@ -11,34 +11,35 @@ import (
 
 func Logger(key string, req, res bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(ctx echo.Context) error {
 			if req {
-				b, err := io.ReadAll(c.Request().Body)
+				b, err := io.ReadAll(ctx.Request().Body)
 				if err != nil {
+					slog.Error("failed to read request body", "error", err)
 					return err
 				}
 
-				slog.Info(fmt.Sprintf("request %s", c.Request().URL),
-					"method", c.Request().Method,
+				slog.Info(fmt.Sprintf("request %s", ctx.Request().URL),
+					"method", ctx.Request().Method,
 					"body", string(b),
-					"traceID", c.Request().Context().Value(key).(string),
+					"traceID", ctx.Request().Context().Value(key).(string),
 				)
 
-				c.Request().Body.Close()
-				c.Request().Body = io.NopCloser(bytes.NewBuffer(b))
+				ctx.Request().Body.Close()
+				ctx.Request().Body = io.NopCloser(bytes.NewBuffer(b))
 			}
 
 			if res {
-				c.Response().Writer = &echoResponseWriter{
-					ResponseWriter: c.Response().Writer,
+				ctx.Response().Writer = &echoResponseWriter{
+					ResponseWriter: ctx.Response().Writer,
 					meta: map[string]any{
-						"traceID": c.Request().Context().Value(key),
-						"url":     c.Request().URL.String(),
+						"traceID": ctx.Request().Context().Value(key),
+						"url":     ctx.Request().URL.String(),
 					},
 				}
 			}
 
-			return next(c)
+			return next(ctx)
 		}
 	}
 }

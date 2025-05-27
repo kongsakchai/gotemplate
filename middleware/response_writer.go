@@ -18,10 +18,17 @@ func (w *echoResponseWriter) WriteHeader(status int) {
 }
 
 func (w *echoResponseWriter) Write(b []byte) (int, error) {
-	slog.Info(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
-		"body", string(b),
-		"traceID", w.meta["traceID"],
-	)
+	if w.status == http.StatusOK || w.status == http.StatusCreated {
+		slog.Info(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
+			"body", string(b),
+			"traceID", w.meta["traceID"],
+		)
+	} else {
+		slog.Error(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
+			"body", string(b),
+			"traceID", w.meta["traceID"],
+		)
+	}
 
 	return w.ResponseWriter.Write(b)
 }

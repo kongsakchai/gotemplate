@@ -16,6 +16,7 @@ BEGIN {
 
 {color=NORMAL}
 
+/coverage: / { color=SAPPHIRE }
 /ok/ { color=GREEN }
 /PASS/ { color=GREEN }
 /=== RUN/ { color=OVERLAY }
