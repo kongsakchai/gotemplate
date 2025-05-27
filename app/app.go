@@ -1,13 +1,14 @@
 package app
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
 type App interface {
-	Shutdown() error
+	Shutdown(ctx context.Context) error
 	Start(addr string) error
 }
 

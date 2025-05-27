@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"log/slog"
-	"net/http/httputil"
 
 	"github.com/labstack/echo/v4"
 )
@@ -11,17 +13,19 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if req {
-				body, err := httputil.DumpRequest(c.Request(), true)
+				b, err := io.ReadAll(c.Request().Body)
 				if err != nil {
 					return err
 				}
 
-				slog.Info("request",
-					slog.String("traceID", c.Request().Context().Value(key).(string)),
-					slog.String("method", c.Request().Method),
-					slog.String("url", c.Request().URL.String()),
-					slog.String("body", string(body)),
+				slog.Info(fmt.Sprintf("request %s", c.Request().URL),
+					"method", c.Request().Method,
+					"body", string(b),
+					"traceID", c.Request().Context().Value(key).(string),
 				)
+
+				c.Request().Body.Close()
+				c.Request().Body = io.NopCloser(bytes.NewBuffer(b))
 			}
 
 			if res {
@@ -29,7 +33,6 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 					ResponseWriter: c.Response().Writer,
 					meta: map[string]any{
 						"traceID": c.Request().Context().Value(key),
-						"method":  c.Request().Method,
 						"url":     c.Request().URL.String(),
 					},
 				}

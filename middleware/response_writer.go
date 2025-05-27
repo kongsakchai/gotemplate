@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -17,12 +18,9 @@ func (w *echoResponseWriter) WriteHeader(status int) {
 }
 
 func (w *echoResponseWriter) Write(b []byte) (int, error) {
-	slog.Info("response",
-		slog.Int("status", w.status),
-		slog.Int("length", len(b)),
-		slog.Any("method", w.meta["method"]),
-		slog.Any("url", w.meta["url"]),
-		slog.Any("traceID", w.meta["traceID"]),
+	slog.Info(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
+		"body", string(b),
+		"traceID", w.meta["traceID"],
 	)
 
 	return w.ResponseWriter.Write(b)
