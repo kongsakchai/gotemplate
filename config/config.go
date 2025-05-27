@@ -2,6 +2,7 @@ package config
 
 import (
 	"sync"
+	"time"
 )
 
 type Config struct {
@@ -26,6 +27,15 @@ type Database struct {
 	Username string
 	Password string
 	DBName   string
+}
+
+type Redis struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	DB       int
+	Timeout  time.Duration
 }
 
 var config Config
