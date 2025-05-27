@@ -3,10 +3,10 @@ package app
 import "net/http"
 
 type Error struct {
-	StatusCd int    `json:"-"`
-	Code     string `json:"code"`
-	Message  string `json:"message"`
-	Error    error  `json:"-"`
+	StatusCd int
+	Code     string
+	Message  string
+	Error    error
 }
 
 func (e Error) IsEmpty() bool {
