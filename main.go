@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/logger"
 	"github.com/kongsakchai/gotemplate/middleware"
 	"github.com/kongsakchai/gotemplate/validator"
@@ -16,8 +17,9 @@ import (
 )
 
 func main() {
-	logger.New()
-	r := setupRoutes()
+	cfg := config.Load()
+	log := logger.New()
+	r := setupRoutes(cfg)
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
@@ -25,22 +27,25 @@ func main() {
 		return r.Shutdown(ctx)
 	})
 
-	if err := r.Start(":8080"); err != nil && err != http.ErrServerClosed {
-		slog.Error("shutting down the server: " + err.Error())
+	log.Info("starting " + cfg.App.Name + " version " + cfg.App.Version)
+	log.Info("listening on port " + cfg.App.Port)
+
+	if err := r.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
+		log.Error("shutting down the server: " + err.Error())
 		return
 	}
 
 	<-idle
-	slog.Info("bye bye")
+	log.Info("bye bye")
 }
 
-func setupRoutes() app.App {
+func setupRoutes(cfg config.Config) app.App {
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
 
 	r.Use(
-		middleware.EchoRefID("X-REF-ID"),
-		middleware.Logger("X-REF-ID", true, true),
+		middleware.EchoRefID(cfg.Header.RefIDKey),
+		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 
 	r.GET("/ping", func(c echo.Context) error {

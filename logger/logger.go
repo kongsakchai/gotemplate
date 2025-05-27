@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var logLevel slog.Level = slog.LevelError
+var logLevel slog.Level
 
 func SetLevel(level string) {
 	switch level {
@@ -21,6 +21,7 @@ func SetLevel(level string) {
 }
 
 func init() {
+	logLevel = slog.LevelInfo
 	if level := os.Getenv("LOG_LEVEL"); level != "" {
 		SetLevel(level)
 	}
