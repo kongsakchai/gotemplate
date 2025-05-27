@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	App    App
-	Header Header
+	App      App
+	Header   Header
+	Database Database
 }
 
 type App struct {
@@ -17,6 +18,14 @@ type App struct {
 
 type Header struct {
 	RefIDKey string
+}
+
+type Database struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	DBName   string
 }
 
 var config Config
