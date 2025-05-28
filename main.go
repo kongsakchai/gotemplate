@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
@@ -15,6 +17,17 @@ import (
 	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v4"
 )
+
+func init() {
+	if os.Getenv("GOMAXPROCS") != "" {
+		runtime.GOMAXPROCS(0) // GOMAXPROCS
+	} else {
+		runtime.GOMAXPROCS(1) // 0 - 999m
+	}
+	if os.Getenv("GOMEMLIMIT") != "" {
+		debug.SetMemoryLimit(-1) // GOMEMLIMIT
+	}
+}
 
 func main() {
 	cfg := config.Load()
