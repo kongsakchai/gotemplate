@@ -35,7 +35,14 @@ func New() *slog.Logger {
 
 	var handler slog.Handler
 	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+		handler = &textHandler{
+			opts: handlerOptions{
+				level:       logLevel,
+				replaceAttr: replaceAttr,
+				timeFormat:  "[2006/01/02 15:04:05]",
+			},
+			w: os.Stdout,
+		}
 	} else {
 		handler = slog.NewJSONHandler(os.Stdout, opts)
 	}

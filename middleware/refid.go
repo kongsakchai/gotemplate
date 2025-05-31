@@ -14,7 +14,7 @@ func RefID(key string) echo.MiddlewareFunc {
 			refID := ctx.Request().Header.Get(key)
 			req := ctx.Request()
 			if refID == "" {
-				slog.WarnContext(req.Context(), "no refID", slog.String("key", refID))
+				slog.DebugContext(req.Context(), "no refID", slog.String("key", key))
 				refID = uuid.NewString()
 			}
 
