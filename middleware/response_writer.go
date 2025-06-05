@@ -20,12 +20,12 @@ func (w *echoResponseWriter) WriteHeader(status int) {
 func (w *echoResponseWriter) Write(b []byte) (int, error) {
 	if w.status == http.StatusOK || w.status == http.StatusCreated {
 		slog.Info(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
-			"body", string(b[:len(b)-1]), // Exclude the trailing newline
+			"body", string(b),
 			"traceID", w.meta["traceID"],
 		)
 	} else {
 		slog.Error(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
-			"body", string(b[:len(b)-1]), // Exclude the trailing newline
+			"body", string(b),
 			"traceID", w.meta["traceID"],
 		)
 	}

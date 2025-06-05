@@ -17,34 +17,28 @@ func SetLevel(level string) {
 		logLevel = slog.LevelWarn
 	case "error":
 		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo // Default to Info level if an unknown level is provided
 	}
 }
 
 func init() {
-	logLevel = slog.LevelInfo
-	if level := os.Getenv("LOG_LEVEL"); level != "" {
-		SetLevel(level)
-	}
+	SetLevel(os.Getenv("LOG_LEVEL"))
 }
 
 func New() *slog.Logger {
-	opts := &slog.HandlerOptions{
-		Level:       logLevel,
-		ReplaceAttr: replaceAttr,
-	}
-
 	var handler slog.Handler
 	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = &textHandler{
-			opts: handlerOptions{
-				level:       logLevel,
-				replaceAttr: replaceAttr,
-				timeFormat:  "[2006/01/02 15:04:05]",
-			},
-			w: os.Stdout,
-		}
+		handler = NewTextHandler(os.Stdout, &HandlerOptions{
+			Level:       logLevel,
+			ReplaceAttr: replaceAttr,
+			TimeFormat:  "[2006/01/02 15:04:05]",
+		})
 	} else {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
+		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level:       logLevel,
+			ReplaceAttr: replaceAttr,
+		})
 	}
 
 	logger := slog.New(handler)

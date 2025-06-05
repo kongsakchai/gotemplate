@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"encoding"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,40 +13,76 @@ import (
 
 type replaceAttrFunc func(groups []string, a slog.Attr) slog.Attr
 
-type handlerOptions struct {
-	level       slog.Level
-	replaceAttr replaceAttrFunc
-	timeFormat  string
+type HandlerOptions struct {
+	Level       slog.Level
+	ReplaceAttr replaceAttrFunc
+	TimeFormat  string
 }
 
 type textHandler struct {
-	opts handlerOptions
+	opts       HandlerOptions
+	attrPrefix []byte
+	groups     []string
 
 	mu sync.Mutex
 	w  io.Writer
 }
 
+func NewTextHandler(w io.Writer, opts *HandlerOptions) *textHandler {
+	if opts == nil {
+		opts = &HandlerOptions{
+			Level:      slog.LevelInfo,
+			TimeFormat: time.RFC3339,
+		}
+	}
+
+	return &textHandler{
+		opts:   *opts,
+		w:      w,
+		groups: make([]string, 0),
+	}
+}
+
 func (h *textHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.opts.level.Level()
+	return level >= h.opts.Level
 }
 
 func (h *textHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &textHandler{}
+	buf := newBuffer()
+	for _, a := range attrs {
+		h.appendAttr(buf, a)
+	}
+	return &textHandler{
+		opts:       h.opts,
+		w:          h.w,
+		attrPrefix: *buf,
+		groups:     h.groups,
+	}
 }
 
 func (h *textHandler) WithGroup(name string) slog.Handler {
-	return &textHandler{}
+	gs := make([]string, len(h.groups)+1)
+	if len(h.groups) > 0 {
+		copy(gs, h.groups)
+	}
+	gs[len(gs)-1] = name
+
+	return &textHandler{
+		opts:       h.opts,
+		w:          h.w,
+		attrPrefix: h.attrPrefix,
+		groups:     gs,
+	}
 }
 
 func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 	buf := newBuffer()
 	defer buf.Free()
 
-	buf.WriteByte('\n')
 	// Write Emoji
 	switch r.Level {
 	case slog.LevelError:
-		buf.WriteString("🚨 ")
+		buf.WriteString("❌ ")
 	case slog.LevelWarn:
 		buf.WriteString("⚠️  ")
 	case slog.LevelInfo:
@@ -58,29 +93,42 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	// Write Time
 	if !r.Time.IsZero() {
-		val := r.Time.Round(0)
-		buf.WriteString("\u001b[38;2;165;173;203m")
-		*buf = val.AppendFormat(*buf, h.opts.timeFormat)
-		buf.WriteString("\u001b[0m ")
+		var val time.Time
+		if rep := h.opts.ReplaceAttr; rep != nil {
+			t := rep(h.groups, slog.Time(slog.TimeKey, r.Time))
+			val = t.Value.Time().Round(0)
+		} else {
+			val = r.Time.Round(0)
+		}
+
+		buf.WriteString(colorGray)
+		*buf = val.AppendFormat(*buf, h.opts.TimeFormat)
+		buf.WriteString(colorResetWithSpace)
 	}
 
 	// Write Level
 	switch r.Level {
 	case slog.LevelError:
-		buf.WriteString("\u001b[38;2;237;135;160mERROR\u001b[0m ")
+		buf.WriteString(colorRed + "ERR" + colorResetWithSpace)
 	case slog.LevelWarn:
-		buf.WriteString("\u001b[38;2;238;212;159mWARN\u001b[0m ")
+		buf.WriteString(colorYellow + "WRN" + colorResetWithSpace)
 	case slog.LevelInfo:
-		buf.WriteString("\u001b[38;2;166;218;149mINFO\u001b[0m ")
+		buf.WriteString(colorGreen + "INF" + colorResetWithSpace)
 	case slog.LevelDebug:
-		buf.WriteString("DEBUG ")
+		buf.WriteString("DBG")
 	}
 
 	// Write Message
 	if r.Message != "" {
-		buf.WriteString("\u001b[1m")
+		buf.WriteString(qouteText + boldText)
 		buf.WriteString(r.Message)
-		buf.WriteString("\u001b[0m ")
+		buf.WriteString(colorReset + qouteText + " ")
+	}
+
+	// Wrote attrPrefix
+	prefix := h.attrPrefix
+	if len(prefix) > 0 {
+		buf.Write(h.attrPrefix)
 	}
 
 	// Write Attributes
@@ -90,6 +138,8 @@ func (h *textHandler) Handle(ctx context.Context, r slog.Record) error {
 			return true
 		})
 	}
+
+	buf.WriteByte('\n')
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -102,24 +152,72 @@ func (h *textHandler) appendAttr(buf *buffer, a slog.Attr) {
 		return
 	}
 
+	if rep := h.opts.ReplaceAttr; rep != nil && a.Value.Kind() == slog.KindGroup {
+		a = rep(h.groups, a)
+		a.Value = a.Value.Resolve()
+	}
+
 	if a.Value.Kind() == slog.KindGroup {
+		for _, group := range a.Value.Group() {
+			h.openGroup(a.Key)
+			h.appendAttr(buf, group)
+			h.closeGroup()
+		}
 	} else {
 		h.appendKey(buf, a.Key)
 		h.appendValue(buf, a.Value)
 	}
-
-	buf.WriteByte(' ')
 }
 
-func (h *textHandler) appendKey(buf *buffer, key string) {
-	buf.WriteString(key)
+func (h *textHandler) openGroup(key string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.groups = append(h.groups, key)
+}
+
+func (h *textHandler) closeGroup() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.groups) > 0 {
+		h.groups = h.groups[:len(h.groups)-1]
+	}
+}
+
+func (h *textHandler) appendKey(buf *buffer, keys string) {
+	buf.WriteString(colorCyan)
+	for _, key := range h.groups {
+		buf.WriteString(key)
+		buf.WriteByte('.')
+	}
+
+	buf.WriteString(keys)
+	buf.WriteString(colorReset)
 	buf.WriteByte('=')
 }
 
 func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
-	switch v.Kind() {
+	defer func() {
+		// Copied from log/slog/handler.go.
+		if r := recover(); r != nil {
+			// If it panics with a nil pointer, the most likely cases are
+			// an encoding.TextMarshaler or error fails to guard against nil,
+			// in which case "<nil>" seems to be the feasible choice.
+			//
+			// Adapted from the code in fmt/print.go.
+			if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
+				buf.WriteString("nil")
+				return
+			}
+
+			// Otherwise just print the original panic message.
+			buf.WriteString(fmt.Sprintf("<panic: %v>", r))
+		}
+	}()
+
+	kind := v.Kind()
+	switch kind {
 	case slog.KindString:
-		buf.WriteString(v.String())
+		*buf = strconv.AppendQuote(*buf, v.String())
 	case slog.KindTime:
 		*buf = appendRFC3339Millis(*buf, v.Time())
 	case slog.KindBool:
@@ -133,35 +231,82 @@ func (h *textHandler) appendValue(buf *buffer, v slog.Value) {
 	case slog.KindDuration:
 		*buf = strconv.AppendInt(*buf, int64(v.Duration()), 10)
 	case slog.KindAny:
-		defer func() {
-			// Copied from log/slog/handler.go.
-			if r := recover(); r != nil {
-				// If it panics with a nil pointer, the most likely cases are
-				// an encoding.TextMarshaler or error fails to guard against nil,
-				// in which case "<nil>" seems to be the feasible choice.
-				//
-				// Adapted from the code in fmt/print.go.
-				if v := reflect.ValueOf(v.Any()); v.Kind() == reflect.Pointer && v.IsNil() {
-					buf.WriteString("<nil>")
-					return
-				}
-
-				// Otherwise just print the original panic message.
-				buf.WriteString(fmt.Sprintf("<panic: %v>", r))
-			}
-		}()
-
-		switch cv := v.Any().(type) {
-		case encoding.TextMarshaler:
-			data, err := cv.MarshalText()
-			if err != nil {
-				break
-			}
-			buf.Write(data)
-		default:
-			buf.WriteString(fmt.Sprintf("%+v", v.Any()))
-		}
+		*buf = appendWithRefect(*buf, reflect.ValueOf(v.Any()))
 	}
+
+	buf.WriteByte(' ')
+}
+
+func appendWithRefect(b []byte, v reflect.Value) []byte {
+	kind := v.Kind()
+	switch kind {
+	case reflect.String:
+		return append(b, v.String()...)
+	case reflect.Bool:
+		return strconv.AppendBool(b, v.Bool())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.AppendInt(b, v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.AppendUint(b, v.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.AppendFloat(b, v.Float(), 'g', -1, 64)
+	case reflect.Slice, reflect.Array:
+		if kind == reflect.Slice && v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		b = append(b, '[')
+		for i := range v.Len() {
+			if i > 0 {
+				b = append(b, ',', ' ')
+			}
+			b = appendWithRefect(b, v.Index(i))
+		}
+
+		return append(b, ']')
+	case reflect.Map:
+		if v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		b = append(b, '{')
+		for i, key := range v.MapKeys() {
+			if i > 0 {
+				b = append(b, ',', ' ')
+			}
+			b = appendWithRefect(b, key)
+			b = append(b, ':')
+			b = appendWithRefect(b, v.MapIndex(key))
+		}
+
+		return append(b, '}')
+	case reflect.Struct:
+		b = append(b, '{')
+		for i := range v.NumField() {
+			field := v.Type().Field(i)
+			if !field.IsExported() {
+				continue
+			}
+
+			if i > 0 {
+				b = append(b, ',', ' ')
+			}
+
+			b = append(b, field.Name...)
+			b = append(b, ':')
+			b = appendWithRefect(b, v.Field(i))
+		}
+
+		return append(b, '}')
+	case reflect.Ptr:
+		if v.IsNil() {
+			return append(b, "nil"...)
+		}
+
+		return appendWithRefect(b, v.Elem())
+	}
+
+	return b
 }
 
 // copy from log/slog/handler.go

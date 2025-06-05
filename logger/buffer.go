@@ -37,3 +37,7 @@ func (b *buffer) WriteString(str string) (int, error) {
 	*b = append(*b, str...)
 	return len(str), nil
 }
+
+func (b *buffer) Bytes() []byte {
+	return *b
+}
