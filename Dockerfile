@@ -4,10 +4,22 @@ WORKDIR /app
 
 COPY ./ ./
 RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build -o app ./main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o goapp ./main.go
+
+# == Run Stage ==
 
 FROM alpine:3.21 as run
-WORKDIR /app
-COPY --from=builder /app/app .
 
-CMD ["./app"]
+RUN apk update && apk add --no-cache \
+        ca-certificates \
+        tzdata 
+
+ENV TZ=Asia/Bangkok
+
+WORKDIR /app
+
+COPY --from=builder /app/goapp ./goapp
+
+EXPOSE 8080
+
+CMD ["./goapp"]
