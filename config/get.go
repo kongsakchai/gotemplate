@@ -15,6 +15,29 @@ func prefix(key string) string {
 	return fmt.Sprintf("%s_%s", Env, key)
 }
 
+func getSecret(key string, defaultValue string) string {
+	secret := os.Getenv(key)
+	if secret == "" {
+		return defaultValue
+	}
+
+	val := os.Getenv(secret)
+	if val == "" {
+		return defaultValue
+	}
+
+	return val
+}
+
+func getString(key string, defaultValue string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
+	}
+
+	return val
+}
+
 func getDuration(key string, defaultValue time.Duration) time.Duration {
 	val := os.Getenv(key)
 	if val == "" {

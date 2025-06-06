@@ -93,6 +93,98 @@ func TestGetDuration(t *testing.T) {
 	}
 }
 
+func TestGetSecret(t *testing.T) {
+	Env = "" // Reset environment variable for testing
+
+	type testcase struct {
+		title          string
+		envKey         string
+		secretKey      string
+		secretValue    string
+		defaultValue   string
+		expectedResult string
+	}
+
+	testcases := []testcase{
+		{
+			title:          "should return default value when environment variable is not set",
+			envKey:         "TEST_SECRET",
+			secretKey:      "",
+			secretValue:    "",
+			defaultValue:   "default",
+			expectedResult: "default",
+		},
+		{
+			title:          "should return environment variable value when secret key is set",
+			envKey:         "TEST_SECRET",
+			secretKey:      "SECRET_KEY",
+			secretValue:    "secret_value",
+			defaultValue:   "default",
+			expectedResult: "secret_value",
+		},
+		{
+			title:          "should return default value when secret key is not set",
+			envKey:         "TEST_SECRET",
+			secretKey:      "SECRET_KEY",
+			secretValue:    "",
+			defaultValue:   "default",
+			expectedResult: "default",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.title, func(t *testing.T) {
+			t.Setenv(tc.envKey, tc.secretKey)
+			if tc.secretKey != "" {
+				t.Setenv(tc.secretKey, tc.secretValue)
+			}
+
+			result := getSecret(tc.envKey, tc.defaultValue)
+
+			assert.Equal(t, tc.expectedResult, result)
+		})
+	}
+}
+
+func TestGetString(t *testing.T) {
+	Env = "" // Reset environment variable for testing
+
+	type testcase struct {
+		title          string
+		envKey         string
+		envValue       string
+		defaultValue   string
+		expectedResult string
+	}
+
+	testcases := []testcase{
+		{
+			title:          "should return default value when environment variable is not set",
+			envKey:         "TEST_STRING",
+			envValue:       "",
+			defaultValue:   "default",
+			expectedResult: "default",
+		},
+		{
+			title:          "should return environment variable value when set",
+			envKey:         "TEST_STRING",
+			envValue:       "value",
+			defaultValue:   "default",
+			expectedResult: "value",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.title, func(t *testing.T) {
+			t.Setenv(tc.envKey, tc.envValue)
+
+			result := getString(tc.envKey, tc.defaultValue)
+
+			assert.Equal(t, tc.expectedResult, result)
+		})
+	}
+}
+
 func TestGetInt(t *testing.T) {
 	Env = "" // Reset environment variable for testing
 
