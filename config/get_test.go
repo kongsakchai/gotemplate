@@ -97,51 +97,44 @@ func TestGetSecret(t *testing.T) {
 	Env = "" // Reset environment variable for testing
 
 	type testcase struct {
-		title          string
-		envKey         string
-		secretKey      string
-		secretValue    string
-		defaultValue   string
-		expectedResult string
+		title       string
+		secretKey   string
+		secretValue string
+		searchKey   string
+		expected    string
 	}
 
 	testcases := []testcase{
 		{
-			title:          "should return default value when environment variable is not set",
-			envKey:         "TEST_SECRET",
-			secretKey:      "",
-			secretValue:    "",
-			defaultValue:   "default",
-			expectedResult: "default",
+			title:       "should return secret value when environment variable is set",
+			secretKey:   "TEST_SECRET",
+			secretValue: "secretValue",
+			searchKey:   "$TEST_SECRET",
+			expected:    "secretValue",
 		},
 		{
-			title:          "should return environment variable value when secret key is set",
-			envKey:         "TEST_SECRET",
-			secretKey:      "SECRET_KEY",
-			secretValue:    "secret_value",
-			defaultValue:   "default",
-			expectedResult: "secret_value",
+			title:       "should return key when environment variable is not set",
+			secretKey:   "TEST_SECRET",
+			secretValue: "",
+			searchKey:   "$TEST_SECRET",
+			expected:    "$TEST_SECRET",
 		},
 		{
-			title:          "should return default value when secret key is not set",
-			envKey:         "TEST_SECRET",
-			secretKey:      "SECRET_KEY",
-			secretValue:    "",
-			defaultValue:   "default",
-			expectedResult: "default",
+			title:       "should return key when not prefixed with $",
+			secretKey:   "TEST_SECRET",
+			secretValue: "secretValue",
+			searchKey:   "TEST_SECRET",
+			expected:    "TEST_SECRET",
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.title, func(t *testing.T) {
-			t.Setenv(tc.envKey, tc.secretKey)
-			if tc.secretKey != "" {
-				t.Setenv(tc.secretKey, tc.secretValue)
-			}
+			t.Setenv(tc.secretKey, tc.secretValue)
 
-			result := getSecret(tc.envKey, tc.defaultValue)
+			result := getSecret(tc.searchKey)
 
-			assert.Equal(t, tc.expectedResult, result)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }

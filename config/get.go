@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,18 +16,15 @@ func prefix(key string) string {
 	return fmt.Sprintf("%s_%s", Env, key)
 }
 
-func getSecret(key string, defaultValue string) string {
-	secret := os.Getenv(key)
+func getSecret(key string) string {
+	if !strings.HasPrefix(key, "$") {
+		return key
+	}
+	secret := os.ExpandEnv(key)
 	if secret == "" {
-		return defaultValue
+		return key
 	}
-
-	val := os.Getenv(secret)
-	if val == "" {
-		return defaultValue
-	}
-
-	return val
+	return secret
 }
 
 func getString(key string, defaultValue string) string {
@@ -35,7 +33,7 @@ func getString(key string, defaultValue string) string {
 		return defaultValue
 	}
 
-	return val
+	return getSecret(val)
 }
 
 func getDuration(key string, defaultValue time.Duration) time.Duration {
@@ -44,7 +42,7 @@ func getDuration(key string, defaultValue time.Duration) time.Duration {
 		return defaultValue
 	}
 
-	dur, err := time.ParseDuration(val)
+	dur, err := time.ParseDuration(getSecret(val))
 	if err != nil {
 		return defaultValue
 	}
@@ -57,7 +55,7 @@ func getInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 
-	intVal, err := strconv.Atoi(val)
+	intVal, err := strconv.Atoi(getSecret(val))
 	if err != nil {
 		return defaultValue
 	}
@@ -74,22 +72,22 @@ func getAppConfig() App {
 
 func getHeaderConfig() Header {
 	return Header{
-		RefIDKey: os.Getenv("HEADER_REF_ID_KEY"),
+		RefIDKey: getString("HEADER_REF_ID_KEY", "X-Ref-ID"),
 	}
 }
 
 func getDatabaseConfig() Database {
 	return Database{
-		URL: os.Getenv(prefix("DATABASE_URL")),
+		URL: getString(prefix("DATABASE_URL"), ""),
 	}
 }
 
 func getRedisConfig() Redis {
 	return Redis{
-		Host:     os.Getenv(prefix("REDIS_HOST")),
-		Port:     os.Getenv(prefix("REDIS_PORT")),
-		Username: os.Getenv(prefix("REDIS_USERNAME")),
-		Password: os.Getenv(prefix("REDIS_PASSWORD")),
+		Host:     getString(prefix("REDIS_HOST"), ""),
+		Port:     getString(prefix("REDIS_PORT"), ""),
+		Username: getString(prefix("REDIS_USERNAME"), ""),
+		Password: getString(prefix("REDIS_PASSWORD"), ""),
 		DB:       getInt(prefix("REDIS_DB"), 0),
 		Timeout:  getDuration(prefix("REDIS_TIMEOUT"), 5*time.Second),
 	}
