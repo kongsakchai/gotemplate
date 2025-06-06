@@ -21,6 +21,7 @@ func TestSetLevel(t *testing.T) {
 		{"info", "info", slog.LevelInfo},
 		{"warn", "warn", slog.LevelWarn},
 		{"error", "error", slog.LevelError},
+		{"unknown", "unknown", slog.LevelInfo}, // Default to Info level for unknown levels
 	}
 
 	for _, tc := range testcases {

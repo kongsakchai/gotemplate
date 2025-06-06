@@ -2,6 +2,8 @@ package logger
 
 import "sync"
 
+const maxBufferSize = 16 << 10
+
 type buffer []byte
 
 var bufPool = sync.Pool{
@@ -16,7 +18,7 @@ func newBuffer() *buffer {
 }
 
 func (b *buffer) Free() {
-	const maxBufferSize = 16 << 10
+	// If the buffer is larger than the max size, we don't return it to the pool
 	if cap(*b) <= maxBufferSize {
 		*b = (*b)[:0]
 		bufPool.Put(b)
