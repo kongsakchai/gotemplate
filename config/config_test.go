@@ -21,6 +21,8 @@ func TestLoad(t *testing.T) {
 	t.Setenv("REDIS_PASSWORD", "redispassword")
 	t.Setenv("REDIS_DB", "1")
 	t.Setenv("REDIS_TIMEOUT", "5s")
+	t.Setenv("MIGRATION_DIRECTORY", "./migrations")
+	t.Setenv("MIGRATION_VERSION", "")
 
 	expectConfig := Config{
 		App: App{
@@ -30,6 +32,10 @@ func TestLoad(t *testing.T) {
 		},
 		Header: Header{
 			RefIDKey: "X-Ref-ID",
+		},
+		Migration: Migration{
+			Directory: "./migrations",
+			Version:   "",
 		},
 		Database: Database{
 			URL: "user:password@tcp(localhost:5432)/testdb",

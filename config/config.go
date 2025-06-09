@@ -6,10 +6,11 @@ import (
 )
 
 type Config struct {
-	App      App
-	Header   Header
-	Database Database
-	Redis    Redis
+	App       App
+	Header    Header
+	Migration Migration
+	Database  Database
+	Redis     Redis
 }
 
 type App struct {
@@ -20,6 +21,11 @@ type App struct {
 
 type Header struct {
 	RefIDKey string
+}
+
+type Migration struct {
+	Directory string
+	Version   string
 }
 
 type Database struct {
@@ -41,10 +47,11 @@ var once sync.Once
 func Load() Config {
 	once.Do(func() {
 		config = Config{
-			App:      getAppConfig(),
-			Header:   getHeaderConfig(),
-			Database: getDatabaseConfig(),
-			Redis:    getRedisConfig(),
+			App:       getAppConfig(),
+			Header:    getHeaderConfig(),
+			Migration: getMigrationConfig(),
+			Database:  getDatabaseConfig(),
+			Redis:     getRedisConfig(),
 		}
 	})
 

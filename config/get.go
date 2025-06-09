@@ -76,6 +76,13 @@ func getHeaderConfig() Header {
 	}
 }
 
+func getMigrationConfig() Migration {
+	return Migration{
+		Directory: getString(prefix("MIGRATION_DIRECTORY"), "./migrations"),
+		Version:   getString(prefix("MIGRATION_VERSION"), ""),
+	}
+}
+
 func getDatabaseConfig() Database {
 	return Database{
 		URL: getString(prefix("DATABASE_URL"), ""),

@@ -2,27 +2,28 @@ package database
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/kongsakchai/gotemplate/config"
 	_ "github.com/lib/pq"
 )
 
+var postgresDB *sql.DB
+
 func NewPostgres(cfg config.Database) (*sql.DB, func()) {
 	db, err := sql.Open("postgres", cfg.URL)
 
 	if err != nil {
-		log.Fatal("Connect to database error", err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Ping to database error", err)
+		panic("Connect to database error: " + err.Error())
 	}
 
 	close := func() {
 		_ = db.Close()
 	}
 
+	postgresDB = db
 	return db, close
+}
+
+func IsPostgresReady() bool {
+	return postgresDB.Ping() == nil
 }

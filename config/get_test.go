@@ -254,6 +254,20 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, expectedHeader, headerConfig)
 	})
 
+	t.Run("should return correct Migration configuration", func(t *testing.T) {
+		t.Setenv("MIGRATION_DIRECTORY", "migrations")
+		t.Setenv("MIGRATION_VERSION", "1001")
+
+		expectedMigration := Migration{
+			Directory: "migrations",
+			Version:   "1001",
+		}
+
+		migrationConfig := getMigrationConfig()
+
+		assert.Equal(t, expectedMigration, migrationConfig)
+	})
+
 	t.Run("should return correct Database configuration", func(t *testing.T) {
 		t.Setenv("DATABASE_URL", "user:password@tcp(localhost:5432)/testdb")
 

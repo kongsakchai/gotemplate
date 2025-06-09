@@ -15,6 +15,7 @@ import (
 	"github.com/kongsakchai/gotemplate/logger"
 	"github.com/kongsakchai/gotemplate/middleware"
 	"github.com/kongsakchai/gotemplate/validator"
+	migrate "github.com/kongsakchai/simple-migrate"
 	"github.com/labstack/echo/v4"
 )
 
@@ -33,6 +34,8 @@ func main() {
 	cfg := config.Load()
 	log := logger.New()
 	r := setupRoutes(cfg)
+
+	setMigration(cfg.Migration)
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
@@ -61,8 +64,8 @@ func setupRoutes(cfg config.Config) app.App {
 		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 
-	r.GET("/ping", func(c echo.Context) error {
-		return app.OkWithMessage(c, "pong", nil)
+	r.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
 	return r
@@ -82,4 +85,17 @@ func gracefulShutdown(close func(context.Context) error) {
 		return
 	}
 	slog.Info("graceful shutdown completed")
+}
+
+func setMigration(cfg config.Migration) {
+	var err error
+	if cfg.Version != "" {
+		err = migrate.New(nil, cfg.Directory).SetVersion(cfg.Version)
+	} else {
+		err = migrate.New(nil, cfg.Directory).Up()
+	}
+
+	if err != nil {
+		panic("migration failed: " + err.Error())
+	}
 }
