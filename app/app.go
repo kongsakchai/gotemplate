@@ -90,3 +90,17 @@ func Fail(ctx echo.Context, err Error, display ...string) error {
 		Display: makeResponseDisplay(display),
 	})
 }
+
+func FailWithData(ctx echo.Context, err Error, data any, display ...string) error {
+	if err.Error != nil {
+		slog.Error("response error", "error", err.Error.Error())
+	}
+
+	return ctx.JSON(err.StatusCd, Response{
+		Code:    err.Code,
+		Status:  FailureStatus,
+		Data:    data,
+		Message: err.Message,
+		Display: makeResponseDisplay(display),
+	})
+}

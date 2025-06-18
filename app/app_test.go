@@ -86,6 +86,22 @@ func TestAppResponse(t *testing.T) {
 		assert.Equal(t, expectedStatus, rec.Code)
 		assert.JSONEq(t, expectedResp, rec.Body.String())
 	})
+
+	t.Run("should return 400 Bad Request with error message when use FailWithData", func(t *testing.T) {
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+
+		expectedStatus := http.StatusBadRequest
+		expectedResp := "{\"code\":\"4000\",\"status\":\"FAIL\",\"message\":\"Bad Request\",\"data\":\"Invalid data\"}\n"
+
+		err := BadRequestError("4000", "Bad Request", errors.New("invalid input"))
+		FailWithData(ctx, err, "Invalid data")
+
+		assert.Equal(t, expectedStatus, rec.Code)
+		assert.JSONEq(t, expectedResp, rec.Body.String())
+	})
 }
 
 func TestMakeResponse(t *testing.T) {
