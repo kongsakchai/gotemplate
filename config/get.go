@@ -78,8 +78,9 @@ func getHeaderConfig() Header {
 
 func getMigrationConfig() Migration {
 	return Migration{
-		Directory: getString(prefix("MIGRATION_DIRECTORY"), "./migrations"),
-		Version:   getString(prefix("MIGRATION_VERSION"), ""),
+		Directory: getString("MIGRATION_DIRECTORY", "./migrations"),
+		Version:   getString("MIGRATION_VERSION", ""),
+		TableName: getString("MIGRATION_TABLE_NAME", "schema_migrations"),
 	}
 }
 

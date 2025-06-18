@@ -36,6 +36,7 @@ func TestLoad(t *testing.T) {
 		Migration: Migration{
 			Directory: "./migrations",
 			Version:   "",
+			TableName: "schema_migrations",
 		},
 		Database: Database{
 			URL: "user:password@tcp(localhost:5432)/testdb",

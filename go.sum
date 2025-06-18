@@ -27,8 +27,8 @@ github.com/go-sql-driver/mysql v1.9.2 h1:4cNKDYQ1I84SXslGddlsrMhc8k4LeDVj6Ad6WRj
 github.com/go-sql-driver/mysql v1.9.2/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/kongsakchai/simple-migrate v0.0.0-20250609102949-6a7ac9f9f4a2 h1:vJT6js96+Kq13kGYhUoI9qH1xEIJv+QQ96JyYsvTmio=
-github.com/kongsakchai/simple-migrate v0.0.0-20250609102949-6a7ac9f9f4a2/go.mod h1:Od5NlNIx7j/uAWke+Mtr1MLb3kmwcW3GdSJdNIoRQlw=
+github.com/kongsakchai/simple-migrate v0.0.2 h1:FGeR2+aw9nq+huH+e1kr1rDueK0tNJ/ICJuY6tMZPvE=
+github.com/kongsakchai/simple-migrate v0.0.2/go.mod h1:Od5NlNIx7j/uAWke+Mtr1MLb3kmwcW3GdSJdNIoRQlw=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=

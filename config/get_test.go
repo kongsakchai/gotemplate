@@ -261,6 +261,7 @@ func TestGetConfig(t *testing.T) {
 		expectedMigration := Migration{
 			Directory: "migrations",
 			Version:   "1001",
+			TableName: "schema_migrations",
 		}
 
 		migrationConfig := getMigrationConfig()
