@@ -15,6 +15,9 @@ func NewPostgres(cfg config.Database) (*sql.DB, func()) {
 	if err != nil {
 		panic("Connect to database error: " + err.Error())
 	}
+	if err := db.Ping(); err != nil {
+		panic("Ping database error: " + err.Error())
+	}
 
 	close := func() {
 		_ = db.Close()
