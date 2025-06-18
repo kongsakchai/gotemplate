@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/google/uuid v1.6.0
-	github.com/kongsakchai/simple-migrate v0.0.0-20250609102949-6a7ac9f9f4a2
+	github.com/kongsakchai/simple-migrate v0.0.2
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.8.0

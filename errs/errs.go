@@ -11,14 +11,34 @@ var maxStackDepth = 3
 
 type Error struct {
 	Err error
-	at  string
+	At  string
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.at)
+	if e.Err == nil {
+		return e.At
+	}
+
+	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.At)
 }
 
-func New(err error) *Error {
+func As(err error) (*Error, bool) {
+	var errType *Error
+	if errors.As(err, &errType) {
+		return errType, true
+	}
+	return nil, false
+}
+
+func New(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return wrap(err)
+}
+
+func wrap(err error) *Error {
 	var errType *Error
 	if errors.As(err, &errType) {
 		return errType
@@ -26,7 +46,7 @@ func New(err error) *Error {
 
 	return &Error{
 		Err: err,
-		at:  caller(maxStackDepth),
+		At:  caller(maxStackDepth),
 	}
 }
 

@@ -26,6 +26,7 @@ type Header struct {
 type Migration struct {
 	Directory string
 	Version   string
+	TableName string
 }
 
 type Database struct {

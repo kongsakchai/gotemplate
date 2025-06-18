@@ -16,8 +16,3 @@ coverage:
 	@go test -coverprofile=coverage.out ./... | ./.script/colorize
 	@go tool cover -html=coverage.out
 	@echo "Coverage report generated: coverage.html"
-
-.PHONY: migrate
-migrate:
-	@echo "Running migrations..."
-	@go run ./cmd/migrate/main.go
