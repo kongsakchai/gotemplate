@@ -13,7 +13,7 @@ func (e Error) IsEmpty() bool {
 	return e == Error{}
 }
 
-func InternalServerError(code string, msg string, err error) Error {
+func InternalServer(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusInternalServerError,
 		Code:     code,
@@ -22,7 +22,7 @@ func InternalServerError(code string, msg string, err error) Error {
 	}
 }
 
-func BadRequestError(code string, msg string, err error) Error {
+func BadRequest(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusBadRequest,
 		Code:     code,
@@ -31,7 +31,7 @@ func BadRequestError(code string, msg string, err error) Error {
 	}
 }
 
-func NotFoundError(code string, msg string, err error) Error {
+func NotFound(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusOK,
 		Code:     code,
@@ -40,7 +40,7 @@ func NotFoundError(code string, msg string, err error) Error {
 	}
 }
 
-func UnauthorizedError(code string, msg string, err error) Error {
+func Unauthorized(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusUnauthorized,
 		Code:     code,
@@ -49,7 +49,7 @@ func UnauthorizedError(code string, msg string, err error) Error {
 	}
 }
 
-func ForbiddenError(code string, msg string, err error) Error {
+func Forbidden(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusForbidden,
 		Code:     code,
@@ -58,7 +58,7 @@ func ForbiddenError(code string, msg string, err error) Error {
 	}
 }
 
-func ConflictError(code string, msg string, err error) Error {
+func Conflict(code string, msg string, err error) Error {
 	return Error{
 		StatusCd: http.StatusConflict,
 		Code:     code,

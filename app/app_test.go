@@ -80,7 +80,7 @@ func TestAppResponse(t *testing.T) {
 		expectedStatus := http.StatusInternalServerError
 		expectedResp := "{\"code\":\"5000\",\"status\":\"FAIL\",\"message\":\"Internal Server Error\"}\n"
 
-		err := InternalServerError("5000", "Internal Server Error", errors.New("unexpected error"))
+		err := InternalServer("5000", "Internal Server Error", errors.New("unexpected error"))
 		Fail(ctx, err)
 
 		assert.Equal(t, expectedStatus, rec.Code)
@@ -96,7 +96,7 @@ func TestAppResponse(t *testing.T) {
 		expectedStatus := http.StatusBadRequest
 		expectedResp := "{\"code\":\"4000\",\"status\":\"FAIL\",\"message\":\"Bad Request\",\"data\":\"Invalid data\"}\n"
 
-		err := BadRequestError("4000", "Bad Request", errors.New("invalid input"))
+		err := BadRequest("4000", "Bad Request", errors.New("invalid input"))
 		FailWithData(ctx, err, "Invalid data")
 
 		assert.Equal(t, expectedStatus, rec.Code)
@@ -128,4 +128,157 @@ func TestMakeResponse(t *testing.T) {
 		assert.Equal(t, "", respDisplay.Title)
 		assert.Equal(t, "", respDisplay.Message)
 	})
+}
+
+func TestQuery(t *testing.T) {
+	type testcases struct {
+		title        string
+		req          string
+		queryType    string
+		defaultValue any
+		expected     any
+	}
+	testCases := []testcases{
+		{
+			title:        "should return string query",
+			req:          "name=John",
+			defaultValue: "",
+			queryType:    "string",
+			expected:     "John",
+		},
+		{
+			title:        "should return default string query",
+			req:          "name=",
+			defaultValue: "John",
+			queryType:    "string",
+			expected:     "John",
+		},
+		{
+			title:        "should return int query",
+			req:          "age=30",
+			defaultValue: int64(0),
+			queryType:    "int",
+			expected:     int64(30),
+		},
+		{
+			title:        "should return default int query",
+			req:          "age=",
+			defaultValue: int64(25),
+			queryType:    "int",
+			expected:     int64(25),
+		},
+		{
+			title:        "should return bool query",
+			req:          "active=true",
+			defaultValue: false,
+			queryType:    "bool",
+			expected:     true,
+		},
+		{
+			title:        "should return default bool query",
+			req:          "active=",
+			defaultValue: false,
+			queryType:    "bool",
+			expected:     false,
+		},
+		{
+			title:        "should return float query",
+			req:          "price=19.99",
+			defaultValue: 0.0,
+			queryType:    "float",
+			expected:     19.99,
+		},
+		{
+			title:        "should return default float query",
+			req:          "price=",
+			defaultValue: 9.99,
+			queryType:    "float",
+			expected:     9.99,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodGet, "/?"+tc.req, nil)
+			rec := httptest.NewRecorder()
+			ctx := e.NewContext(req, rec)
+
+			var result any
+			switch tc.queryType {
+			case "string":
+				result = QueryString(ctx, "name", tc.defaultValue.(string))
+			case "int":
+				result = QueryInt(ctx, "age", tc.defaultValue.(int64))
+			case "bool":
+				result = QueryBool(ctx, "active", tc.defaultValue.(bool))
+			case "float":
+				result = QueryFloat(ctx, "price", tc.defaultValue.(float64))
+			}
+
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestParam(t *testing.T) {
+	type testcases struct {
+		title        string
+		req          string
+		paramType    string
+		defaultValue any
+		expected     any
+	}
+	testCases := []testcases{
+		{
+			title:        "should return string param",
+			req:          "John",
+			defaultValue: "",
+			paramType:    "string",
+			expected:     "John",
+		},
+		{
+			title:        "should return default string param",
+			req:          "",
+			defaultValue: "John",
+			paramType:    "string",
+			expected:     "John",
+		},
+		{
+			title:        "should return int param",
+			req:          "30",
+			defaultValue: int64(0),
+			paramType:    "int",
+			expected:     int64(30),
+		},
+		{
+			title:        "should return default int param",
+			req:          "",
+			defaultValue: int64(25),
+			paramType:    "int",
+			expected:     int64(25),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			rec := httptest.NewRecorder()
+			ctx := e.NewContext(req, rec)
+			ctx.SetParamNames("/:value")
+			ctx.SetParamNames("value")
+			ctx.SetParamValues(tc.req)
+
+			var result any
+			switch tc.paramType {
+			case "string":
+				result = ParamString(ctx, "value", tc.defaultValue.(string))
+			case "int":
+				result = ParamInt(ctx, "value", tc.defaultValue.(int64))
+			}
+
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

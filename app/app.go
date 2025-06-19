@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -103,4 +104,56 @@ func FailWithData(ctx echo.Context, err Error, data any, display ...string) erro
 		Message: err.Message,
 		Display: makeResponseDisplay(display),
 	})
+}
+
+// Query functions for extracting parameters from the request context
+
+func QueryString(ctx echo.Context, key, defaultValue string) string {
+	if value := ctx.QueryParam(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func QueryInt(ctx echo.Context, key string, defaultValue int64) int64 {
+	if str := ctx.QueryParam(key); str != "" {
+		if value, err := strconv.ParseInt(str, 10, 64); err == nil {
+			return value
+		}
+	}
+	return defaultValue
+}
+
+func QueryBool(ctx echo.Context, key string, defaultValue bool) bool {
+	if str := ctx.QueryParam(key); str != "" {
+		if value, err := strconv.ParseBool(str); err == nil {
+			return value
+		}
+	}
+	return defaultValue
+}
+
+func QueryFloat(ctx echo.Context, key string, defaultValue float64) float64 {
+	if str := ctx.QueryParam(key); str != "" {
+		if value, err := strconv.ParseFloat(str, 64); err == nil {
+			return value
+		}
+	}
+	return defaultValue
+}
+
+func ParamString(ctx echo.Context, key, defaultValue string) string {
+	if value := ctx.Param(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func ParamInt(ctx echo.Context, key string, defaultValue int64) int64 {
+	if str := ctx.Param(key); str != "" {
+		if value, err := strconv.ParseInt(str, 10, 64); err == nil {
+			return value
+		}
+	}
+	return defaultValue
 }
