@@ -16,7 +16,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := BadRequestError("4000", "Bad Request", nil)
+		err := BadRequest("4000", "Bad Request", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -29,7 +29,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := NotFoundError("4040", "Not Found", nil)
+		err := NotFound("4040", "Not Found", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -42,7 +42,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := InternalServerError("5000", "Internal Server Error", nil)
+		err := InternalServer("5000", "Internal Server Error", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -55,7 +55,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := UnauthorizedError("4010", "Unauthorized", nil)
+		err := Unauthorized("4010", "Unauthorized", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -68,7 +68,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := ForbiddenError("4030", "Forbidden", nil)
+		err := Forbidden("4030", "Forbidden", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -81,7 +81,7 @@ func TestNewError(t *testing.T) {
 			Error:    nil,
 		}
 
-		err := ConflictError("4090", "Conflict", nil)
+		err := Conflict("4090", "Conflict", nil)
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -90,7 +90,7 @@ func TestNewError(t *testing.T) {
 		err := Error{}
 		assert.True(t, err.IsEmpty())
 
-		err = BadRequestError("4000", "Bad Request", nil)
+		err = BadRequest("4000", "Bad Request", nil)
 		assert.False(t, err.IsEmpty())
 	})
 }
