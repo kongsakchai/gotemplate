@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
+	"github.com/kongsakchai/gotemplate/database"
 	"github.com/kongsakchai/gotemplate/logger"
 	"github.com/kongsakchai/gotemplate/middleware"
 	"github.com/kongsakchai/gotemplate/validator"
@@ -33,18 +35,21 @@ func init() {
 func main() {
 	cfg := config.Load()
 	log := logger.New()
-	r := setupRoutes(cfg)
 
-	setMigration(cfg.Migration)
+	db, closeDB := database.NewMySQL(cfg.Database)
+	setMigration(db, cfg.Migration)
+
+	log.Info("starting "+cfg.App.Name, "version", cfg.App.Version, "env", config.Env)
+	log.Info("listening on port " + cfg.App.Port)
+	r := setupRoutes(db, cfg)
 
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
 		defer close(idle)
-		return r.Shutdown(ctx)
+		r.Shutdown(ctx)
+		closeDB()
+		return nil
 	})
-
-	log.Info("starting " + cfg.App.Name + " version " + cfg.App.Version)
-	log.Info("listening on port " + cfg.App.Port)
 
 	if err := r.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
 		log.Error("shutting down the server: " + err.Error())
@@ -55,7 +60,7 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(cfg config.Config) app.App {
+func setupRoutes(db *sql.DB, cfg config.Config) app.App {
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
 
@@ -64,11 +69,17 @@ func setupRoutes(cfg config.Config) app.App {
 		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 
-	r.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	r.GET("/health", healthCheck)
 
 	return r
+}
+
+func healthCheck(ctx echo.Context) error {
+	if database.IsMySQLReady() {
+		return app.Fail(ctx, app.InternalServer("9999", "database is not ready", nil))
+	}
+
+	return app.OkWithMessage(ctx, nil, "healthy")
 }
 
 func gracefulShutdown(close func(context.Context) error) {
@@ -87,12 +98,12 @@ func gracefulShutdown(close func(context.Context) error) {
 	slog.Info("graceful shutdown completed")
 }
 
-func setMigration(cfg config.Migration) {
+func setMigration(db *sql.DB, cfg config.Migration) {
 	var err error
 	if cfg.Version != "" {
-		err = migrate.New(nil, cfg.Directory).SetVersion(cfg.Version)
+		err = migrate.New(db, cfg.Directory).SetVersion(cfg.Version)
 	} else {
-		err = migrate.New(nil, cfg.Directory).Up()
+		err = migrate.New(db, cfg.Directory).Up()
 	}
 
 	if err != nil {
