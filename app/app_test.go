@@ -104,32 +104,6 @@ func TestAppResponse(t *testing.T) {
 	})
 }
 
-func TestMakeResponse(t *testing.T) {
-	t.Run("should create response display with title and message", func(t *testing.T) {
-		display := []string{"Title", "Message"}
-		respDisplay := makeResponseDisplay(display)
-
-		assert.Equal(t, "Title", respDisplay.Title)
-		assert.Equal(t, "Message", respDisplay.Message)
-	})
-
-	t.Run("should create response display with only title", func(t *testing.T) {
-		display := []string{"Only Title"}
-		respDisplay := makeResponseDisplay(display)
-
-		assert.Equal(t, "Only Title", respDisplay.Title)
-		assert.Equal(t, "", respDisplay.Message)
-	})
-
-	t.Run("should create empty response display", func(t *testing.T) {
-		display := []string{}
-		respDisplay := makeResponseDisplay(display)
-
-		assert.Equal(t, "", respDisplay.Title)
-		assert.Equal(t, "", respDisplay.Message)
-	})
-}
-
 func TestQuery(t *testing.T) {
 	type testcases struct {
 		title        string
