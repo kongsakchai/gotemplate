@@ -15,71 +15,47 @@ type App interface {
 }
 
 type Response struct {
-	Code    string          `json:"code"`
-	Status  string          `json:"status"`
-	Message string          `json:"message,omitempty"`
-	Data    any             `json:"data,omitempty"`
-	Display ResponseDisplay `json:"display,omitzero"`
+	Code    string `json:"code"`
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }
 
-type ResponseDisplay struct {
-	Title   string `json:"title"`
-	Message string `json:"message"`
-}
-
-func makeResponseDisplay(display []string) ResponseDisplay {
-	var title, message string
-	if len(display) > 0 {
-		title = display[0]
-	}
-	if len(display) > 1 {
-		message = display[1]
-	}
-	return ResponseDisplay{
-		Title:   title,
-		Message: message,
-	}
-}
-
-func Ok(ctx echo.Context, data any, display ...string) error {
+func Ok(ctx echo.Context, data any) error {
 	return ctx.JSON(http.StatusOK, Response{
-		Code:    SuccessCode,
-		Status:  SuccessStatus,
-		Data:    data,
-		Display: makeResponseDisplay(display),
+		Code:   SuccessCode,
+		Status: SuccessStatus,
+		Data:   data,
 	})
 }
 
-func OkWithMessage(ctx echo.Context, data any, msg string, display ...string) error {
+func OkWithMessage(ctx echo.Context, data any, msg string) error {
 	return ctx.JSON(http.StatusOK, Response{
 		Code:    SuccessCode,
 		Status:  SuccessStatus,
 		Data:    data,
 		Message: msg,
-		Display: makeResponseDisplay(display),
 	})
 }
 
-func Created(ctx echo.Context, data any, display ...string) error {
+func Created(ctx echo.Context, data any) error {
 	return ctx.JSON(http.StatusCreated, Response{
-		Code:    SuccessCode,
-		Status:  SuccessStatus,
-		Data:    data,
-		Display: makeResponseDisplay(display),
+		Code:   SuccessCode,
+		Status: SuccessStatus,
+		Data:   data,
 	})
 }
 
-func CreatedWithMessage(ctx echo.Context, data any, msg string, display ...string) error {
+func CreatedWithMessage(ctx echo.Context, data any, msg string) error {
 	return ctx.JSON(http.StatusCreated, Response{
 		Code:    SuccessCode,
 		Status:  SuccessStatus,
 		Data:    data,
 		Message: msg,
-		Display: makeResponseDisplay(display),
 	})
 }
 
-func Fail(ctx echo.Context, err Error, display ...string) error {
+func Fail(ctx echo.Context, err Error) error {
 	if err.Error != nil {
 		slog.Error("response error", "error", err.Error.Error())
 	}
@@ -88,11 +64,10 @@ func Fail(ctx echo.Context, err Error, display ...string) error {
 		Code:    err.Code,
 		Status:  FailureStatus,
 		Message: err.Message,
-		Display: makeResponseDisplay(display),
 	})
 }
 
-func FailWithData(ctx echo.Context, err Error, data any, display ...string) error {
+func FailWithData(ctx echo.Context, err Error, data any) error {
 	if err.Error != nil {
 		slog.Error("response error", "error", err.Error.Error())
 	}
@@ -102,7 +77,6 @@ func FailWithData(ctx echo.Context, err Error, data any, display ...string) erro
 		Status:  FailureStatus,
 		Data:    data,
 		Message: err.Message,
-		Display: makeResponseDisplay(display),
 	})
 }
 
