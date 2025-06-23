@@ -16,7 +16,7 @@ func TestValidate(t *testing.T) {
 		title         string
 		data          data
 		expected      error
-		expectedError string
+		validateError []string
 	}
 
 	testcases := []testcase{
@@ -32,7 +32,7 @@ func TestValidate(t *testing.T) {
 				"name": "required",
 				"Age":  "required",
 			},
-			expectedError: "name: required, Age: required",
+			validateError: []string{"name: required", "Age: required"},
 		},
 	}
 
@@ -42,7 +42,9 @@ func TestValidate(t *testing.T) {
 			err := validator.Validate(tc.data)
 			assert.Equal(t, tc.expected, err)
 			if err != nil {
-				assert.Equal(t, tc.expectedError, err.Error())
+				for _, ve := range tc.validateError {
+					assert.Contains(t, err.Error(), ve)
+				}
 			}
 		})
 	}

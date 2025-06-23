@@ -75,7 +75,7 @@ func setupRoutes(db *sql.DB, cfg config.Config) app.App {
 }
 
 func healthCheck(ctx echo.Context) error {
-	if database.IsMySQLReady() {
+	if !database.IsMySQLReady() {
 		return app.Fail(ctx, app.InternalServer("9999", "database is not ready", nil))
 	}
 
