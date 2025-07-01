@@ -14,6 +14,17 @@ type Error struct {
 	At  string
 }
 
+func (e *Error) RawError() string {
+	if e.Err == nil {
+		return ""
+	}
+	return e.Err.Error()
+}
+
+func (e *Error) AtError() string {
+	return e.At
+}
+
 func (e Error) Error() string {
 	if e.Err == nil {
 		return e.At

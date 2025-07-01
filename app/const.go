@@ -2,7 +2,8 @@ package app
 
 const (
 	SuccessStatus = "SUCCESS"
-	FailureStatus = "FAIL"
+	ErrorStatus   = "ERROR"
 
 	SuccessCode = "0000"
+	ErrorCode   = "9999"
 )

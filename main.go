@@ -33,7 +33,7 @@ func init() {
 }
 
 func main() {
-	cfg := config.Load()
+	cfg := config.Load(config.Env)
 	log := logger.New()
 
 	db, closeDB := database.NewMySQL(cfg.Database)

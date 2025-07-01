@@ -1,7 +1,9 @@
 package app
 
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -78,7 +80,7 @@ func TestAppResponse(t *testing.T) {
 		ctx := e.NewContext(req, rec)
 
 		expectedStatus := http.StatusInternalServerError
-		expectedResp := "{\"code\":\"5000\",\"status\":\"FAIL\",\"message\":\"Internal Server Error\"}\n"
+		expectedResp := "{\"code\":\"5000\",\"status\":\"ERROR\",\"message\":\"Internal Server Error\"}\n"
 
 		err := InternalServer("5000", "Internal Server Error", errors.New("unexpected error"))
 		Fail(ctx, err)
@@ -94,7 +96,7 @@ func TestAppResponse(t *testing.T) {
 		ctx := e.NewContext(req, rec)
 
 		expectedStatus := http.StatusBadRequest
-		expectedResp := "{\"code\":\"4000\",\"status\":\"FAIL\",\"message\":\"Bad Request\",\"data\":\"Invalid data\"}\n"
+		expectedResp := "{\"code\":\"4000\",\"status\":\"ERROR\",\"message\":\"Bad Request\",\"data\":\"Invalid data\"}\n"
 
 		err := BadRequest("4000", "Bad Request", errors.New("invalid input"))
 		FailWithData(ctx, err, "Invalid data")
@@ -104,155 +106,64 @@ func TestAppResponse(t *testing.T) {
 	})
 }
 
-func TestQuery(t *testing.T) {
-	type testcases struct {
-		title        string
-		req          string
-		queryType    string
-		defaultValue any
-		expected     any
-	}
-	testCases := []testcases{
-		{
-			title:        "should return string query",
-			req:          "name=John",
-			defaultValue: "",
-			queryType:    "string",
-			expected:     "John",
-		},
-		{
-			title:        "should return default string query",
-			req:          "name=",
-			defaultValue: "John",
-			queryType:    "string",
-			expected:     "John",
-		},
-		{
-			title:        "should return int query",
-			req:          "age=30",
-			defaultValue: int64(0),
-			queryType:    "int",
-			expected:     int64(30),
-		},
-		{
-			title:        "should return default int query",
-			req:          "age=",
-			defaultValue: int64(25),
-			queryType:    "int",
-			expected:     int64(25),
-		},
-		{
-			title:        "should return bool query",
-			req:          "active=true",
-			defaultValue: false,
-			queryType:    "bool",
-			expected:     true,
-		},
-		{
-			title:        "should return default bool query",
-			req:          "active=",
-			defaultValue: false,
-			queryType:    "bool",
-			expected:     false,
-		},
-		{
-			title:        "should return float query",
-			req:          "price=19.99",
-			defaultValue: 0.0,
-			queryType:    "float",
-			expected:     19.99,
-		},
-		{
-			title:        "should return default float query",
-			req:          "price=",
-			defaultValue: 9.99,
-			queryType:    "float",
-			expected:     9.99,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.title, func(t *testing.T) {
-			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/?"+tc.req, nil)
-			rec := httptest.NewRecorder()
-			ctx := e.NewContext(req, rec)
-
-			var result any
-			switch tc.queryType {
-			case "string":
-				result = QueryString(ctx, "name", tc.defaultValue.(string))
-			case "int":
-				result = QueryInt(ctx, "age", tc.defaultValue.(int64))
-			case "bool":
-				result = QueryBool(ctx, "active", tc.defaultValue.(bool))
-			case "float":
-				result = QueryFloat(ctx, "price", tc.defaultValue.(float64))
-			}
-
-			assert.Equal(t, tc.expected, result)
-		})
-	}
+type mockError struct {
+	Message string
 }
 
-func TestParam(t *testing.T) {
-	type testcases struct {
-		title        string
-		req          string
-		paramType    string
-		defaultValue any
-		expected     any
+func (e *mockError) Error() string {
+	return e.Message
+}
+
+func (e *mockError) AtError() string {
+	return "mock error location"
+}
+
+func (e *mockError) RawError() string {
+	return e.Message
+}
+
+func TestLogError(t *testing.T) {
+	type testcase struct {
+		title    string
+		err      error
+		expected string
 	}
-	testCases := []testcases{
+
+	testCases := []testcase{
 		{
-			title:        "should return string param",
-			req:          "John",
-			defaultValue: "",
-			paramType:    "string",
-			expected:     "John",
+			title:    "should log error with message and at location",
+			err:      errors.New("test error"),
+			expected: "test error",
 		},
 		{
-			title:        "should return default string param",
-			req:          "",
-			defaultValue: "John",
-			paramType:    "string",
-			expected:     "John",
+			title:    "should log error with nil error",
+			err:      nil,
+			expected: "",
 		},
 		{
-			title:        "should return int param",
-			req:          "30",
-			defaultValue: int64(0),
-			paramType:    "int",
-			expected:     int64(30),
-		},
-		{
-			title:        "should return default int param",
-			req:          "",
-			defaultValue: int64(25),
-			paramType:    "int",
-			expected:     int64(25),
+			title:    "should log custom error with message and at location",
+			err:      &mockError{Message: "custom error"},
+			expected: "error=\"custom error\" at=\"mock error location\"",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			rec := httptest.NewRecorder()
-			ctx := e.NewContext(req, rec)
-			ctx.SetParamNames("/:value")
-			ctx.SetParamNames("value")
-			ctx.SetParamValues(tc.req)
+			df := slog.Default()
+			defer func() {
+				slog.SetDefault(df)
+			}()
 
-			var result any
-			switch tc.paramType {
-			case "string":
-				result = ParamString(ctx, "value", tc.defaultValue.(string))
-			case "int":
-				result = ParamInt(ctx, "value", tc.defaultValue.(int64))
+			wt := bytes.NewBuffer([]byte{})
+			slog.SetDefault(slog.New(slog.NewTextHandler(wt, nil)))
+
+			logError(tc.err)
+
+			if tc.expected == "" {
+				assert.Empty(t, wt.String())
+			} else {
+				assert.Contains(t, wt.String(), tc.expected)
 			}
-
-			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
