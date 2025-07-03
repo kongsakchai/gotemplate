@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrapError(t *testing.T) {
+func TestError(t *testing.T) {
 	t.Run("should create a new Error with stack trace", func(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.Err.Error())
-		assert.NotEqual(t, "", e.At)
+		assert.Equal(t, "test error", e.RawError())
+		assert.NotEqual(t, "", e.AtError())
 	})
 
 	t.Run("should return the same Error if it is already of type Error", func(t *testing.T) {
@@ -21,8 +21,8 @@ func TestWrapError(t *testing.T) {
 		e := wrap(originalErr)
 
 		assert.Equal(t, originalErr, e)
-		assert.Equal(t, "original error", e.Err.Error())
-		assert.NotEqual(t, "", e.At)
+		assert.Equal(t, "original error", e.RawError())
+		assert.NotEqual(t, "", e.AtError())
 	})
 
 	t.Run("should return empty at if runtime.Caller fails", func(t *testing.T) {
@@ -33,8 +33,8 @@ func TestWrapError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.Err.Error())
-		assert.Equal(t, "", e.At)
+		assert.Equal(t, "test error", e.RawError())
+		assert.Equal(t, "", e.AtError())
 	})
 
 	t.Run("should error string format", func(t *testing.T) {
@@ -43,20 +43,35 @@ func TestWrapError(t *testing.T) {
 
 		expected := "error: test error at "
 		assert.Contains(t, e.Error(), expected)
-		assert.Contains(t, e.Error(), e.At) // Ensure the stack trace is included
+		assert.Contains(t, e.Error(), e.AtError())
 	})
 
 	t.Run("should handle nil error", func(t *testing.T) {
 		e := wrap(nil)
 
 		assert.NotNil(t, e)
-		assert.Contains(t, e.Error(), "(testing.tRunner)")
+		assert.Equal(t, "", e.RawError())
+		assert.Contains(t, e.Error(), "tRunner")
+		assert.Contains(t, e.Error(), "testing.go")
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {
 		var nilErr *Error
 		e := wrap(nilErr)
 		assert.Nil(t, e)
+	})
+
+	t.Run("should return only base file name if filepath.Rel fails", func(t *testing.T) {
+		originalRootPath := rootPath
+		rootPath = "."
+		defer func() { rootPath = originalRootPath }()
+
+		err := errors.New("test error")
+		e := wrap(err)
+
+		assert.Equal(t, "test error", e.RawError())
+		assert.NotEqual(t, "", e.AtError())
+		assert.Contains(t, e.AtError(), "testing.go")
 	})
 }
 

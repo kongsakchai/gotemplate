@@ -3,11 +3,21 @@ package errs
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 )
 
-var maxStackDepth = 3
+var (
+	maxStackDepth = 3
+	rootPath      = ""
+)
+
+func init() {
+	if wd, err := os.Getwd(); err == nil {
+		rootPath = wd
+	}
+}
 
 type Error struct {
 	Err error
@@ -67,7 +77,11 @@ func caller(skip int) string {
 		return ""
 	}
 
-	f := filepath.Base(file)
+	f, err := filepath.Rel(rootPath, file)
+	if err != nil {
+		f = filepath.Base(file)
+	}
 	fn := runtime.FuncForPC(pc)
-	return fmt.Sprintf("%s:%d (%s)", f, line, fn.Name())
+
+	return fmt.Sprintf("(%s:%v) %s", f, line, fn.Name())
 }
