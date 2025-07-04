@@ -60,3 +60,7 @@ func (c *Cache) Del(key string) error {
 
 	return c.client.Del(ctx, key).Err()
 }
+
+func (c *Cache) Close() error {
+	return c.client.Close()
+}
