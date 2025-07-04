@@ -3,6 +3,8 @@ package logger
 import (
 	"log/slog"
 	"os"
+
+	"github.com/kongsakchai/paint"
 )
 
 var logLevel slog.Level
@@ -29,7 +31,7 @@ func init() {
 func New() *slog.Logger {
 	var handler slog.Handler
 	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = NewTextHandler(os.Stdout, &HandlerOptions{
+		handler = paint.NewTextHandler(os.Stdout, &paint.HandlerOptions{
 			Level:       logLevel,
 			ReplaceAttr: replaceAttr,
 			TimeFormat:  "[2006/01/02 15:04:05]",

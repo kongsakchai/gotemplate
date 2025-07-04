@@ -4,8 +4,6 @@ github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=
 github.com/bsm/gomega v1.27.10/go.mod h1:JyEr/xRbxbtgWNi8tIEVPUYZ5Dzef52k01W3YH0H+O0=
-github.com/caarlos0/env/v11 v11.3.1 h1:cArPWC15hWmEt+gWk7YBi7lEXTXCvpaSdCiZE2X5mCA=
-github.com/caarlos0/env/v11 v11.3.1/go.mod h1:qupehSf/Y0TUTsxKywqRt/vJjN5nz6vauiYEUUr8P4U=
 github.com/caarlos0/env/v11 v11.3.2-0.20250505082809-56a09d295d93 h1:0y+RwEJQPWgrxH+sOdd3ZTl5w33MWfB0AwetoVnxxq4=
 github.com/caarlos0/env/v11 v11.3.2-0.20250505082809-56a09d295d93/go.mod h1:qupehSf/Y0TUTsxKywqRt/vJjN5nz6vauiYEUUr8P4U=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -31,6 +29,8 @@ github.com/go-sql-driver/mysql v1.9.2 h1:4cNKDYQ1I84SXslGddlsrMhc8k4LeDVj6Ad6WRj
 github.com/go-sql-driver/mysql v1.9.2/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/kongsakchai/paint v0.0.2 h1:332nsbGV4nZOqFH8psYIDJnVgUFt7c6K14/KfvMgWgc=
+github.com/kongsakchai/paint v0.0.2/go.mod h1:dzdvY9R59uwKqVc9fFtPmZex0Xw6Y52ZCS2DwJI1IKc=
 github.com/kongsakchai/simple-migrate v0.0.2 h1:FGeR2+aw9nq+huH+e1kr1rDueK0tNJ/ICJuY6tMZPvE=
 github.com/kongsakchai/simple-migrate v0.0.2/go.mod h1:Od5NlNIx7j/uAWke+Mtr1MLb3kmwcW3GdSJdNIoRQlw=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
