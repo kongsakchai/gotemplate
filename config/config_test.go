@@ -16,8 +16,9 @@ func TestLoad(t *testing.T) {
 		t.Setenv("APP_NAME", "TestApp")
 		t.Setenv("APP_PORT", "8080")
 		t.Setenv("APP_VERSION", "1.0.0")
-		t.Setenv("DATABASE_URL", "Not Used")
-		t.Setenv("LOCAL_DATABASE_URL", "localhost:5432")
+		t.Setenv("DATABASE_URL", "Use Here")
+		t.Setenv("LOCAL_DATABASE_URL", "Not Use Here")
+		t.Setenv("LOCAL_REDIS_HOST", "Use Here")
 
 		expectConfig := Config{
 			App: App{
@@ -29,12 +30,13 @@ func TestLoad(t *testing.T) {
 				RefIDKey: "X-Ref-ID",
 			},
 			Database: Database{
-				URL: "localhost:5432",
+				URL: "Use Here",
 			},
 			Migration: Migration{
 				Directory: "./migrations",
 			},
 			Redis: Redis{
+				Host:    "Use Here",
 				Timeout: time.Minute * 10,
 			},
 		}

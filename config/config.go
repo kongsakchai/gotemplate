@@ -33,33 +33,27 @@ type Migration struct {
 }
 
 type Database struct {
-	URL string `envKey:"DATABASE_URL"`
+	URL string `env:"DATABASE_URL"`
 }
 
 type Redis struct {
-	Host     string        `envKey:"REDIS_HOST"`
-	Port     string        `envKey:"REDIS_PORT"`
-	Username string        `envKey:"REDIS_USERNAME"`
-	Password string        `envKey:"REDIS_PASSWORD"`
-	DB       int           `envKey:"REDIS_DB" envKeyDefault:"0"`
-	Timeout  time.Duration `envKey:"REDIS_TIMEOUT" envKeyDefault:"10m"`
+	Host     string        `env:"REDIS_HOST"`
+	Port     string        `env:"REDIS_PORT"`
+	Username string        `env:"REDIS_USERNAME"`
+	Password string        `env:"REDIS_PASSWORD"`
+	DB       int           `env:"REDIS_DB" envDefault:"0"`
+	Timeout  time.Duration `env:"REDIS_TIMEOUT" envDefault:"10m"`
 }
 
 var config Config
 var once sync.Once
 
-// TODO: when add new config \n
-//   - tag `env` is used for environment variables. envDefault is used for default value.
-//   - ex. `env:"DATABASE_URL"` -> `DATABASE_URL`
-//   - tag `envKey` is used for environment variables with prefix. envKeyDefault is used for default value.
-//   - ex. `envKey:"DATABASE_URL"` -> `XXX_DATABASE_URL`
 func Load(prefix string) Config {
 	once.Do(func() {
 		env.Parse(&config)
 		opt := env.Options{
-			Prefix:              fmt.Sprintf("%s_", prefix),
-			TagName:             "envKey",
-			DefaultValueTagName: "envKeyDefault",
+			Prefix:                       fmt.Sprintf("%s_", prefix),
+			SetDefaultsForZeroValuesOnly: true,
 		}
 		env.ParseWithOptions(&config, opt)
 	})

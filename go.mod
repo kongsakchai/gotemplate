@@ -3,6 +3,7 @@ module github.com/kongsakchai/gotemplate
 go 1.24.0
 
 require (
+	github.com/caarlos0/env/v11 v11.3.2-0.20250505082809-56a09d295d93
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/google/uuid v1.6.0
@@ -15,7 +16,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/caarlos0/env/v11 v11.3.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
