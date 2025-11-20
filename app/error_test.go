@@ -10,7 +10,7 @@ import (
 func TestNewError(t *testing.T) {
 	t.Run("should return 400 Bad Request when use BadRequest", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusBadRequest,
+			HTTPCode: http.StatusBadRequest,
 			Code:     "4000",
 			Message:  "Bad Request",
 			Error:    nil,
@@ -23,7 +23,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 404 Not Found when use NotFound", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusOK,
+			HTTPCode: http.StatusOK,
 			Code:     "4040",
 			Message:  "Not Found",
 			Error:    nil,
@@ -36,7 +36,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 500 Internal Server Error when use InternalServerError", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusInternalServerError,
+			HTTPCode: http.StatusInternalServerError,
 			Code:     "5000",
 			Message:  "Internal Server Error",
 			Error:    nil,
@@ -49,7 +49,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 401 Unauthorized when use UnauthorizedError", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusUnauthorized,
+			HTTPCode: http.StatusUnauthorized,
 			Code:     "4010",
 			Message:  "Unauthorized",
 			Error:    nil,
@@ -62,7 +62,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 403 Forbidden when use ForbiddenError", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusForbidden,
+			HTTPCode: http.StatusForbidden,
 			Code:     "4030",
 			Message:  "Forbidden",
 			Error:    nil,
@@ -75,7 +75,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 409 Conflict when use ConflictError", func(t *testing.T) {
 		expectedError := Error{
-			StatusCd: http.StatusConflict,
+			HTTPCode: http.StatusConflict,
 			Code:     "4090",
 			Message:  "Conflict",
 			Error:    nil,

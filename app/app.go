@@ -59,7 +59,7 @@ func Fail(ctx echo.Context, err Error) error {
 		slog.Error("response error", "error", err.Error.Error())
 	}
 
-	return ctx.JSON(err.StatusCd, Response{
+	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
 		Status:  ErrorStatus,
 		Message: err.Message,
@@ -69,7 +69,7 @@ func Fail(ctx echo.Context, err Error) error {
 func FailWithData(ctx echo.Context, err Error, data any) error {
 	logError(err.Error)
 
-	return ctx.JSON(err.StatusCd, Response{
+	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
 		Status:  ErrorStatus,
 		Data:    data,
