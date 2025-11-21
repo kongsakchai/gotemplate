@@ -69,17 +69,18 @@ func setupRoutes(db *sql.DB, cfg config.Config) app.App {
 		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 
-	r.GET("/health", healthCheck)
+	r.GET("/health", healthCheck(db))
 
 	return r
 }
 
-func healthCheck(ctx echo.Context) error {
-	if !database.IsMySQLReady() {
-		return app.Fail(ctx, app.InternalServer("9999", "database is not ready", nil))
+func healthCheck(db *sql.DB) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		if db.Ping() != nil {
+			return app.Fail(ctx, app.InternalServer("9999", "database is not ready", nil))
+		}
+		return app.OkWithMessage(ctx, nil, "healthy")
 	}
-
-	return app.OkWithMessage(ctx, nil, "healthy")
 }
 
 func gracefulShutdown(close func(context.Context) error) {
