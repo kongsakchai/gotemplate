@@ -61,7 +61,7 @@ func Fail(ctx echo.Context, err Error) error {
 
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
-		Status:  ErrorStatus,
+		Status:  ErrStatus,
 		Message: err.Message,
 	})
 }
@@ -71,7 +71,7 @@ func FailWithData(ctx echo.Context, err Error, data any) error {
 
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
-		Status:  ErrorStatus,
+		Status:  ErrStatus,
 		Data:    data,
 		Message: err.Message,
 	})

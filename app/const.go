@@ -2,8 +2,10 @@ package app
 
 const (
 	SuccessStatus = "SUCCESS"
-	ErrorStatus   = "ERROR"
+	ErrStatus     = "ERROR"
 
 	SuccessCode = "0000"
-	ErrorCode   = "9999"
+	ErrCode     = "9999"
+
+	ErrDatabaseMsg = "database is not ready"
 )

@@ -21,6 +21,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var gracefulTimeout = time.Second * 10
+
 func init() {
 	if os.Getenv("GOMAXPROCS") != "" {
 		runtime.GOMAXPROCS(0) // GOMAXPROCS
@@ -46,7 +48,9 @@ func main() {
 	idle := make(chan struct{})
 	go gracefulShutdown(func(ctx context.Context) error {
 		defer close(idle)
-		r.Shutdown(ctx)
+		if err := r.Shutdown(ctx); err != nil {
+			return err
+		}
 		closeDB()
 		return nil
 	})
@@ -77,7 +81,7 @@ func setupRoutes(db *sql.DB, cfg config.Config) app.App {
 func healthCheck(db *sql.DB) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		if db.Ping() != nil {
-			return app.Fail(ctx, app.InternalServer("9999", "database is not ready", nil))
+			return app.Fail(ctx, app.InternalServer(app.ErrCode, app.ErrDatabaseMsg, nil))
 		}
 		return app.OkWithMessage(ctx, nil, "healthy")
 	}
@@ -89,12 +93,12 @@ func gracefulShutdown(close func(context.Context) error) {
 	<-sig.Done()
 
 	slog.Info("shutting down the server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
 	defer cancel()
 
 	if err := close(ctx); err != nil {
 		slog.Error("graceful shutdown failed: " + err.Error())
-		return
+		panic("force shutdown")
 	}
 	slog.Info("graceful shutdown completed")
 }
