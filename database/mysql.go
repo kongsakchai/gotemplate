@@ -7,6 +7,6 @@ import (
 	"github.com/kongsakchai/gotemplate/config"
 )
 
-func NewMySQL(cfg config.Database) (*sql.DB, func()) {
+func NewMySQL(cfg config.Database) (*sql.DB, func() error) {
 	return newDatabase("mysql", cfg.URL)
 }

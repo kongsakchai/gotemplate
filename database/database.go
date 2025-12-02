@@ -1,8 +1,10 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-func newDatabase(driverName string, dataSourceName string) (*sql.DB, func()) {
+func newDatabase(driverName string, dataSourceName string) (*sql.DB, func() error) {
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		panic("Connect to database error: " + err.Error())
@@ -12,8 +14,8 @@ func newDatabase(driverName string, dataSourceName string) (*sql.DB, func()) {
 		panic("Ping database error: " + err.Error())
 	}
 
-	close := func() {
-		_ = db.Close()
+	close := func() error {
+		return db.Close()
 	}
 
 	return db, close

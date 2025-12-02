@@ -7,6 +7,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func NewPostgres(cfg config.Database) (*sql.DB, func()) {
+func NewPostgres(cfg config.Database) (*sql.DB, func() error) {
 	return newDatabase("postgres", cfg.URL)
 }
