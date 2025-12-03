@@ -12,6 +12,8 @@ import (
 func Logger(key string, req, res bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			traceID, _ := ctx.Get(key).(string)
+
 			if req {
 				b, err := io.ReadAll(ctx.Request().Body)
 				if err != nil {
@@ -22,7 +24,7 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 				slog.Info(fmt.Sprintf("request %s", ctx.Request().URL),
 					"method", ctx.Request().Method,
 					"body", string(b),
-					"traceID", ctx.Request().Context().Value(key).(string),
+					"trace_id", traceID,
 				)
 
 				ctx.Request().Body.Close()
@@ -33,8 +35,8 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 				ctx.Response().Writer = &echoResponseWriter{
 					ResponseWriter: ctx.Response().Writer,
 					meta: map[string]any{
-						"traceID": ctx.Request().Context().Value(key),
-						"url":     ctx.Request().URL.String(),
+						"trace_id": traceID,
+						"url":      ctx.Request().URL.String(),
 					},
 				}
 			}

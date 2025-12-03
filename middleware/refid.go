@@ -18,7 +18,9 @@ func RefID(key string) echo.MiddlewareFunc {
 				refID = uuid.NewString()
 			}
 
+			ctx.Set(key, refID)
 			ctx.SetRequest(req.WithContext(newRefIDContext(req.Context(), key, refID)))
+
 			return next(ctx)
 		}
 	}
