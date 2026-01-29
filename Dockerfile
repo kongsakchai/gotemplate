@@ -18,8 +18,15 @@ ENV TZ=Asia/Bangkok
 
 WORKDIR /app
 
+# Copy binary app and migrations file
 COPY --from=builder /app/goapp ./goapp
 COPY ./migrations ./migrations
+
+# Permissions
+RUN chown -R app:app /app && chmod 0755 /app/goapp
+
+# Drop root
+USER app:app
 
 EXPOSE 8080
 
