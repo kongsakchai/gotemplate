@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -38,25 +39,16 @@ func main() {
 	cfg := config.Load(config.Env)
 	log := logger.New()
 
-	db, closeDB := database.NewMySQL(cfg.Database)
-	setMigration(db, cfg.Migration)
+	r, close := setupRoutes(cfg)
+
+	idle := make(chan struct{})
+	go gracefulShutdown(idle, close)
 
 	log.Info("starting "+cfg.App.Name, "version", cfg.App.Version, "env", config.Env)
 	log.Info("listening on port " + cfg.App.Port)
-	r := setupRoutes(db, cfg)
-
-	idle := make(chan struct{})
-	go gracefulShutdown(func(ctx context.Context) error {
-		defer close(idle)
-		if err := r.Shutdown(ctx); err != nil {
-			return err
-		}
-		closeDB()
-		return nil
-	})
 
 	if err := r.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
-		log.Error("shutting down the server: " + err.Error())
+		slog.Error("shutting down the server: " + err.Error())
 		return
 	}
 
@@ -64,9 +56,22 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(db *sql.DB, cfg config.Config) app.App {
+func setupRoutes(cfg config.Config) (app.App, func(context.Context) error) {
+	db, closeDB := database.NewMySQL(cfg.Database)
+	setMigration(db, cfg.Migration)
+
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
+
+	shutdown := func(ctx context.Context) error {
+		if err := r.Shutdown(ctx); err != nil {
+			return fmt.Errorf("server shutdown %w", err)
+		}
+		if err := closeDB(); err != nil {
+			return fmt.Errorf("database shutdown %w", err)
+		}
+		return nil
+	}
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
@@ -75,7 +80,7 @@ func setupRoutes(db *sql.DB, cfg config.Config) app.App {
 
 	r.GET("/health", healthCheck(db))
 
-	return r
+	return r, shutdown
 }
 
 func healthCheck(db *sql.DB) echo.HandlerFunc {
@@ -87,7 +92,9 @@ func healthCheck(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func gracefulShutdown(close func(context.Context) error) {
+func gracefulShutdown(idle chan struct{}, shutdown func(context.Context) error) {
+	defer close(idle)
+
 	sig, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 	<-sig.Done()
@@ -96,7 +103,7 @@ func gracefulShutdown(close func(context.Context) error) {
 	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
 	defer cancel()
 
-	if err := close(ctx); err != nil {
+	if err := shutdown(ctx); err != nil {
 		slog.Error("graceful shutdown failed: " + err.Error())
 		panic("force shutdown")
 	}

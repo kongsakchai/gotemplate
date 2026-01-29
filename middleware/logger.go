@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +25,7 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 				slog.Info(fmt.Sprintf("request %s", ctx.Request().URL),
 					"method", ctx.Request().Method,
 					"body", string(b),
-					"trace_id", traceID,
+					"traceID", traceID,
 				)
 
 				ctx.Request().Body.Close()
@@ -35,8 +36,9 @@ func Logger(key string, req, res bool) echo.MiddlewareFunc {
 				ctx.Response().Writer = &echoResponseWriter{
 					ResponseWriter: ctx.Response().Writer,
 					meta: map[string]any{
-						"trace_id": traceID,
-						"url":      ctx.Request().URL.String(),
+						"traceID": traceID,
+						"url":     ctx.Request().URL.String(),
+						"now":     time.Now(),
 					},
 				}
 			}

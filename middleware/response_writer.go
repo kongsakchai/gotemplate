@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type echoResponseWriter struct {
@@ -22,11 +23,13 @@ func (w *echoResponseWriter) Write(b []byte) (int, error) {
 		slog.Info(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
 			"body", string(b),
 			"traceID", w.meta["traceID"],
+			"latency", time.Since(w.meta["now"].(time.Time)).String(),
 		)
 	} else {
 		slog.Error(fmt.Sprintf("response %d %s", w.status, w.meta["url"]),
 			"body", string(b),
 			"traceID", w.meta["traceID"],
+			"latency", time.Since(w.meta["now"].(time.Time)).String(),
 		)
 	}
 
