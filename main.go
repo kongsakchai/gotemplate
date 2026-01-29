@@ -111,6 +111,10 @@ func gracefulShutdown(idle chan struct{}, shutdown func(context.Context) error) 
 }
 
 func setMigration(db *sql.DB, cfg config.Migration) {
+	if !cfg.Enable {
+		return
+	}
+
 	var err error
 	if cfg.Version != "" {
 		err = migrate.New(db, cfg.Directory).SetVersion(cfg.Version)

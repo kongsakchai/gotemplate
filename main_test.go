@@ -45,11 +45,14 @@ func TestSetupRoutes(t *testing.T) {
 		endpoint, err := ct.Endpoint(t.Context(), "")
 		require.NoError(t, err)
 
-		db, err := sql.Open("mysql", fmt.Sprintf("root:example@(%s)/example", endpoint))
-		require.NoError(t, err)
-
 		// arrange
-		app := setupRoutes(db, config.Config{})
+		app, close := setupRoutes(config.Config{
+			Database: config.Database{
+				URL: fmt.Sprintf("root:example@(%s)/example", endpoint),
+			},
+		})
+		defer close(t.Context())
+
 		go app.Start(":8888")
 		time.Sleep(1 * time.Second)
 
@@ -147,8 +150,7 @@ func TestGracefulShutdown(t *testing.T) {
 				assert.Nil(t, p)
 			}()
 
-			gracefulShutdown(func(ctx context.Context) error {
-				defer close(idle)
+			gracefulShutdown(idle, func(ctx context.Context) error {
 				<-ctx.Done()
 				return nil
 			})
@@ -172,8 +174,7 @@ func TestGracefulShutdown(t *testing.T) {
 				assert.NotNil(t, p)
 			}()
 
-			gracefulShutdown(func(ctx context.Context) error {
-				defer close(idle)
+			gracefulShutdown(idle, func(ctx context.Context) error {
 				return fmt.Errorf("force shutdown")
 			})
 		}()
@@ -214,7 +215,7 @@ func TestSetMigration(t *testing.T) {
 
 	{
 		// act
-		setMigration(db, config.Migration{Version: "0000", Directory: "./migrations/mock"})
+		setMigration(db, config.Migration{Enable: true, Version: "0000", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -223,7 +224,7 @@ func TestSetMigration(t *testing.T) {
 
 	{
 		// act
-		setMigration(db, config.Migration{Version: "", Directory: "./migrations/mock"})
+		setMigration(db, config.Migration{Enable: true, Version: "", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -242,7 +243,7 @@ func TestSetMigration(t *testing.T) {
 			p := recover()
 			assert.NotNil(t, p)
 		}()
-		setMigration(db, config.Migration{Directory: "invalid"})
+		setMigration(db, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
 	testcontainers.CleanupContainer(t, ct)
