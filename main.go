@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,7 +18,6 @@ import (
 	"github.com/kongsakchai/gotemplate/middleware"
 	"github.com/kongsakchai/gotemplate/validator"
 	migrate "github.com/kongsakchai/simple-migrate"
-	"github.com/labstack/echo/v4"
 )
 
 var gracefulTimeout = time.Second * 10
@@ -39,15 +37,15 @@ func main() {
 	cfg := config.Load(config.Env)
 	log := logger.New()
 
-	r, close := setupRoutes(cfg)
+	app, close := initApp(cfg)
 
 	idle := make(chan struct{})
-	go gracefulShutdown(idle, close)
+	go gracefulShutdown(idle, app.Shutdown, close)
 
 	log.Info("starting "+cfg.App.Name, "version", cfg.App.Version, "env", config.Env)
 	log.Info("listening on port " + cfg.App.Port)
 
-	if err := r.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
+	if err := app.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
 		slog.Error("shutting down the server: " + err.Error())
 		return
 	}
@@ -56,43 +54,23 @@ func main() {
 	log.Info("bye bye")
 }
 
-func setupRoutes(cfg config.Config) (app.App, func(context.Context) error) {
+func initApp(cfg config.Config) (app.App, shutdownFunc) {
 	db, closeDB := database.NewMySQL(cfg.Database)
-	setMigration(db, cfg.Migration)
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
-
-	shutdown := func(ctx context.Context) error {
-		if err := r.Shutdown(ctx); err != nil {
-			return fmt.Errorf("server shutdown %w", err)
-		}
-		if err := closeDB(); err != nil {
-			return fmt.Errorf("database shutdown %w", err)
-		}
-		return nil
-	}
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
 		middleware.Logger(cfg.Header.RefIDKey, true, true),
 	)
 
-	r.GET("/health", healthCheck(db))
-
-	return r, shutdown
+	return router(cfg, r, db), closeDB
 }
 
-func healthCheck(db *sql.DB) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		if db.Ping() != nil {
-			return app.Fail(ctx, app.InternalServer(app.ErrCode, app.ErrDatabaseMsg, nil))
-		}
-		return app.OkWithMessage(ctx, nil, "healthy")
-	}
-}
+type shutdownFunc func(context.Context) error
 
-func gracefulShutdown(idle chan struct{}, shutdown func(context.Context) error) {
+func gracefulShutdown(idle chan struct{}, shutdowns ...shutdownFunc) {
 	defer close(idle)
 
 	sig, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
@@ -103,9 +81,11 @@ func gracefulShutdown(idle chan struct{}, shutdown func(context.Context) error) 
 	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
 	defer cancel()
 
-	if err := shutdown(ctx); err != nil {
-		slog.Error("graceful shutdown failed: " + err.Error())
-		panic("force shutdown")
+	for _, shutdown := range shutdowns {
+		if err := shutdown(ctx); err != nil {
+			slog.Error("graceful shutdown failed: " + err.Error())
+			panic("force shutdown")
+		}
 	}
 	slog.Info("graceful shutdown completed")
 }
