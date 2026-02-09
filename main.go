@@ -11,12 +11,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
-	"github.com/kongsakchai/gotemplate/database"
 	"github.com/kongsakchai/gotemplate/logger"
-	"github.com/kongsakchai/gotemplate/middleware"
-	"github.com/kongsakchai/gotemplate/validator"
 	migrate "github.com/kongsakchai/simple-migrate"
 )
 
@@ -37,10 +33,10 @@ func main() {
 	cfg := config.Load(config.Env)
 	log := logger.New()
 
-	app, close := initApp(cfg)
+	app, shutdowns := router(cfg)
 
 	idle := make(chan struct{})
-	go gracefulShutdown(idle, app.Shutdown, close)
+	go gracefulShutdown(idle, shutdowns...)
 
 	log.Info("starting "+cfg.App.Name, "version", cfg.App.Version, "env", config.Env)
 	log.Info("listening on port " + cfg.App.Port)
@@ -52,20 +48,6 @@ func main() {
 
 	<-idle
 	log.Info("bye bye")
-}
-
-func initApp(cfg config.Config) (app.App, shutdownFunc) {
-	db, closeDB := database.NewMySQL(cfg.Database)
-
-	r := app.NewEchoApp()
-	r.Validator = validator.NewReqValidator()
-
-	r.Use(
-		middleware.RefID(cfg.Header.RefIDKey),
-		middleware.Logger(cfg.Header.RefIDKey, true, true),
-	)
-
-	return router(cfg, r, db), closeDB
 }
 
 type shutdownFunc func(context.Context) error

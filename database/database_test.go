@@ -69,7 +69,7 @@ func TestNewDatabase(t *testing.T) {
 		})
 
 		assert.NoError(t, db.Ping())
-		close()
+		close(t.Context())
 		assert.Error(t, db.Ping())
 
 		testcontainers.CleanupContainer(t, ct)
@@ -111,7 +111,7 @@ func TestNewDatabase(t *testing.T) {
 		})
 
 		assert.NoError(t, db.Ping())
-		close()
+		close(t.Context())
 		assert.Error(t, db.Ping())
 
 		// clear container

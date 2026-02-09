@@ -5,13 +5,29 @@ import (
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
+	"github.com/kongsakchai/gotemplate/database"
+	"github.com/kongsakchai/gotemplate/middleware"
+	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v4"
 )
 
-func router(cfg config.Config, r *app.EchoApp, db *sql.DB) *app.EchoApp {
+func router(cfg config.Config) (app.App, []shutdownFunc) {
+	db, closeDB := database.NewMySQL(cfg.Database)
+
+	r := app.NewEchoApp()
+	r.Validator = validator.NewReqValidator()
+
+	r.Use(
+		middleware.RefID(cfg.Header.RefIDKey),
+		middleware.Logger(cfg.Header.RefIDKey, true, true),
+	)
+
 	r.GET("/health", healthCheck(db))
 
-	return r
+	return r, []shutdownFunc{
+		r.Shutdown,
+		closeDB,
+	}
 }
 
 func healthCheck(db *sql.DB) echo.HandlerFunc {
