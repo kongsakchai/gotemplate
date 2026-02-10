@@ -19,6 +19,10 @@ import (
 var gracefulTimeout = time.Second * 10
 
 func init() {
+	setupProcess()
+}
+
+func setupProcess() {
 	if os.Getenv("GOMAXPROCS") != "" {
 		runtime.GOMAXPROCS(0) // GOMAXPROCS
 	} else {

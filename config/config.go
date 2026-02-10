@@ -14,6 +14,7 @@ type Config struct {
 	Migration Migration
 	Database  Database
 	Redis     Redis
+	Log       Log
 }
 
 type App struct {
@@ -44,6 +45,11 @@ type Redis struct {
 	Password string        `env:"REDIS_PASSWORD"`
 	DB       int           `env:"REDIS_DB" envDefault:"0"`
 	Timeout  time.Duration `env:"REDIS_TIMEOUT" envDefault:"10m"`
+}
+
+type Log struct {
+	Enable     bool `env:"LOG_ENABLE"`
+	HttpEnable bool `env:"LOG_HTTP_ENABLE"`
 }
 
 var config Config

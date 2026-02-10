@@ -285,6 +285,10 @@ func TestSetMigration(t *testing.T) {
 	}
 
 	{
+		setMigration(db, config.Migration{Enable: false, Directory: "invalid"})
+	}
+
+	{
 		defer func() {
 			p := recover()
 			assert.NotNil(t, p)
