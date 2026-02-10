@@ -8,6 +8,7 @@
 ├── config
 ├── database
 ├── errs
+├── httpclient
 ├── logger
 ├── middleware
 ├── migrations
@@ -43,6 +44,10 @@ Database connector, e.g., MySQL, PostgreSQL
 ### errs
 
 Custom error types and error handling
+
+### httpclient
+
+HTTP Client for call external service
 
 ### logger
 
