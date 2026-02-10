@@ -13,15 +13,17 @@ func resetLogLevel(defaultLevel slog.Level) {
 
 func TestSetLevel(t *testing.T) {
 	testcases := []struct {
-		title string
-		level string
-		want  slog.Level
+		title  string
+		level  string
+		enable string
+		want   slog.Level
 	}{
-		{"debug", "debug", slog.LevelDebug},
-		{"info", "info", slog.LevelInfo},
-		{"warn", "warn", slog.LevelWarn},
-		{"error", "error", slog.LevelError},
-		{"unknown", "unknown", slog.LevelInfo}, // Default to Info level for unknown levels
+		{"debug", "debug", "true", slog.LevelDebug},
+		{"info", "info", "true", slog.LevelInfo},
+		{"warn", "warn", "true", slog.LevelWarn},
+		{"error", "error", "true", slog.LevelError},
+		{"unknown", "unknown", "true", slog.LevelInfo}, // Default to Info level for unknown levels
+		{"disable", "warn", "false", 99},
 	}
 
 	for _, tc := range testcases {
@@ -29,7 +31,7 @@ func TestSetLevel(t *testing.T) {
 			defaultLevel := logLevel
 			defer resetLogLevel(defaultLevel)
 
-			SetLevel(tc.level)
+			SetLevel(tc.level, tc.enable)
 			assert.Equal(t, tc.want, logLevel)
 		})
 	}

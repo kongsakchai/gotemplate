@@ -9,7 +9,12 @@ import (
 
 var logLevel slog.Level
 
-func SetLevel(level string) {
+func SetLevel(level string, enable string) {
+	if enable != "true" {
+		logLevel = 99
+		return
+	}
+
 	switch level {
 	case "debug":
 		logLevel = slog.LevelDebug
@@ -25,7 +30,7 @@ func SetLevel(level string) {
 }
 
 func init() {
-	SetLevel(os.Getenv("LOG_LEVEL"))
+	SetLevel(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_ENABLE"))
 }
 
 func New() *slog.Logger {
