@@ -62,6 +62,7 @@ func TestNewDatabase(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.Nil(t, p)
+			testcontainers.CleanupContainer(t, ct)
 		}()
 
 		db, close := NewMySQL(config.Database{
@@ -104,6 +105,7 @@ func TestNewDatabase(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.Nil(t, p)
+			testcontainers.CleanupContainer(t, ct)
 		}()
 
 		db, close := NewPostgres(config.Database{

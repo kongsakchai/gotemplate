@@ -252,6 +252,7 @@ func TestSetMigration(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.NotNil(t, p)
+			testcontainers.CleanupContainer(t, ct)
 		}()
 		setMigration(db, config.Migration{Enable: true, Directory: "invalid"})
 	}
