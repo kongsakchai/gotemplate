@@ -55,6 +55,9 @@ func TestNewDatabase(t *testing.T) {
 		)
 		require.NoError(t, err)
 
+		// clear container
+		defer testcontainers.CleanupContainer(t, ct)
+
 		endpoint, err := ct.Endpoint(t.Context(), "")
 		require.NoError(t, err)
 
@@ -62,7 +65,6 @@ func TestNewDatabase(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.Nil(t, p)
-			testcontainers.CleanupContainer(t, ct)
 		}()
 
 		db, close := NewMySQL(config.Database{
@@ -72,8 +74,6 @@ func TestNewDatabase(t *testing.T) {
 		assert.NoError(t, db.Ping())
 		close(t.Context())
 		assert.Error(t, db.Ping())
-
-		testcontainers.CleanupContainer(t, ct)
 	})
 
 	// Postgres
@@ -98,6 +98,9 @@ func TestNewDatabase(t *testing.T) {
 		)
 		require.NoError(t, err)
 
+		// clear container
+		defer testcontainers.CleanupContainer(t, ct)
+
 		endpoint, err := ct.Endpoint(t.Context(), "")
 		require.NoError(t, err)
 
@@ -105,7 +108,6 @@ func TestNewDatabase(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.Nil(t, p)
-			testcontainers.CleanupContainer(t, ct)
 		}()
 
 		db, close := NewPostgres(config.Database{
@@ -115,8 +117,5 @@ func TestNewDatabase(t *testing.T) {
 		assert.NoError(t, db.Ping())
 		close(t.Context())
 		assert.Error(t, db.Ping())
-
-		// clear container
-		testcontainers.CleanupContainer(t, ct)
 	})
 }

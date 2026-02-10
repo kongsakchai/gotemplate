@@ -48,6 +48,9 @@ func TestSetupRoutes(t *testing.T) {
 		)
 		require.NoError(t, err)
 
+		// clear container
+		defer testcontainers.CleanupContainer(t, ct)
+
 		endpoint, err := ct.Endpoint(t.Context(), "")
 		require.NoError(t, err)
 
@@ -69,9 +72,6 @@ func TestSetupRoutes(t *testing.T) {
 		//assert
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		app.Shutdown(t.Context())
-
-		// clear container
-		testcontainers.CleanupContainer(t, ct)
 	})
 }
 
@@ -96,6 +96,9 @@ func TestHealthCheck(t *testing.T) {
 		)
 		require.NoError(t, err)
 
+		// clear container
+		defer testcontainers.CleanupContainer(t, ct)
+
 		endpoint, err := ct.Endpoint(t.Context(), "")
 		require.NoError(t, err)
 
@@ -117,13 +120,10 @@ func TestHealthCheck(t *testing.T) {
 		//assert
 		assert.NotNil(t, rec.Body)
 		assert.Equal(t, http.StatusOK, rec.Code)
-
-		// clear container
-		testcontainers.CleanupContainer(t, ct)
 	})
 
 	t.Run("should return error when can ping db fail", func(t *testing.T) {
-		db, err := sql.Open("mysql", "root:example@(localhost:3306)/example")
+		db, err := sql.Open("mysql", "root:example@(localhost:0000)/example")
 		require.NoError(t, err)
 
 		// arrange
@@ -213,6 +213,9 @@ func TestSetMigration(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// clear container
+	defer testcontainers.CleanupContainer(t, ct)
+
 	endpoint, err := ct.Endpoint(t.Context(), "")
 	require.NoError(t, err)
 
@@ -252,10 +255,8 @@ func TestSetMigration(t *testing.T) {
 		defer func() {
 			p := recover()
 			assert.NotNil(t, p)
-			testcontainers.CleanupContainer(t, ct)
 		}()
 		setMigration(db, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
-	testcontainers.CleanupContainer(t, ct)
 }
