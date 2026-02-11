@@ -12,8 +12,8 @@ func TestError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.RawError())
-		assert.NotEqual(t, "", e.AtError())
+		assert.Equal(t, "test error", e.UnwrapError())
+		assert.NotEqual(t, "", e.At())
 	})
 
 	t.Run("should return the same Error if it is already of type Error", func(t *testing.T) {
@@ -21,8 +21,8 @@ func TestError(t *testing.T) {
 		e := wrap(originalErr)
 
 		assert.Equal(t, originalErr, e)
-		assert.Equal(t, "original error", e.RawError())
-		assert.NotEqual(t, "", e.AtError())
+		assert.Equal(t, "original error", e.UnwrapError())
+		assert.NotEqual(t, "", e.At())
 	})
 
 	t.Run("should return empty at if runtime.Caller fails", func(t *testing.T) {
@@ -33,8 +33,8 @@ func TestError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.RawError())
-		assert.Equal(t, "", e.AtError())
+		assert.Equal(t, "test error", e.UnwrapError())
+		assert.Equal(t, "", e.At())
 	})
 
 	t.Run("should error string format", func(t *testing.T) {
@@ -43,14 +43,14 @@ func TestError(t *testing.T) {
 
 		expected := "error: test error at "
 		assert.Contains(t, e.Error(), expected)
-		assert.Contains(t, e.Error(), e.AtError())
+		assert.Contains(t, e.Error(), e.At())
 	})
 
 	t.Run("should handle nil error", func(t *testing.T) {
 		e := wrap(nil)
 
 		assert.NotNil(t, e)
-		assert.Equal(t, "", e.RawError())
+		assert.Equal(t, "", e.UnwrapError())
 		assert.Contains(t, e.Error(), "tRunner")
 		assert.Contains(t, e.Error(), "testing.go")
 	})
@@ -69,9 +69,9 @@ func TestError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.RawError())
-		assert.NotEqual(t, "", e.AtError())
-		assert.Contains(t, e.AtError(), "testing.go")
+		assert.Equal(t, "test error", e.Unwrap().Error())
+		assert.NotEqual(t, "", e.At())
+		assert.Contains(t, e.Error(), "testing.go")
 	})
 }
 

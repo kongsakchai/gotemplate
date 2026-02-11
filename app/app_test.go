@@ -114,11 +114,11 @@ func (e *mockError) Error() string {
 	return e.Message
 }
 
-func (e *mockError) AtError() string {
+func (e *mockError) At() string {
 	return "mock error location"
 }
 
-func (e *mockError) RawError() string {
+func (e *mockError) UnwrapError() string {
 	return e.Message
 }
 

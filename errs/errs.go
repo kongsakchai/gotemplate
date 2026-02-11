@@ -20,27 +20,32 @@ func init() {
 }
 
 type Error struct {
-	Err error
-	At  string
+	err error
+	at  string
 }
 
-func (e *Error) RawError() string {
-	if e.Err == nil {
+func (e *Error) UnwrapError() string {
+	if e.err == nil {
 		return ""
 	}
-	return e.Err.Error()
+
+	return e.err.Error()
 }
 
-func (e *Error) AtError() string {
-	return e.At
+func (e *Error) At() string {
+	return e.at
 }
 
 func (e Error) Error() string {
-	if e.Err == nil {
-		return e.At
+	if e.err == nil {
+		return fmt.Sprintf("error: something wrong at %s", e.at)
 	}
 
-	return fmt.Sprintf("error: %s at %s", e.Err.Error(), e.At)
+	return fmt.Sprintf("error: %s at %s", e.err.Error(), e.at)
+}
+
+func (e *Error) Unwrap() error {
+	return e.err
 }
 
 func As(err error) (*Error, bool) {
@@ -48,6 +53,7 @@ func As(err error) (*Error, bool) {
 	if errors.As(err, &errType) {
 		return errType, true
 	}
+
 	return nil, false
 }
 
@@ -66,8 +72,8 @@ func wrap(err error) *Error {
 	}
 
 	return &Error{
-		Err: err,
-		At:  caller(maxStackDepth),
+		err: err,
+		at:  caller(maxStackDepth),
 	}
 }
 

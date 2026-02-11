@@ -78,9 +78,8 @@ func FailWithData(ctx echo.Context, err Error, data any) error {
 }
 
 type WrapError interface {
-	Error() string
-	AtError() string
-	RawError() string
+	At() string
+	UnwrapError() string
 }
 
 func logError(err error) {
@@ -89,7 +88,7 @@ func logError(err error) {
 	}
 
 	if wrapErr, ok := err.(WrapError); ok {
-		slog.Error("error", "error", wrapErr.RawError(), "at", wrapErr.AtError())
+		slog.Error("error", "error", wrapErr.UnwrapError(), "at", wrapErr.At())
 	} else {
 		slog.Error("error", "error", err.Error())
 	}
