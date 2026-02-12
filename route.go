@@ -1,8 +1,7 @@
 package main
 
 import (
-	"database/sql"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/database"
@@ -13,6 +12,7 @@ import (
 
 func router(cfg config.Config) (app.App, []shutdownFunc) {
 	db, closeDB := database.NewMySQL(cfg.Database)
+	setMigration(db.DB, cfg.Migration)
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
@@ -30,7 +30,7 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 	}
 }
 
-func healthCheck(db *sql.DB) echo.HandlerFunc {
+func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		if db.Ping() != nil {
 			return app.Fail(ctx, app.InternalServer(app.ErrCode, app.ErrDatabaseMsg, nil))

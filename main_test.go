@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +19,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "modernc.org/sqlite"
 )
 
 func shutdownsAll(ctx context.Context, shutdowns []shutdownFunc) {
@@ -77,32 +78,7 @@ func TestSetupRoutes(t *testing.T) {
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("should return healthy when can ping db success", func(t *testing.T) {
-		t.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-		// init container
-		ct, err := testcontainers.Run(
-			t.Context(),
-			"mariadb:latest",
-
-			testcontainers.WithProvider(testcontainers.ProviderPodman),
-			testcontainers.WithExposedPorts("3306/tcp"),
-			testcontainers.WithWaitStrategy(
-				wait.ForListeningPort("3306/tcp"),
-			),
-
-			testcontainers.WithEnv(map[string]string{
-				"MYSQL_ROOT_PASSWORD": "example",
-				"MYSQL_DATABASE":      "example",
-			}),
-		)
-		require.NoError(t, err)
-
-		// clear container
-		defer testcontainers.CleanupContainer(t, ct)
-
-		endpoint, err := ct.Endpoint(t.Context(), "")
-		require.NoError(t, err)
-
-		db, err := sql.Open("mysql", fmt.Sprintf("root:example@(%s)/example", endpoint))
+		db, err := sqlx.Open("sqlite", ":memory:")
 		require.NoError(t, err)
 
 		// arrange
@@ -123,7 +99,7 @@ func TestHealthCheck(t *testing.T) {
 	})
 
 	t.Run("should return error when can ping db fail", func(t *testing.T) {
-		db, err := sql.Open("mysql", "root:example@(localhost:0000)/example")
+		db, err := sqlx.Open("mysql", "root:example@(localhost:0000)/example")
 		require.NoError(t, err)
 
 		// arrange
@@ -194,37 +170,12 @@ func TestGracefulShutdown(t *testing.T) {
 }
 
 func TestSetMigration(t *testing.T) {
-	t.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-	// init container
-	ct, err := testcontainers.Run(
-		t.Context(),
-		"mariadb:latest",
-
-		testcontainers.WithProvider(testcontainers.ProviderPodman),
-		testcontainers.WithExposedPorts("3306/tcp"),
-		testcontainers.WithWaitStrategy(
-			wait.ForListeningPort("3306/tcp"),
-		),
-
-		testcontainers.WithEnv(map[string]string{
-			"MYSQL_ROOT_PASSWORD": "example",
-			"MYSQL_DATABASE":      "example",
-		}),
-	)
-	require.NoError(t, err)
-
-	// clear container
-	defer testcontainers.CleanupContainer(t, ct)
-
-	endpoint, err := ct.Endpoint(t.Context(), "")
-	require.NoError(t, err)
-
-	db, err := sql.Open("mysql", fmt.Sprintf("root:example@(%s)/example", endpoint))
+	db, err := sqlx.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 
 	{
 		// act
-		setMigration(db, config.Migration{Enable: true, Version: "0000", Directory: "./migrations/mock"})
+		setMigration(db.DB, config.Migration{Enable: true, Version: "0000", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -233,7 +184,7 @@ func TestSetMigration(t *testing.T) {
 
 	{
 		// act
-		setMigration(db, config.Migration{Enable: true, Version: "", Directory: "./migrations/mock"})
+		setMigration(db.DB, config.Migration{Enable: true, Version: "", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -248,7 +199,7 @@ func TestSetMigration(t *testing.T) {
 	}
 
 	{
-		setMigration(db, config.Migration{Enable: false, Directory: "invalid"})
+		setMigration(db.DB, config.Migration{Enable: false, Directory: "invalid"})
 	}
 
 	{
@@ -256,7 +207,7 @@ func TestSetMigration(t *testing.T) {
 			p := recover()
 			assert.NotNil(t, p)
 		}()
-		setMigration(db, config.Migration{Enable: true, Directory: "invalid"})
+		setMigration(db.DB, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
 }
