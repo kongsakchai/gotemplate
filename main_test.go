@@ -80,6 +80,7 @@ func TestHealthCheck(t *testing.T) {
 	t.Run("should return healthy when can ping db success", func(t *testing.T) {
 		db, err := sqlx.Open("sqlite", ":memory:")
 		require.NoError(t, err)
+		defer db.Close()
 
 		// arrange
 		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
@@ -101,6 +102,7 @@ func TestHealthCheck(t *testing.T) {
 	t.Run("should return error when can ping db fail", func(t *testing.T) {
 		db, err := sqlx.Open("mysql", "root:example@(localhost:0000)/example")
 		require.NoError(t, err)
+		defer db.Close()
 
 		// arrange
 		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
@@ -172,6 +174,7 @@ func TestGracefulShutdown(t *testing.T) {
 func TestSetMigration(t *testing.T) {
 	db, err := sqlx.Open("sqlite", ":memory:")
 	require.NoError(t, err)
+	defer db.Close()
 
 	{
 		// act
