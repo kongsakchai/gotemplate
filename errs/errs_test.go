@@ -56,7 +56,7 @@ func TestError(t *testing.T) {
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {
-		var nilErr *Error
+		var nilErr *wrapErr
 		e := wrap(nilErr)
 		assert.Nil(t, e)
 	})

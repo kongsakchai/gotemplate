@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/kongsakchai/gotemplate/errs"
 	"github.com/labstack/echo/v4"
 )
 
@@ -55,31 +56,16 @@ func CreatedWithMessage(ctx echo.Context, data any, msg string) error {
 }
 
 func Fail(ctx echo.Context, err Error) error {
-	if err.Error != nil {
-		slog.Error("response error", "error", err.Error.Error())
+	if err.Err != nil {
+		slog.Error("response error", "error", err.Err.Error())
 	}
 
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
 		Status:  ErrStatus,
+		Data:    err.Data,
 		Message: err.Message,
 	})
-}
-
-func FailWithData(ctx echo.Context, err Error, data any) error {
-	logError(err.Error)
-
-	return ctx.JSON(err.HTTPCode, Response{
-		Code:    err.Code,
-		Status:  ErrStatus,
-		Data:    data,
-		Message: err.Message,
-	})
-}
-
-type WrapError interface {
-	At() string
-	UnwrapError() string
 }
 
 func logError(err error) {
@@ -87,7 +73,7 @@ func logError(err error) {
 		return
 	}
 
-	if wrapErr, ok := err.(WrapError); ok {
+	if wrapErr, ok := errs.As(err); ok {
 		slog.Error("error", "error", wrapErr.UnwrapError(), "at", wrapErr.At())
 	} else {
 		slog.Error("error", "error", err.Error())

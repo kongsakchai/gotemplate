@@ -13,10 +13,11 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusBadRequest,
 			Code:     "4000",
 			Message:  "Bad Request",
-			Error:    nil,
+			Data:     "hello",
+			Err:      nil,
 		}
 
-		err := BadRequest("4000", "Bad Request", nil)
+		err := BadRequest("4000", "Bad Request", nil, "hello")
 
 		assert.Equal(t, expectedError, err)
 	})
@@ -26,7 +27,7 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusOK,
 			Code:     "4040",
 			Message:  "Not Found",
-			Error:    nil,
+			Err:      nil,
 		}
 
 		err := NotFound("4040", "Not Found", nil)
@@ -39,7 +40,7 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusInternalServerError,
 			Code:     "5000",
 			Message:  "Internal Server Error",
-			Error:    nil,
+			Err:      nil,
 		}
 
 		err := InternalServer("5000", "Internal Server Error", nil)
@@ -52,7 +53,7 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusUnauthorized,
 			Code:     "4010",
 			Message:  "Unauthorized",
-			Error:    nil,
+			Err:      nil,
 		}
 
 		err := Unauthorized("4010", "Unauthorized", nil)
@@ -65,7 +66,7 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusForbidden,
 			Code:     "4030",
 			Message:  "Forbidden",
-			Error:    nil,
+			Err:      nil,
 		}
 
 		err := Forbidden("4030", "Forbidden", nil)
@@ -78,7 +79,7 @@ func TestNewError(t *testing.T) {
 			HTTPCode: http.StatusConflict,
 			Code:     "4090",
 			Message:  "Conflict",
-			Error:    nil,
+			Err:      nil,
 		}
 
 		err := Conflict("4090", "Conflict", nil)
@@ -92,5 +93,22 @@ func TestNewError(t *testing.T) {
 
 		err = BadRequest("4000", "Bad Request", nil)
 		assert.False(t, err.IsEmpty())
+	})
+}
+
+func TestErrorData(t *testing.T) {
+	t.Run("should return nil when get nil data", func(t *testing.T) {
+		data := errorData(nil)
+		assert.Nil(t, data)
+	})
+
+	t.Run("should return data when get one data", func(t *testing.T) {
+		data := errorData([]any{"hello"})
+		assert.Equal(t, "hello", data)
+	})
+
+	t.Run("should return array when get multiple data", func(t *testing.T) {
+		data := errorData([]any{"hello", "world"})
+		assert.Equal(t, []any{"hello", "world"}, data)
 	})
 }

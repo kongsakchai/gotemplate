@@ -16,6 +16,7 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
+	r.HTTPErrorHandler = errorHandler
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
@@ -33,8 +34,19 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		if db.Ping() != nil {
-			return app.Fail(ctx, app.InternalServer(app.ErrCode, app.ErrDatabaseMsg, nil))
+			return app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
 		}
 		return app.OkWithMessage(ctx, nil, "healthy")
+	}
+}
+
+func errorHandler(err error, ctx echo.Context) {
+	if appErr, ok := err.(app.Error); ok {
+		err = app.Fail(ctx, appErr)
+	} else {
+		err = app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
+	}
+	if err != nil {
+		ctx.Logger().Info(err.Error())
 	}
 }

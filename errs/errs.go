@@ -19,12 +19,12 @@ func init() {
 	}
 }
 
-type Error struct {
+type wrapErr struct {
 	err error
 	at  string
 }
 
-func (e *Error) UnwrapError() string {
+func (e *wrapErr) UnwrapError() string {
 	if e.err == nil {
 		return ""
 	}
@@ -32,11 +32,11 @@ func (e *Error) UnwrapError() string {
 	return e.err.Error()
 }
 
-func (e *Error) At() string {
+func (e *wrapErr) At() string {
 	return e.at
 }
 
-func (e Error) Error() string {
+func (e wrapErr) Error() string {
 	if e.err == nil {
 		return fmt.Sprintf("error: something wrong at %s", e.at)
 	}
@@ -44,12 +44,12 @@ func (e Error) Error() string {
 	return fmt.Sprintf("error: %s at %s", e.err.Error(), e.at)
 }
 
-func (e *Error) Unwrap() error {
+func (e *wrapErr) Unwrap() error {
 	return e.err
 }
 
-func As(err error) (*Error, bool) {
-	var errType *Error
+func As(err error) (*wrapErr, bool) {
+	var errType *wrapErr
 	if errors.As(err, &errType) {
 		return errType, true
 	}
@@ -65,13 +65,13 @@ func New(err error) error {
 	return wrap(err)
 }
 
-func wrap(err error) *Error {
-	var errType *Error
+func wrap(err error) *wrapErr {
+	var errType *wrapErr
 	if errors.As(err, &errType) {
 		return errType
 	}
 
-	return &Error{
+	return &wrapErr{
 		err: err,
 		at:  caller(maxStackDepth),
 	}
