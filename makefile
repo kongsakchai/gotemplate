@@ -16,3 +16,7 @@ coverage:
 	@go test -coverprofile=coverage.out ./... | ./.script/colorize
 	@go tool cover -html=coverage.out
 	@echo "Coverage report generated: coverage.html"
+
+.PHONY: init
+init:
+	@chmod +x ./.script/colorize
