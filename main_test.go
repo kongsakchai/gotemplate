@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -213,4 +215,46 @@ func TestSetMigration(t *testing.T) {
 		setMigration(db.DB, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
+}
+
+type mockFailContext struct {
+	echo.Context
+}
+
+func (m mockFailContext) JSON(code int, i any) error {
+	return errors.New("JSON ERROR")
+}
+
+func TestErrorHandler(t *testing.T) {
+	t.Run("should return bad request when error is app error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
+		rec := httptest.NewRecorder()
+
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		appErr := app.BadRequest("4000", "error", errors.New("error"))
+		errorHandler(appErr, ctx)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	})
+
+	t.Run("should return internal error when error isn't app error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
+		rec := httptest.NewRecorder()
+
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		errorHandler(errors.New("error"), ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, rec.Result().StatusCode)
+	})
+
+	t.Run("should no response when send response fail", func(t *testing.T) {
+		ctx := &mockFailContext{}
+
+		appErr := app.BadRequest("4000", "error", errors.New("error"))
+		errorHandler(appErr, ctx)
+	})
 }

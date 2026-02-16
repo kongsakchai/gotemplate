@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kongsakchai/gotemplate/errs"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -126,8 +127,8 @@ func TestLogError(t *testing.T) {
 		},
 		{
 			title:    "should log custom error with message and at location",
-			err:      &mockError{Message: "custom error"},
-			expected: "error=\"custom error\" at=\"mock error location\"",
+			err:      errs.New(errors.New("error")),
+			expected: "level=ERROR msg=error error=error at=",
 		},
 	}
 

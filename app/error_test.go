@@ -94,6 +94,14 @@ func TestNewError(t *testing.T) {
 		err = BadRequest("4000", "Bad Request", nil)
 		assert.False(t, err.IsEmpty())
 	})
+
+	t.Run("should return error when call Error()", func(t *testing.T) {
+		err := Error{}
+		assert.True(t, err.IsEmpty())
+
+		err = BadRequest("4000", "Bad Request", nil)
+		assert.Equal(t, "http_code=400 code=4000 msg=\"Bad Request\" data=<nil> err=<nil>", err.Error())
+	})
 }
 
 func TestErrorData(t *testing.T) {

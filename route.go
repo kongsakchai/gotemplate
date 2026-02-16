@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
@@ -47,6 +49,6 @@ func errorHandler(err error, ctx echo.Context) {
 		err = app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
 	}
 	if err != nil {
-		ctx.Logger().Info(err.Error())
+		slog.Error("error handler fail", "err", err.Error())
 	}
 }

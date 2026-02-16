@@ -18,7 +18,7 @@ func (e Error) IsEmpty() bool {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("http_code=%d code=%s msg=%s data=%v err=%v", e.HTTPCode, e.Code, e.Message, e.Data, e.Err)
+	return fmt.Sprintf("http_code=%d code=%s msg=\"%s\" data=%v err=%v", e.HTTPCode, e.Code, e.Message, e.Data, e.Err)
 }
 
 func errorData(data []any) any {
