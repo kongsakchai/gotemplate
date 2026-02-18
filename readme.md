@@ -1,8 +1,23 @@
 # Go Template
 
-## Structure
+## Usage
+
+- Install `gonew`
 
 ```sh
+go install golang.org/x/tools/cmd/gonew@latest
+```
+
+- Create a new project
+
+```sh
+gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
+```
+
+## Project structure
+
+```sh
+./
 ├── app
 ├── cache
 ├── config
@@ -15,13 +30,10 @@
 └── validator
 ```
 
-### app
-
-Application Layer and business logic. It contains the application logic and is organized into subdirectories for business domains or features.
-
-#### Example
+- **app** Application layer and business logic. Contains core application logic, each subdirectory represents a business domain or feature.
 
 ```sh
+./
 └── app
     ├── user
     └── admin
@@ -29,54 +41,39 @@ Application Layer and business logic. It contains the application logic and is o
         └── handler.go
 ```
 
-### cache
+- **cache** Cache layer connectors and helpers, such as Redis.
+  Used for caching data, session storage, or performance optimization.
 
-Cache connector, e.g., Redis
+- **config** Application configuration management.
+  Includes environment variables, configuration structs, and config loaders.
 
-### config
+- **database** Database connectors and setup, e.g., MySQL or PostgreSQL.
 
-Configuration files and environment variables
+- **errs** Custom error types and centralized error handling for error tracking.
 
-### database
+- **httpclient** HTTP client utilities for calling external services or APIs.
 
-Database connector, e.g., MySQL, PostgreSQL
+- **logger** Logging configuration and shared logger instances.
+  Ensures consistent logging format and levels across the application.
 
-### errs
+- **middleware** HTTP middleware components for request processing, such as authentication, authorization, logging, and request tracing.
 
-Custom error types and error handling
+- **validator** Request validation logic. Typically integrates with libraries such as go-playground/validator to validate incoming payloads.
 
-### httpclient
-
-HTTP Client for call external service
-
-### logger
-
-Logger setup and configuration
-
-### middleware
-
-Middleware for request processing, e.g., authentication, logging
-
-### validator
-
-Validation logic for request data, e.g., using `go-playground/validator`
-
-### migrations
-
-Migration files `.sql` for database schema changes, e.g., using `kongsakchai/simple-migrate`
+- **migrations** Database migration files (.sql) for schema versioning and changes.
+  Compatible with tools such as kongsakchai/simple-migrate.
 
 ---
 
-## Usage
+## Guidline for this template
 
-### Install `gonew`
+### package `app/`
 
-```sh
-go install golang.org/x/tools/cmd/gonew@latest
-```
+business logic และ application layer ต่าง ๆ ควรอยู่ใน package นี้, และควรแบ่งแยกแต่ละ module ให้ชัดเจน example:
 
-### Create a new project
+- app/register
+- app/booking
+- app/product
 
-```sh
-gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
-```
+> [!CAUTION]
+> ไม่ควรเขียน business logic ใน package อื่น ๆ ควรอยู่ใน package `app/` เท่านั้น
