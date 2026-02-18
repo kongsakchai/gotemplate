@@ -24,7 +24,7 @@ func TestNewError(t *testing.T) {
 
 	t.Run("should return 404 Not Found when use NotFound", func(t *testing.T) {
 		expectedError := Error{
-			HTTPCode: http.StatusOK,
+			HTTPCode: http.StatusBadRequest,
 			Code:     "4040",
 			Message:  "Not Found",
 			Err:      nil,

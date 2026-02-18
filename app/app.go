@@ -16,42 +16,34 @@ type App interface {
 
 type Response struct {
 	Code    string `json:"code"`
-	Status  string `json:"status"`
+	Success bool   `json:"success"`
 	Message string `json:"message,omitempty"`
 	Data    any    `json:"data,omitempty"`
 }
 
-func Ok(ctx echo.Context, data any) error {
-	return ctx.JSON(http.StatusOK, Response{
-		Code:   SuccessCode,
-		Status: SuccessStatus,
-		Data:   data,
-	})
-}
-
-func OkWithMessage(ctx echo.Context, data any, msg string) error {
+func Ok(ctx echo.Context, data any, msg ...string) error {
+	message := ""
+	if len(msg) > 0 {
+		message = msg[0]
+	}
 	return ctx.JSON(http.StatusOK, Response{
 		Code:    SuccessCode,
-		Status:  SuccessStatus,
+		Success: true,
 		Data:    data,
-		Message: msg,
+		Message: message,
 	})
 }
 
-func Created(ctx echo.Context, data any) error {
-	return ctx.JSON(http.StatusCreated, Response{
-		Code:   SuccessCode,
-		Status: SuccessStatus,
-		Data:   data,
-	})
-}
-
-func CreatedWithMessage(ctx echo.Context, data any, msg string) error {
+func Created(ctx echo.Context, data any, msg ...string) error {
+	message := ""
+	if len(msg) > 0 {
+		message = msg[0]
+	}
 	return ctx.JSON(http.StatusCreated, Response{
 		Code:    SuccessCode,
-		Status:  SuccessStatus,
+		Success: true,
 		Data:    data,
-		Message: msg,
+		Message: message,
 	})
 }
 
@@ -62,10 +54,21 @@ func Fail(ctx echo.Context, err Error) error {
 
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
-		Status:  ErrStatus,
+		Success: false,
 		Data:    err.Data,
 		Message: err.Message,
 	})
+}
+
+func ErrorHandler(err error, ctx echo.Context) {
+	if appErr, ok := err.(Error); ok {
+		err = Fail(ctx, appErr)
+	} else {
+		err = Fail(ctx, InternalServer(ErrInternalCode, ErrInternalMsg, err))
+	}
+	if err != nil {
+		slog.Error("error handler fail", "err", err.Error())
+	}
 }
 
 func logError(err error) {

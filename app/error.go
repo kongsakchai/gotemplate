@@ -53,7 +53,7 @@ func BadRequest(code string, msg string, err error, data ...any) Error {
 
 func NotFound(code string, msg string, err error, data ...any) Error {
 	return Error{
-		HTTPCode: http.StatusOK,
+		HTTPCode: http.StatusBadRequest,
 		Code:     code,
 		Message:  msg,
 		Err:      err,

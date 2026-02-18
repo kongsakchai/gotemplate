@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log/slog"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
@@ -18,7 +16,7 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
-	r.HTTPErrorHandler = errorHandler
+	r.HTTPErrorHandler = app.ErrorHandler
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
@@ -38,17 +36,6 @@ func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 		if db.Ping() != nil {
 			return app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
 		}
-		return app.OkWithMessage(ctx, nil, "healthy")
-	}
-}
-
-func errorHandler(err error, ctx echo.Context) {
-	if appErr, ok := err.(app.Error); ok {
-		err = app.Fail(ctx, appErr)
-	} else {
-		err = app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
-	}
-	if err != nil {
-		slog.Error("error handler fail", "err", err.Error())
+		return app.Ok(ctx, nil, "healthy")
 	}
 }

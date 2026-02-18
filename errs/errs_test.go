@@ -2,13 +2,14 @@ package errs
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestError(t *testing.T) {
-	t.Run("should create a new Error with stack trace", func(t *testing.T) {
+	t.Run("should create a wrap error with stack trace", func(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
@@ -17,8 +18,10 @@ func TestError(t *testing.T) {
 	})
 
 	t.Run("should return the same Error if it is already of type Error", func(t *testing.T) {
-		originalErr := New(errors.New("original error"))
+		originalErr := New("original error")
 		e := wrap(originalErr)
+
+		fmt.Println(e)
 
 		assert.Equal(t, originalErr, e)
 		assert.Equal(t, "original error", e.UnwrapError())
@@ -56,7 +59,7 @@ func TestError(t *testing.T) {
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {
-		var nilErr *wrapErr
+		var nilErr *Errs
 		e := wrap(nilErr)
 		assert.Nil(t, e)
 	})
@@ -75,15 +78,14 @@ func TestError(t *testing.T) {
 	})
 }
 
-func TestNewError(t *testing.T) {
+func TestWrapError(t *testing.T) {
 	t.Run("should return nil when error is nil", func(t *testing.T) {
-		err := New(nil)
+		err := Wrap(nil)
 		assert.Nil(t, err)
 	})
 
 	t.Run("should wrap the error with stack trace", func(t *testing.T) {
-		err := errors.New("test error")
-		e := New(err)
+		e := Wrap(errors.New("error"))
 
 		assert.NotNil(t, e)
 	})
@@ -91,7 +93,7 @@ func TestNewError(t *testing.T) {
 
 func TestErrorAs(t *testing.T) {
 	t.Run("should return true when error matches the Error type", func(t *testing.T) {
-		err := New(errors.New("test error"))
+		err := New("test error")
 		_, ok := As(err)
 		assert.True(t, ok)
 	})

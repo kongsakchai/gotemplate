@@ -140,8 +140,8 @@ app.Conflict(code string, msg string, err error, data ...any) app.Error
 
 > [!NOTE]
 >
-> - Why I do not use HTTP 404 for data not found ? 404 is a standard HTTP error that represents a missing endpoint or resource. Using it for missing data can cause confusion between “data not found” and “route not found”, and it also adds unnecessary complexity on the client side.
-> - Why I use HTTP 400 for data not found ? I see missing data as something that usually results from an invalid or incorrect request from the client, while the system itself is still operating normally.
+> - Why I do not use HTTP `404` for data not found ? `404` is a standard HTTP error that represents a missing endpoint or resource. Using it for missing data can cause confusion between “data not found” and “route not found”, and it also adds unnecessary complexity on the client side.
+> - Why I use HTTP `400` for data not found ? I see missing data as something that usually results from an invalid or incorrect request from the client, while the system itself is still operating normally.
 
 **500 Internal Server Error**
 

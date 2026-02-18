@@ -7,7 +7,7 @@ test:
 .PHONY: testcover
 testcover:
 	@echo "Running tests..."
-	@go test -v -cover ./... | ./.script/colorize
+	@go test -cover ./... | ./.script/colorize
 	@echo "Tests completed."
 
 .PHONY: coverage
