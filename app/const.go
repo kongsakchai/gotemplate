@@ -1,6 +1,9 @@
 package app
 
 const (
+	RefIDKey   = "ref-id"
+	TraceIDKey = "traceID"
+
 	SuccessCode     = "0000"
 	ErrInternalCode = "9999"
 

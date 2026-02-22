@@ -7,38 +7,41 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/kongsakchai/gotemplate/app"
 	"github.com/labstack/echo/v4"
 )
 
-func Logger(key string, req, res bool) echo.MiddlewareFunc {
+func Logger(enable bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			traceID, _ := ctx.Get(key).(string)
+			traceID, _ := ctx.Get(app.RefIDKey).(string)
+			req := ctx.Request().Context()
 
-			if req {
+			if enable {
 				b, err := io.ReadAll(ctx.Request().Body)
 				if err != nil {
-					slog.Error("failed to read request body", "error", err)
+					slog.ErrorContext(req, "failed to read request body", "error", err)
 					return err
 				}
 
-				slog.Info(fmt.Sprintf("request %s", ctx.Request().URL),
+				slog.InfoContext(req, fmt.Sprintf("request %s", ctx.Request().URL),
 					"method", ctx.Request().Method,
 					"body", string(b),
-					"traceID", traceID,
+					app.TraceIDKey, traceID,
 				)
 
 				ctx.Request().Body.Close()
 				ctx.Request().Body = io.NopCloser(bytes.NewBuffer(b))
 			}
 
-			if res {
+			if enable {
 				ctx.Response().Writer = &echoResponseWriter{
+					ctx:            ctx.Request().Context(),
 					ResponseWriter: ctx.Response().Writer,
 					meta: map[string]any{
-						"traceID": traceID,
-						"url":     ctx.Request().URL.String(),
-						"now":     time.Now(),
+						"url":          ctx.Request().URL.String(),
+						"now":          time.Now(),
+						app.TraceIDKey: traceID,
 					},
 				}
 			}

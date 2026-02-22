@@ -44,7 +44,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	t.Run("should log request", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger("X-Request-ID", true, false))
+		e.Use(Logger(true))
 		e.GET("/", handler)
 
 		buf := bytes.NewBuffer([]byte{})
@@ -66,7 +66,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	t.Run("should return error when request body cannot be read", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger("X-Request-ID", true, false))
+		e.Use(Logger(true))
 		e.GET("/", handler)
 
 		buf := bytes.NewBuffer([]byte{})
@@ -86,7 +86,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	t.Run("should log response", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger("X-Request-ID", false, true))
+		e.Use(Logger(true))
 		e.GET("/", handler)
 
 		buf := bytes.NewBuffer([]byte{})
@@ -106,7 +106,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	t.Run("should log error response", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger("X-Request-ID", false, true))
+		e.Use(Logger(true))
 		e.GET("/error", handlerError)
 
 		buf := bytes.NewBuffer([]byte{})

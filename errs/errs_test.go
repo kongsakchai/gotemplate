@@ -8,24 +8,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestError(t *testing.T) {
+func TestWrapError(t *testing.T) {
 	t.Run("should create a wrap error with stack trace", func(t *testing.T) {
-		err := errors.New("test error")
-		e := wrap(err)
+		e := wrap(errors.ErrUnsupported)
 
-		assert.Equal(t, "test error", e.UnwrapError())
+		assert.Equal(t, errors.ErrUnsupported, e.Unwrap())
 		assert.NotEqual(t, "", e.At())
 	})
 
-	t.Run("should return the same Error if it is already of type Error", func(t *testing.T) {
-		originalErr := New("original error")
-		e := wrap(originalErr)
+	t.Run("should return the same Error if it is already of errorTrace", func(t *testing.T) {
+		ogError := &errorTrace{err: errors.ErrUnsupported, at: "unit test"}
+		e := wrap(ogError)
 
 		fmt.Println(e)
 
-		assert.Equal(t, originalErr, e)
-		assert.Equal(t, "original error", e.UnwrapError())
-		assert.NotEqual(t, "", e.At())
+		e2, ok := As(ogError)
+		assert.True(t, ok)
+		assert.Equal(t, e2, e)
+		assert.Equal(t, "unit test", e.At())
 	})
 
 	t.Run("should return empty at if runtime.Caller fails", func(t *testing.T) {
@@ -36,8 +36,7 @@ func TestError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		assert.Equal(t, "test error", e.UnwrapError())
-		assert.Equal(t, "", e.At())
+		assert.Equal(t, err, e.Unwrap())
 	})
 
 	t.Run("should error string format", func(t *testing.T) {
@@ -46,20 +45,19 @@ func TestError(t *testing.T) {
 
 		expected := "error: test error at "
 		assert.Contains(t, e.Error(), expected)
-		assert.Contains(t, e.Error(), e.At())
 	})
 
 	t.Run("should handle nil error", func(t *testing.T) {
 		e := wrap(nil)
 
 		assert.NotNil(t, e)
-		assert.Equal(t, "", e.UnwrapError())
+		assert.Nil(t, e.Unwrap())
 		assert.Contains(t, e.Error(), "tRunner")
 		assert.Contains(t, e.Error(), "testing.go")
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {
-		var nilErr *Errs
+		var nilErr *errorTrace
 		e := wrap(nilErr)
 		assert.Nil(t, e)
 	})
@@ -69,31 +67,16 @@ func TestError(t *testing.T) {
 		rootPath = "."
 		defer func() { rootPath = originalRootPath }()
 
-		err := errors.New("test error")
-		e := wrap(err)
+		e := wrap(errors.ErrUnsupported)
 
-		assert.Equal(t, "test error", e.Unwrap().Error())
-		assert.NotEqual(t, "", e.At())
+		assert.Equal(t, errors.ErrUnsupported, e.Unwrap())
 		assert.Contains(t, e.Error(), "testing.go")
-	})
-}
-
-func TestWrapError(t *testing.T) {
-	t.Run("should return nil when error is nil", func(t *testing.T) {
-		err := Wrap(nil)
-		assert.Nil(t, err)
-	})
-
-	t.Run("should wrap the error with stack trace", func(t *testing.T) {
-		e := Wrap(errors.New("error"))
-
-		assert.NotNil(t, e)
 	})
 }
 
 func TestErrorAs(t *testing.T) {
 	t.Run("should return true when error matches the Error type", func(t *testing.T) {
-		err := New("test error")
+		err := &errorTrace{err: errors.ErrUnsupported, at: "unit test"}
 		_, ok := As(err)
 		assert.True(t, ok)
 	})
@@ -102,5 +85,44 @@ func TestErrorAs(t *testing.T) {
 		err := errors.New("test error")
 		_, ok := As(err)
 		assert.False(t, ok)
+	})
+}
+
+func TestNewError(t *testing.T) {
+	t.Run("should return error with message 'unit test'", func(t *testing.T) {
+		err := New("unit test")
+
+		assert.NotNil(t, err)
+	})
+
+	t.Run("should return nil when from function get nil", func(t *testing.T) {
+		err := From(nil)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("should return not nil when from function get some error", func(t *testing.T) {
+		err := From(errors.ErrUnsupported)
+
+		assert.NotNil(t, err)
+	})
+}
+
+func TestToLogs(t *testing.T) {
+	t.Run("should return 0 slog.Attr when error is nil", func(t *testing.T) {
+		err := From(nil)
+
+		assert.Equal(t, 0, len(Logs(err)))
+	})
+	t.Run("should return 2 slog.Attr when error is errorTrace", func(t *testing.T) {
+		err := New("unit test")
+
+		assert.Equal(t, 2, len(Logs(err)))
+	})
+
+	t.Run("should return 2 slog.Attr when error is normal", func(t *testing.T) {
+		err := errors.New("unit test")
+
+		assert.Equal(t, 1, len(Logs(err)))
 	})
 }

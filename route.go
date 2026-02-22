@@ -3,9 +3,10 @@ package main
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/app/apperror"
+	"github.com/kongsakchai/gotemplate/app/middleware"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/database"
-	"github.com/kongsakchai/gotemplate/middleware"
 	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v4"
 )
@@ -16,11 +17,11 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
-	r.HTTPErrorHandler = app.ErrorHandler
+	r.HTTPErrorHandler = apperror.ErrorHandler
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
-		middleware.Logger(cfg.Header.RefIDKey, true, true),
+		middleware.Logger(true),
 	)
 
 	r.GET("/health", healthCheck(db))

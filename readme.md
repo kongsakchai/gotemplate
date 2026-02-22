@@ -23,6 +23,7 @@ gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
 ```sh
 ./
 ├── app
+│   └── middleware
 ├── cache
 ├── config
 ├── database
@@ -177,6 +178,26 @@ func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 }
 ```
 
+### Package `/app/middleware`
+
+A helper package for HTTP middleware used in request processing,
+such as authentication, authorization, logging, and request tracing.
+
+**app/middleware/refid.go**
+
+Middleware for managing a **reference ID** to make log tracing easier.
+The header key can be configured via an environment variable.
+
+```env
+HEADER_REF_ID_KEY=
+```
+
+If the reference ID is not present in the request header, a new one will be generated using [github.com/google/uuid](https://github.com/google/uuid).
+
+**app/middleware/logger.go**
+
+Middleware for logging API request and response data.
+
 ### Package `cache/`
 
 A helper package for interacting with caching systems. It includes utilities such as a Redis client factory. You may also integrate other caching solutions, such as [github.com/patrickmn/go-cache](https://github.com/patrickmn/go-cache).
@@ -255,28 +276,6 @@ LOG_FORMAT=text|json
 ```
 
 Sensitive data masking (such as passwords, tokens, or PII) can be configured in `logger/replace.go`.
-
----
-
-### Package `/middleware`
-
-A helper package for HTTP middleware used in request processing,
-such as authentication, authorization, logging, and request tracing.
-
-**middleware/refid.go**
-
-Middleware for managing a **reference ID** to make log tracing easier.
-The header key can be configured via an environment variable.
-
-```env
-HEADER_REF_ID_KEY=
-```
-
-If the reference ID is not present in the request header, a new one will be generated using `uuid`.
-
-**middleware/logger.go**
-
-Middleware for logging API request and response data.
 
 ### Package `/validator`
 
