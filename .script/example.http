@@ -1,2 +1,16 @@
 # Ping
 GET http://localhost:8080/health
+
+HTTP/1.1 200  - OK
+content-type: application/json
+date: Mon, 02 Mar 2026 04:25:45 GMT
+content-length: 51
+connection: close
+###
+GET http://localhost:8080/metrics
+
+HTTP/1.1 200  - OK
+content-type: application/json
+date: Mon, 02 Mar 2026 04:25:56 GMT
+content-length: 214
+connection: close
