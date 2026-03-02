@@ -50,7 +50,7 @@ func TestAppResponse(t *testing.T) {
 		expectedStatus := http.StatusInternalServerError
 		expectedResp := "{\"code\":\"5000\",\"success\":false,\"message\":\"Internal Server Error\"}\n"
 
-		err := InternalServer("5000", "Internal Server Error", errors.New("unexpected error"))
+		err := InternalError("5000", "Internal Server Error", errors.New("unexpected error"))
 		Fail(ctx, err)
 
 		assert.Equal(t, expectedStatus, rec.Code)

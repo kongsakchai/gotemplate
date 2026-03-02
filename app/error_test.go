@@ -43,7 +43,7 @@ func TestNewError(t *testing.T) {
 			Err:      nil,
 		}
 
-		err := InternalServer("5000", "Internal Server Error", nil)
+		err := InternalError("5000", "Internal Server Error", nil)
 
 		assert.Equal(t, expectedError, err)
 	})

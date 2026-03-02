@@ -45,7 +45,7 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		if db.Ping() != nil {
-			return app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
+			return app.Fail(ctx, app.InternalError(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
 		}
 		return app.Ok(ctx, nil, "healthy")
 	}

@@ -31,7 +31,7 @@ func errorData(data []any) any {
 	return data
 }
 
-func InternalServer(code string, msg string, err error, data ...any) Error {
+func InternalError(code string, msg string, err error, data ...any) Error {
 	return Error{
 		HTTPCode: http.StatusInternalServerError,
 		Code:     code,

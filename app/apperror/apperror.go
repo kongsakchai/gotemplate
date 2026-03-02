@@ -17,7 +17,7 @@ func ErrorHandler(err error, ctx echo.Context) {
 		err = app.Fail(ctx, appErr)
 	} else {
 		slog.LogAttrs(c, slog.LevelError, "app error", append(errs.Logs(err), slog.String(app.TraceIDKey, traceID))...)
-		err = app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
+		err = app.Fail(ctx, app.InternalError(app.ErrInternalCode, app.ErrInternalMsg, err))
 	}
 	if err != nil {
 		slog.ErrorContext(c, "error handler fail", "err", err.Error())
