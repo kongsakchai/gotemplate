@@ -57,19 +57,3 @@ func TestAppResponse(t *testing.T) {
 		assert.JSONEq(t, expectedResp, rec.Body.String())
 	})
 }
-
-type mockError struct {
-	Message string
-}
-
-func (e *mockError) Error() string {
-	return e.Message
-}
-
-func (e *mockError) At() string {
-	return "mock error location"
-}
-
-func (e *mockError) UnwrapError() string {
-	return e.Message
-}

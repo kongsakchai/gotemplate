@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"net/http/httptest"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -26,4 +28,11 @@ func (app *EchoApp) Start(addr string) error {
 
 func (app *EchoApp) Shutdown(ctx context.Context) error {
 	return app.Echo.Shutdown(ctx)
+}
+
+func NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder) {
+	e := echo.New()
+	req := httptest.NewRequest(method, target, strings.NewReader(payload))
+	rec := httptest.NewRecorder()
+	return e.NewContext(req, rec), rec
 }
