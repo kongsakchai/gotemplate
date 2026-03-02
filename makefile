@@ -20,3 +20,7 @@ coverage:
 .PHONY: init
 init:
 	@chmod +x ./.script/colorize
+
+.PHONY: gen-mock
+gen-mock:
+	@mockery

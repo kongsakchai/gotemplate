@@ -1,0 +1,17 @@
+all: false
+dir: "{{.InterfaceDir}}"
+filename: mocks_{{.InterfaceName | lower}}_test.go
+force-file-write: true
+formatter: goimports
+generate: true
+include-auto-generated: false
+log-level: info
+structname: "mcok{{.InterfaceName}}"
+pkgname: "{{.SrcPackageName}}"
+recursive: true
+require-template-schema-exists: true
+template: testify
+template-schema: "{{.Template}}.schema.json"
+exclude-subpkg-regex: ["app/apperror$", "app/middleware$"]
+packages:
+  github.com/kongsakchai/gotemplate/app:
