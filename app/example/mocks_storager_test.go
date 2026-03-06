@@ -5,7 +5,6 @@
 package example
 
 import (
-	"github.com/kongsakchai/gotemplate/app"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -36,8 +35,59 @@ func (_m *mockStorager) EXPECT() *mockStorager_Expecter {
 	return &mockStorager_Expecter{mock: &_m.Mock}
 }
 
+// CreateUser provides a mock function for the type mockStorager
+func (_mock *mockStorager) CreateUser(user User) error {
+	ret := _mock.Called(user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateUser")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(User) error); ok {
+		r0 = returnFunc(user)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// mockStorager_CreateUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateUser'
+type mockStorager_CreateUser_Call struct {
+	*mock.Call
+}
+
+// CreateUser is a helper method to define mock.On call
+//   - user User
+func (_e *mockStorager_Expecter) CreateUser(user interface{}) *mockStorager_CreateUser_Call {
+	return &mockStorager_CreateUser_Call{Call: _e.mock.On("CreateUser", user)}
+}
+
+func (_c *mockStorager_CreateUser_Call) Run(run func(user User)) *mockStorager_CreateUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 User
+		if args[0] != nil {
+			arg0 = args[0].(User)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *mockStorager_CreateUser_Call) Return(err error) *mockStorager_CreateUser_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *mockStorager_CreateUser_Call) RunAndReturn(run func(user User) error) *mockStorager_CreateUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UserByName provides a mock function for the type mockStorager
-func (_mock *mockStorager) UserByName(name string) (User, app.Error) {
+func (_mock *mockStorager) UserByName(name string) (User, error) {
 	ret := _mock.Called(name)
 
 	if len(ret) == 0 {
@@ -45,8 +95,8 @@ func (_mock *mockStorager) UserByName(name string) (User, app.Error) {
 	}
 
 	var r0 User
-	var r1 app.Error
-	if returnFunc, ok := ret.Get(0).(func(string) (User, app.Error)); ok {
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string) (User, error)); ok {
 		return returnFunc(name)
 	}
 	if returnFunc, ok := ret.Get(0).(func(string) User); ok {
@@ -54,10 +104,10 @@ func (_mock *mockStorager) UserByName(name string) (User, app.Error) {
 	} else {
 		r0 = ret.Get(0).(User)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string) app.Error); ok {
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
 		r1 = returnFunc(name)
 	} else {
-		r1 = ret.Get(1).(app.Error)
+		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
@@ -86,18 +136,18 @@ func (_c *mockStorager_UserByName_Call) Run(run func(name string)) *mockStorager
 	return _c
 }
 
-func (_c *mockStorager_UserByName_Call) Return(user User, error app.Error) *mockStorager_UserByName_Call {
-	_c.Call.Return(user, error)
+func (_c *mockStorager_UserByName_Call) Return(user User, err error) *mockStorager_UserByName_Call {
+	_c.Call.Return(user, err)
 	return _c
 }
 
-func (_c *mockStorager_UserByName_Call) RunAndReturn(run func(name string) (User, app.Error)) *mockStorager_UserByName_Call {
+func (_c *mockStorager_UserByName_Call) RunAndReturn(run func(name string) (User, error)) *mockStorager_UserByName_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Users provides a mock function for the type mockStorager
-func (_mock *mockStorager) Users() ([]User, app.Error) {
+func (_mock *mockStorager) Users() ([]User, error) {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
@@ -105,8 +155,8 @@ func (_mock *mockStorager) Users() ([]User, app.Error) {
 	}
 
 	var r0 []User
-	var r1 app.Error
-	if returnFunc, ok := ret.Get(0).(func() ([]User, app.Error)); ok {
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func() ([]User, error)); ok {
 		return returnFunc()
 	}
 	if returnFunc, ok := ret.Get(0).(func() []User); ok {
@@ -116,10 +166,10 @@ func (_mock *mockStorager) Users() ([]User, app.Error) {
 			r0 = ret.Get(0).([]User)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func() app.Error); ok {
+	if returnFunc, ok := ret.Get(1).(func() error); ok {
 		r1 = returnFunc()
 	} else {
-		r1 = ret.Get(1).(app.Error)
+		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
@@ -141,12 +191,12 @@ func (_c *mockStorager_Users_Call) Run(run func()) *mockStorager_Users_Call {
 	return _c
 }
 
-func (_c *mockStorager_Users_Call) Return(users []User, error app.Error) *mockStorager_Users_Call {
-	_c.Call.Return(users, error)
+func (_c *mockStorager_Users_Call) Return(users []User, err error) *mockStorager_Users_Call {
+	_c.Call.Return(users, err)
 	return _c
 }
 
-func (_c *mockStorager_Users_Call) RunAndReturn(run func() ([]User, app.Error)) *mockStorager_Users_Call {
+func (_c *mockStorager_Users_Call) RunAndReturn(run func() ([]User, error)) *mockStorager_Users_Call {
 	_c.Call.Return(run)
 	return _c
 }

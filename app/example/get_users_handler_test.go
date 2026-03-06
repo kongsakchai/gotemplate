@@ -1,72 +1,55 @@
 package example
 
 import (
+	"encoding/json"
+	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUserByName(t *testing.T) {
-	t.Run("should return name when service success", func(t *testing.T) {
-		service := newMockStorager(t)
-		service.EXPECT().UserByName("john").Return(User{Name: "john"}, app.Error{})
+func TestHandlerGetUsers(t *testing.T) {
+	t.Run("should return internal error when storage users fails", func(t *testing.T) {
+		storage := newMockStorager(t)
+		h := NewHandler(storage)
 
-		h := NewHandler(service)
+		storage.EXPECT().Users().Return(nil, errors.New("db error"))
 
-		ctx, rec := app.NewMockContext("GET", "/john", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("john")
-
-		err := h.GetUserByName(ctx)
-
-		assert.NoError(t, err)
-		assert.JSONEq(t, `{"code":"0000","data":{"name":"john","age":0},"success":true}`, rec.Body.String())
-	})
-
-	t.Run("should return error when service returns error", func(t *testing.T) {
-		service := newMockStorager(t)
-		service.EXPECT().UserByName("john").Return(User{}, app.NotFound("4001", "user not found", nil))
-
-		h := NewHandler(service)
-
-		ctx, _ := app.NewMockContext("GET", "/john", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("john")
-
-		err := h.GetUserByName(ctx)
-
-		assert.Error(t, err)
-		assert.Equal(t, "http_code=400 code=4001 msg=\"user not found\" data=<nil> err=<nil>", err.Error())
-	})
-}
-
-func TestGetUsers(t *testing.T) {
-	t.Run("should return users when service success", func(t *testing.T) {
-		service := newMockStorager(t)
-		service.EXPECT().Users().Return([]User{{Name: "john"}}, app.Error{})
-
-		h := NewHandler(service)
-
-		ctx, rec := app.NewMockContext("GET", "/users", "")
-
-		err := h.GetUsers(ctx)
-
-		assert.NoError(t, err)
-		assert.JSONEq(t, `{"code":"0000","data":[{"name":"john","age":0}],"success":true}`, rec.Body.String())
-	})
-
-	t.Run("should return error when service returns error", func(t *testing.T) {
-		service := newMockStorager(t)
-		service.EXPECT().Users().Return(nil, app.InternalError("5001", "internal server error", nil))
-
-		h := NewHandler(service)
-
-		ctx, _ := app.NewMockContext("GET", "/users", "")
-
+		ctx, _ := app.NewMockContext(http.MethodGet, "/users", "")
 		err := h.GetUsers(ctx)
 
 		assert.Error(t, err)
-		assert.Equal(t, "http_code=500 code=5001 msg=\"internal server error\" data=<nil> err=<nil>", err.Error())
+		appErr, ok := err.(app.Error)
+		assert.True(t, ok)
+		assert.Equal(t, http.StatusInternalServerError, appErr.HTTPCode)
+		assert.Equal(t, "5001", appErr.Code)
+	})
+
+	t.Run("should return ok with users data when success", func(t *testing.T) {
+		storage := newMockStorager(t)
+		h := NewHandler(storage)
+
+		expectedUsers := []User{
+			{FirstName: "john", LastName: "doe", Age: 30},
+			{FirstName: "jane", LastName: "doe", Age: 25},
+		}
+		storage.EXPECT().Users().Return(expectedUsers, nil)
+
+		ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
+		err := h.GetUsers(ctx)
+
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var resp map[string]any
+		assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		assert.Equal(t, app.SuccessCode, resp["code"])
+		assert.Equal(t, true, resp["success"])
+
+		data, ok := resp["data"].([]any)
+		assert.True(t, ok)
+		assert.Len(t, data, 2)
 	})
 }

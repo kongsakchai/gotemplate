@@ -1,11 +1,10 @@
 package example
 
-import "github.com/kongsakchai/gotemplate/app"
-
 //mockery:generate: true
 type Storager interface {
-	Users() ([]User, app.Error)
-	UserByName(name string) (User, app.Error)
+	Users() ([]User, error)
+	UserByName(name string) (User, error)
+	CreateUser(user User) error
 }
 
 type handler struct {

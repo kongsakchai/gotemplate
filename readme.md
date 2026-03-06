@@ -309,3 +309,38 @@ MIGRATION_TABLE_NAME=schema_migrations # table used to store migration logs
 
 - If `MIGRATION_VERSION` is not specified, the latest version will be used
 - If `MIGRATION_TABLE_NAME` or `MIGRATION_DIR` is not specified, default values will be applied
+
+### Recommended patterns
+
+When using this Go template, I recommend the following patterns:
+
+- **Storage pattern / Repository pattern** for managing database or external API interactions to separate concerns and improve testability.
+- **Combine Handler with Service** I don't see the necessity to separate Handler from Service, as it may overcomplicate the code, especially for small to medium projects. Combining them reduces file count and improves code clarity and maintainability. However, I recommend breaking down Handler into smaller functions for better organization:
+  - `Handle` function: manages HTTP requests
+  - `Process` function: handles business logic (Service layer)
+
+Example:
+
+```go
+type handler struct {
+	storage Storager
+}
+
+func (h *handler) GetUserByID(ctx echo.Context) error {
+	userID := ctx.Param("id")
+	_, err := h.processGetUserByID(userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *handler) processGetUserByID(userID string) (*User, error) {
+	// business logic here
+}
+```
+
+- **One file per endpoint** for clarity and easier maintenance. In larger projects, organizing files by endpoint improves code organization and makes features easier to locate and modify.
+- **Separate modules by business domain** for better organization and maintainability. Domain-driven module separation improves code clarity and reduces cognitive load.
+- **File naming** should represent the responsibility and purpose of the file.
+- **Error handling** Use centralized error handling by creating custom error types and leveraging the global error handler to manage all errors in one place. This keeps code clean and simplifies maintenance.

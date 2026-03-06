@@ -1,30 +1,24 @@
 package example
 
-import "github.com/kongsakchai/gotemplate/app"
-
 type storage struct {
-	users map[string]User
+	users []User
 }
 
 func NewStorage() *storage {
-	users := make(map[string]User)
-	users["john"] = User{Name: "John", Age: 30}
-
+	users := make([]User, 0)
 	return &storage{users: users}
 }
 
-func (s *storage) UserByName(name string) (User, app.Error) {
-	user, exists := s.users[name]
-	if !exists {
-		return User{}, app.NotFound("4001", "user not found", nil)
-	}
-	return user, app.Error{}
+func (s *storage) CreateUser(user User) error {
+	s.users = append(s.users, user)
+	return nil
 }
 
-func (s *storage) Users() ([]User, app.Error) {
-	var users []User
+func (s *storage) UserByName(name string) (User, error) {
 	for _, user := range s.users {
-		users = append(users, user)
+		if user.FirstName == name {
+			return user, nil
+		}
 	}
-	return users, app.Error{}
+	return User{}, nil
 }

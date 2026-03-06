@@ -1,6 +1,7 @@
 package example
 
 type User struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Age       int    `json:"age"`
 }

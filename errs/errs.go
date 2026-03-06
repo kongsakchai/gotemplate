@@ -28,9 +28,9 @@ type errorTrace struct {
 // Error returns error message
 func (e errorTrace) Error() string {
 	if e.err == nil {
-		return fmt.Sprintf("error: something wrong at %s", e.at)
+		return "something went wrong"
 	}
-	return fmt.Sprintf("error: %s at %s", e.err.Error(), e.at)
+	return e.err.Error()
 }
 
 // Unwrap returns the wrapped error

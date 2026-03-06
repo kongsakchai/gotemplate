@@ -6,34 +6,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUserByName(t *testing.T) {
-	t.Run("should return user when user exists", func(t *testing.T) {
-		storage := NewStorage()
-		user, err := storage.UserByName("john")
+func TestNewStorage(t *testing.T) {
+	s := NewStorage()
 
-		assert.True(t, err.IsEmpty())
-		assert.Equal(t, "John", user.Name)
-		assert.Equal(t, 30, user.Age)
-	})
-
-	t.Run("should return error when user does not exist", func(t *testing.T) {
-		storage := NewStorage()
-		user, err := storage.UserByName("jane")
-
-		assert.Equal(t, "4001", err.Code)
-		assert.Equal(t, "user not found", err.Message)
-		assert.Empty(t, user)
-	})
+	assert.NotNil(t, s)
+	assert.NotNil(t, s.users)
+	assert.Len(t, s.users, 0)
 }
 
-func TestUsers(t *testing.T) {
-	t.Run("should return list of users", func(t *testing.T) {
-		storage := NewStorage()
-		users, err := storage.Users()
+func TestStorageCreateUser(t *testing.T) {
+	s := NewStorage()
+	user := User{FirstName: "john", LastName: "doe", Age: 30}
 
-		assert.True(t, err.IsEmpty())
-		assert.Len(t, users, 1)
-		assert.Equal(t, "John", users[0].Name)
-		assert.Equal(t, 30, users[0].Age)
+	err := s.CreateUser(user)
+
+	assert.NoError(t, err)
+	assert.Len(t, s.users, 1)
+	assert.Equal(t, user, s.users[0])
+}
+
+func TestStorageUserByName(t *testing.T) {
+	t.Run("should return user when name exists", func(t *testing.T) {
+		s := NewStorage()
+		expected := User{FirstName: "john", LastName: "doe", Age: 30}
+		s.users = append(s.users, expected)
+
+		user, err := s.UserByName("john")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expected, user)
+	})
+
+	t.Run("should return empty user when name does not exist", func(t *testing.T) {
+		s := NewStorage()
+		s.users = append(s.users, User{FirstName: "john", LastName: "doe", Age: 30})
+
+		user, err := s.UserByName("jane")
+
+		assert.NoError(t, err)
+		assert.Equal(t, User{}, user)
 	})
 }

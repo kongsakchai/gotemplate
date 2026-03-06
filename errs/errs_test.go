@@ -43,7 +43,7 @@ func TestWrapError(t *testing.T) {
 		err := errors.New("test error")
 		e := wrap(err)
 
-		expected := "error: test error at "
+		expected := "test error"
 		assert.Contains(t, e.Error(), expected)
 	})
 
@@ -52,8 +52,7 @@ func TestWrapError(t *testing.T) {
 
 		assert.NotNil(t, e)
 		assert.Nil(t, e.Unwrap())
-		assert.Contains(t, e.Error(), "tRunner")
-		assert.Contains(t, e.Error(), "testing.go")
+		assert.Equal(t, "something went wrong", e.Error())
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {
@@ -70,7 +69,7 @@ func TestWrapError(t *testing.T) {
 		e := wrap(errors.ErrUnsupported)
 
 		assert.Equal(t, errors.ErrUnsupported, e.Unwrap())
-		assert.Contains(t, e.Error(), "testing.go")
+		assert.Contains(t, e.Error(), "unsupported operation")
 	})
 }
 
