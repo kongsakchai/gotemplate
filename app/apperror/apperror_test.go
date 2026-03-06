@@ -53,6 +53,18 @@ func TestErrorHandler(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Result().StatusCode)
 	})
 
+	t.Run("should return http error when error is http error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
+		rec := httptest.NewRecorder()
+
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		ErrorHandler(&echo.HTTPError{Code: http.StatusNotFound, Message: "bad request"}, ctx)
+
+		assert.Equal(t, http.StatusNotFound, rec.Result().StatusCode)
+	})
+
 	t.Run("should no response when send response fail", func(t *testing.T) {
 		ctx := &mockFailContext{}
 
