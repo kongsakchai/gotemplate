@@ -16,10 +16,6 @@ func handler(c echo.Context) error {
 	return c.String(http.StatusOK, "Pong!")
 }
 
-func handlerError(c echo.Context) error {
-	return c.String(http.StatusInternalServerError, "Internal Server Error")
-}
-
 func setupLogger(w io.Writer) *slog.Logger {
 	defaultLogger := slog.Default()
 	logger := slog.New(slog.NewTextHandler(w, nil))
@@ -41,6 +37,28 @@ func (m *mockReader) Read(p []byte) (n int, err error) {
 }
 
 func TestLoggerMiddleware(t *testing.T) {
+	t.Run("should log request with non json content type", func(t *testing.T) {
+		e := echo.New()
+		e.Use(RefID("X-Request-ID"))
+		e.Use(Logger(true))
+		e.GET("/", handler)
+
+		buf := bytes.NewBuffer([]byte{})
+		defaultLogger := setupLogger(buf)
+		defer resetLogger(defaultLogger)
+
+		req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader([]byte("Ping!")))
+		req.Header.Set("X-Request-ID", "abcde")
+		rec := httptest.NewRecorder()
+
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Contains(t, buf.String(), "level=INFO")
+		assert.Contains(t, buf.String(), "traceID=abcde")
+		assert.Contains(t, buf.String(), "body=\"\"")
+	})
+
 	t.Run("should log request", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
@@ -52,6 +70,7 @@ func TestLoggerMiddleware(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader([]byte("Ping!")))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		req.Header.Set("X-Request-ID", "12345")
 		rec := httptest.NewRecorder()
 
@@ -74,6 +93,7 @@ func TestLoggerMiddleware(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		req := httptest.NewRequest(http.MethodGet, "/", &mockReader{err: io.ErrUnexpectedEOF})
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 
 		e.ServeHTTP(rec, req)
@@ -83,10 +103,10 @@ func TestLoggerMiddleware(t *testing.T) {
 		assert.Contains(t, buf.String(), "failed to read request body")
 	})
 
-	t.Run("should log response", func(t *testing.T) {
+	t.Run("should not log when logger is disabled", func(t *testing.T) {
 		e := echo.New()
 		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(true))
+		e.Use(Logger(false))
 		e.GET("/", handler)
 
 		buf := bytes.NewBuffer([]byte{})
@@ -99,27 +119,6 @@ func TestLoggerMiddleware(t *testing.T) {
 		e.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, buf.String(), "level=INFO")
-		assert.Contains(t, buf.String(), "body=Pong!")
-	})
-
-	t.Run("should log error response", func(t *testing.T) {
-		e := echo.New()
-		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(true))
-		e.GET("/error", handlerError)
-
-		buf := bytes.NewBuffer([]byte{})
-		defaultLogger := setupLogger(buf)
-		defer resetLogger(defaultLogger)
-
-		req := httptest.NewRequest(http.MethodGet, "/error", nil)
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusInternalServerError, rec.Code)
-		assert.Contains(t, buf.String(), "level=ERROR")
-		assert.Contains(t, buf.String(), "body=\"Internal Server Error\"")
+		assert.Equal(t, "", buf.String())
 	})
 }

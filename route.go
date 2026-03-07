@@ -30,7 +30,7 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 
 	r.Use(
 		middleware.RefID(cfg.Header.RefIDKey),
-		middleware.Logger(true),
+		middleware.Logger(cfg.Log.Enable),
 	)
 
 	r.GET("/health", healthCheck(db))
