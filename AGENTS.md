@@ -218,20 +218,6 @@ app/user/
   storage.go
 ```
 
-### Storage/Repository Pattern
-
-Use dependency injection for storage to improve testability:
-
-```go
-//mockery:generate: true
-type Storager interface {
-    Users() ([]User, error)
-    UserByName(name string) (User, error)
-    CreateUser(user User) error
-}
-```
-Run mock generation: `go generate ./...`
-
 ## Configuration
 
 - Use the `config` package with environment variables
@@ -282,6 +268,61 @@ func TestExample(t *testing.T) {
 
 - Use `require.NoError` for setup/assertions that must pass
 - Use `assert` for assertions that don't need to halt
+
+### Mocking Echo Context
+
+Use `app.NewMockContext` to create a mock Echo context for testing handlers:
+
+```go
+// Signature: NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder)
+
+// Example: GET request
+ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
+
+// Example: POST request with body
+ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe"}`)
+```
+
+The function returns:
+- `echo.Context` - for passing to handlers
+- `*httptest.ResponseRecorder` - for asserting HTTP response
+
+Example in tests:
+```go
+func TestGetUser(t *testing.T) {
+    ctx, rec := app.NewMockContext(http.MethodGet, "/users/john", "")
+    
+    handler := NewHandler(mockStorage)
+    err := handler.GetUser(ctx)
+    
+    require.NoError(t, err)
+    assert.Equal(t, 200, rec.Code)
+    assert.JSONEq(t, `{"code":"success","success":true,"data":{...}}`, rec.Body.String())
+}
+```
+
+### Dependecy injection
+
+Use dependency injection to improve testability:
+
+- add directive `//mockery:generate: true` to interface:
+
+```go
+//mockery:generate: true
+type Storager interface {
+    Users() ([]User, error)
+    UserByName(name string) (User, error)
+    CreateUser(user User) error
+}
+```
+
+- Install mockery:
+```bash
+
+go install github.com/vektra/mockery/v2@latest
+```
+
+- Run mock generation: `mockery`
 
 ## Database
 

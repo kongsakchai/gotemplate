@@ -344,3 +344,66 @@ func (h *handler) processGetUserByID(userID string) (*User, error) {
 - **Separate modules by business domain** for better organization and maintainability. Domain-driven module separation improves code clarity and reduces cognitive load.
 - **File naming** should represent the responsibility and purpose of the file.
 - **Error handling** Use centralized error handling by creating custom error types and leveraging the global error handler to manage all errors in one place. This keeps code clean and simplifies maintenance.
+
+### Testing
+
+This project uses [testify](https://github.com/stretchr/testify) for testing. The `app` package provides a helper for mocking Echo context.
+
+**Mocking Echo Context — `app/echo.go`**
+
+```go
+func NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder)
+```
+
+**Usage**
+
+```go
+// GET request
+ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
+
+// POST request with body
+ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe"}`)
+```
+
+The function returns:
+- `echo.Context` — for passing to handlers
+- `*httptest.ResponseRecorder` — for asserting HTTP response
+
+**Example**
+
+```go
+func TestGetUser(t *testing.T) {
+    ctx, rec := app.NewMockContext(http.MethodGet, "/users/john", "")
+
+    handler := NewHandler(mockStorage)
+    err := handler.GetUser(ctx)
+
+    require.NoError(t, err)
+    assert.Equal(t, 200, rec.Code)
+    assert.JSONEq(t, `{"code":"0000","success":true,"data":{...}}`, rec.Body.String())
+}
+```
+
+**Dependecy injection**
+
+Use dependency injection to improve testability:
+
+- add directive `//mockery:generate: true` to interface:
+
+```go
+//mockery:generate: true
+type Storager interface {
+    Users() ([]User, error)
+    UserByName(name string) (User, error)
+    CreateUser(user User) error
+}
+```
+
+- Install mockery:
+```bash
+
+go install github.com/vektra/mockery/v2@latest
+```
+
+- Run mock generation: `mockery`
+
