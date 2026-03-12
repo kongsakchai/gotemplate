@@ -1,425 +1,167 @@
-# AGENTS.md - Agent Coding Guidelines
+# AGENTS.md - Go Template Project Guidelines
 
-## Project Overview
-
-This is a Go backend project using Echo framework. It provides a template for building REST APIs with MySQL/SQLite database support, Redis caching, and comprehensive error handling.
-
-> **Important**: Business logic should only be written in the `app/` package. Other packages (`config`, `database`, `cache`, `logger`, `validator`, etc.) are for infrastructure concerns only.
+## Overview
+This is a Go web service API template using Echo framework. Business logic MUST reside in `app/` package only.
 
 ## Build, Lint, and Test Commands
 
 ### Running Tests
-
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests for a specific package
-go test ./app/...
-
-# Run a single test file
-go test -v ./app/app_test.go
-
-# Run a single test function
-go test -v -run TestAppResponse ./app/
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run tests with verbose output
-go test -v ./...
-
-# Run integration tests (requires Docker/testcontainers)
-go test -v -tags=integration ./...
+go test -v ./...                           # Run all tests
+go test -cover ./...                       # With coverage
+go test -coverprofile=coverage.out ./...   # Coverage report
+go test -v ./path/to/package -run TestName # Single test
 ```
 
-### Build Commands
-
+### Mock Generation
 ```bash
-# Build the application
-go build -o bin/server .
-
-# Run the application
-go run .
-```
-
-### Linting
-
-This project uses standard Go tooling. Ensure code is formatted with:
-
-```bash
-# Format code
-go fmt ./...
-
-# Vet code
-go vet ./...
-
-# Run all checks (fmt + vet + test)
-go build ./... && go vet ./... && go test ./...
+mockery  # Uses .mockery.yml config
 ```
 
 ## Code Style Guidelines
 
-### Imports
-
-- Use Go's standard import organization:
-  1. Standard library packages
-  2. Third-party packages
-  3. Internal packages
-
-Example:
-```go
-import (
-    "context"
-    "fmt"
-    "net/http"
-
-    "github.com/labstack/echo/v4"
-    "github.com/stretchr/testify/assert"
-
-    "github.com/kongsakchai/gotemplate/app"
-)
+### Project Structure
 ```
-
-- Blank import (`_`) for driver registration at the end of import block
-
-### Formatting
-
-- Use `gofmt` or an IDE with Go formatting support
-- Maximum line length: use IDE wrapping or let `gofmt` handle it
-- Leave a blank line between import groups and code
-
-### Types
-
-- Use explicit types for function parameters and return values
-- Use `any` for generic data fields in structs (e.g., `Data any`)
-- Use struct tags for JSON serialization: `json:"fieldName"`
-
-Example:
-```go
-type Response struct {
-    Code    string `json:"code"`
-    Success bool   `json:"success"`
-    Message string `json:"message,omitempty"`
-    Data    any    `json:"data,omitempty"`
-}
+./
+├── app/              # Business logic only
+├── cache/            # Redis/caching
+├── config/           # Configuration
+├── database/         # DB connectors
+├── errs/             # Custom errors
+├── httpclient/       # HTTP utilities
+├── logger/           # Logging
+├── middleware/       # HTTP middleware
+├── migrations/      # SQL migrations
+└── validator/       # Request validation
 ```
 
 ### Naming Conventions
+- **Interfaces**: `Storager`, `Handler` (no "I" prefix)
+- **Structs**: `User`, `CreateUserRequest` (PascalCase)
+- **Functions**: `GetUser`, `createUser` (unexported = lowercase)
+- **Variables**: `userID`, `config` (camelCase)
+- **Database**: snake_case columns, PascalCase structs
 
-- **Variables**: camelCase (e.g., `appPort`, `userName`)
-- **Constants**: PascalCase for exported, camelCase for unexported (e.g., `SuccessCode`, `maxRetries`)
-- **Functions**: PascalCase for exported, camelCase for unexported
-- **Types/Structs**: PascalCase (e.g., `App`, `CreateUserRequest`)
-- **Interfaces**: PascalCase, typically with `er` suffix for single-method interfaces (e.g., `Storager`)
-- **JSON fields**: snake_case in tags, PascalCase in struct (e.g., `FirstName string \`json:"firstName"\``)
-- **Package names**: short, lowercase, no underscores (e.g., `app`, `config`, `errs`)
-- **File naming**: represent the responsibility and purpose (e.g., `user_handler.go`, `storage.go`)
-
-## API Response Helpers
-
-Use helpers from `app/app.go`:
-
+### Imports
 ```go
-// OK 200
-app.Ok(ctx, data, message...) 
+import (
+    "context"
+    "net/http"
 
-// Created 201
-app.Created(ctx, data, message...)
-
-// Error response
-app.Fail(ctx, app.Error)
+    "github.com/kongsakchai/gotemplate/app"
+    "github.com/labstack/echo/v4"
+)
 ```
+- Standard library first, then external packages
+- Use `goimports` for formatting
 
-Response structure:
+### Types & Structs
+- Use `any` not `interface{}`
+- Proper struct tags for JSON/validation:
 ```go
-type Response struct {
-    Code    string `json:"code"`    // business code
-    Success bool   `json:"success"` 
-    Message string `json:"message,omitempty"`
-    Data    any    `json:"data,omitempty"`
+type CreateUserRequest struct {
+    FirstName string `json:"firstName" validate:"required"`
+    LastName  string `json:"lastName" validate:"required"`
+    Age       int    `json:"age" validate:"gte=0,lte=130"`
 }
 ```
 
-## Error Handling
-
-- Use custom `app.Error` type for API errors with HTTP status codes:
+### Error Handling
+Use centralized `app.Error` type:
 ```go
-type Error struct {
-    HTTPCode int    // HTTP status code: 500, 400, 401, 403, 409
-    Code     string // Business code
-    Message  string
-    Data     any
-    Err      error  // Used for server-side logging only
-}
+// In handlers - return app.Error
+return app.BadRequest("4001", "invalid request body", err)
+return app.InternalError("5001", "failed to get user", err)
+return app.Conflict("4003", "user already exists", nil)
+
+// Global error handler
+echoApp.HTTPErrorHandler = app.ErrorHandler
 ```
 
-- Error factory functions in `app` package:
-  - `app.InternalError(code, msg, err, data...)` - 500
-  - `app.BadRequest(code, msg, err, data...)` - 400
-  - `app.NotFound(code, msg, err, data...)` - 400 (not 404 - see note below)
-  - `app.Unauthorized(code, msg, err, data...)` - 401
-  - `app.Forbidden(code, msg, err, data...)` - 403
-  - `app.Conflict(code, msg, err, data...)` - 409
+### Response Format
+```go
+app.Ok(ctx, data)           // 200 OK
+app.Created(ctx, data)      // 201 Created
+app.Fail(ctx, app.Error)   // Error response
+```
 
-> **Note on 404 vs 400**: 404 is reserved for missing endpoints/resources. Using 400 for "data not found" avoids confusion between "route not found" and "data not found". Missing data is treated as an invalid client request.
-
-- Check for empty errors using `err.IsEmpty()`
-- Use global error handler: `app.ErrorHandler(err, ctx)` (already configured in `route.go`)
-
-## Handler Pattern
-
-Combine Handler with Service - no need to separate them. Break Handler into smaller functions:
-
+### Handler Pattern
 ```go
 type handler struct {
     storage Storager
 }
 
-func NewHandler(storage Storager) *handler {
-    return &handler{storage: storage}
-}
-
-func (h *handler) HandleRequest(ctx echo.Context) error {
-    // 1. Bind request
-    var req RequestStruct
+// Public - handles HTTP
+func (h *handler) CreateUser(ctx echo.Context) error {
+    var req CreateUserRequest
     if err := ctx.Bind(&req); err != nil {
         return app.BadRequest("4001", "invalid request body", err)
     }
+    return app.Ok(ctx, nil)
+}
 
-    // 2. Validate request
-    if err := ctx.Validate(&req); err != nil {
-        return app.BadRequest("4002", "validation error", err, err)
-    }
-
-    // 3. Process business logic (service layer)
-    result, err := h.processRequest(req)
+// Private - business logic, returns app.Error
+func (h *handler) createUser(req CreateUserRequest) app.Error {
+    err := h.storage.CreateUser(user)
     if err != nil {
-        return err // Return app.Error directly
+        return app.InternalError("5002", "failed to create user", err)
     }
-
-    // 4. Return response
-    return app.Ok(ctx, result)
-}
-
-func (h *handler) processRequest(req RequestStruct) (*Response, app.Error) {
-    // business logic here
+    return app.Error{} // Empty = success
 }
 ```
 
-### One file per endpoint
-
-For clarity and easier maintenance, organize by endpoint:
-```
-app/user/
-  user.go
-  get_user_handler.go
-  create_user_handler.go
-  storage.go
-```
-
-## Configuration
-
-- Use the `config` package with environment variables
-- Use struct tags for env var mapping: `env:"VAR_NAME" envDefault:"default"`
-- Load config with prefix: `config.Load("APP")`
-
-Support environment-specific config:
-```env
-ENV=LOCAL|DEV|PROD
-LOCAL_DATABASE_URL=
-DEV_DATABASE_URL=
-PROD_DATABASE_URL=
+### Testing
+- Use `testify` (assert/require)
+- Use `app.NewMockContext()` for Echo context mocking
+- Use mockery with `//mockery:generate: true` directive
+- Use `modernc.org/sqlite` for in-memory DB testing
+```go
+ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john"}`)
+storage := newMockStorager(t)
+storage.EXPECT().CreateUser(gomock.Any()).Return(nil)
 ```
 
-Example:
+### Configuration
 ```go
 type Database struct {
     URL string `env:"DATABASE_URL"`
 }
+// Usage: config.Load("DEV") for DEV_DATABASE_URL
 ```
 
-## Validation
-
-- Use `go-playground/validator` with `validate` tags
-- Validate in handlers using `ctx.Validate(&struct)`
-
-```go
-type CreateUserRequest struct {
-    FirstName string `json:"firstName" validate:"required"`
-    LastName  string `json:"lastName" validate:"required"`
-    Age       int    `json:"age" validate:"required,gte=0,lte=130"`
-}
+### Logging
 ```
-
-## Testing
-
-- Use `github.com/stretchr/testify` (assert for checks, require for fatal failures)
-- Name test files: `*_test.go`
-- Use subtests with `t.Run()` for better organization:
-
-```go
-func TestExample(t *testing.T) {
-    t.Run("should do something", func(t *testing.T) {
-        // test code
-    })
-}
-```
-
-- Use `require.NoError` for setup/assertions that must pass
-- Use `assert` for assertions that don't need to halt
-
-### Mocking Echo Context
-
-Use `app.NewMockContext` to create a mock Echo context for testing handlers:
-
-```go
-// Signature: NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder)
-
-// Example: GET request
-ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
-
-// Example: POST request with body
-ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe"}`)
-```
-
-The function returns:
-- `echo.Context` - for passing to handlers
-- `*httptest.ResponseRecorder` - for asserting HTTP response
-
-Example in tests:
-```go
-func TestGetUser(t *testing.T) {
-    ctx, rec := app.NewMockContext(http.MethodGet, "/users/john", "")
-    
-    handler := NewHandler(mockStorage)
-    err := handler.GetUser(ctx)
-    
-    require.NoError(t, err)
-    assert.Equal(t, 200, rec.Code)
-    assert.JSONEq(t, `{"code":"success","success":true,"data":{...}}`, rec.Body.String())
-}
-```
-
-### Dependecy injection
-
-Use dependency injection to improve testability:
-
-- add directive `//mockery:generate: true` to interface:
-
-```go
-//mockery:generate: true
-type Storager interface {
-    Users() ([]User, error)
-    UserByName(name string) (User, error)
-    CreateUser(user User) error
-}
-```
-
-- Install mockery:
-```bash
-
-go install github.com/vektra/mockery/v2@latest
-```
-
-- Run mock generation: `mockery`
-
-## Database
-
-- Use `sqlx` for database operations
-- Follow repository pattern with interfaces
-- Organize by database type:
-  - `database/mysql.go`
-  - `database/postgres.go`
-  - `database/sqlite.go`
-
-## Migrations
-
-- Store in `/migrations` folder
-- Naming convention:
-  ```
-  version_name.up.sql
-  version_name.down.sql
-  ```
-
-Configuration via environment variables:
-```env
-MIGRATION_ENABLE=true
-MIGRATION_DIR=./migrations
-MIGRATION_VERSION=0001
-MIGRATION_TABLE_NAME=schema_migrations
-```
-
-## Other Packages
-
-### errs/ - Error Wrapping
-```go
-newErr := errs.Wrap(err)
-// OR
-newErr := errs.New("some error")
-// Output: error: msg at (file.go:line) package.function
-```
-
-### httpclient/ - External API Calls
-```go
-type Response[T any] struct {
-    Code    int
-    Data    T
-    RawData []byte
-}
-
-httpclient.Get[Resp any](ctx, client, url, headers...)
-httpclient.Post[Resp any](ctx, client, url, payload, headers...)
-```
-
-### logger/ - Logging
-```env
 LOG_ENABLE=true
 LOG_HTTP_ENABLE=true
 LOG_LEVEL=debug|info|warning|error|critical
 LOG_FORMAT=text|json
 ```
-Sensitive data masking configured in `logger/replace.go`.
 
-### cache/ - Redis caching
-Use for Redis client factory and caching utilities.
+### Database Migrations
+- Place in `migrations/` directory
+- Naming: `0001_init_schema.up.sql`, `0001_init_schema.down.sql`
+- Use `github.com/kongsakchai/simple-migrate`
 
-### Middleware
-- Place custom middleware in `app/middleware/` or `middleware/`
-- Use Echo's `Use()` for global middleware
-- Reference ID tracking via `X-Ref-ID` header (configurable via `HEADER_REF_ID_KEY`)
+## Key Patterns
 
-## Project Structure
-
-```
-./
-├── app/
-│   ├── apperror/          # Application errors
-│   ├── example/           # Example handlers
-│   └── middleware/        # Custom middleware
-├── cache/                 # Redis caching
-├── config/                # Configuration
-├── database/              # Database connectors (mysql.go, postgres.go, etc.)
-├── errs/                  # Error wrapping utilities
-├── httpclient/            # HTTP client utilities
-├── logger/                # Logging utilities
-├── middleware/            # HTTP middleware
-├── migrations/            # SQL migration files
-├── validator/             # Validation utilities
-└── main.go               # Entry point
+### Storage/Repository Pattern
+```go
+type Storager interface {
+    UserByName(name string) (User, error)
+    CreateUser(user User) error
+}
 ```
 
-### Module Organization
+### HTTP Client
+```go
+resp, err := httpclient.Get[ResponseType](ctx, client, url, headers)
+```
 
-Separate modules by business domain:
-```
-app/
-├── user/
-│   ├── user.go
-│   ├── get_user_handler.go
-│   └── storage.go
-├── admin/
-│   ├── admin.go
-│   └── handler.go
-└── booking/
-```
+## Dependencies
+- **Echo v4**: Web framework
+- **Testify**: Testing assertions
+- **Mockery**: Mock generation
+- **go-playground/validator**: Request validation
+- **sqlx**: Database operations
+- **redis/go-redis**: Redis client
+- **simple-migrate**: Database migrations

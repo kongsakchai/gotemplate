@@ -366,6 +366,7 @@ ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","
 ```
 
 The function returns:
+
 - `echo.Context` — for passing to handlers
 - `*httptest.ResponseRecorder` — for asserting HTTP response
 
@@ -386,7 +387,7 @@ func TestGetUser(t *testing.T) {
 
 **Dependecy injection**
 
-Use dependency injection to improve testability:
+Use `mockery` for generating mocks of interfaces. This allows you to easily create mock implementations of your interfaces for testing.
 
 - add directive `//mockery:generate: true` to interface:
 
@@ -400,6 +401,7 @@ type Storager interface {
 ```
 
 - Install mockery:
+
 ```bash
 
 go install github.com/vektra/mockery/v2@latest
@@ -407,3 +409,43 @@ go install github.com/vektra/mockery/v2@latest
 
 - Run mock generation: `mockery`
 
+**Database testing**
+
+- Use `modernc.org/sqlite` for testing database interactions. This allows you to create an in-memory SQLite database for testing purposes, which is fast and does not require any setup.
+
+```go
+import (
+		_ "modernc.org/sqlite"
+		"github.com/jmoiron/sqlx"
+)
+
+func TestDatabase(t *testing.T) {
+	db, err := sqlx.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Run migrations or setup schema here
+
+	// Perform database operations and assertions
+}
+```
+
+- Use `github.com/DATA-DOG/go-sqlmock` for testing database interactions without an actual database. This allows you to mock database queries and responses, making it easier to test your database logic in isolation.
+
+```go
+import (
+		"github.com/DATA-DOG/go-sqlmock"
+)
+
+func TestDatabase(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Setup expected queries and responses here
+
+	// Perform database operations and assertions
+}
+```
+
+> https://github.com/DATA-DOG/go-sqlmock
