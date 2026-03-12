@@ -52,8 +52,8 @@ func As(err error) (*errorTrace, bool) {
 	return nil, false
 }
 
-func New(str string) error {
-	return wrap(errors.New(str))
+func New(str string, args ...any) error {
+	return wrap(fmt.Errorf(str, args...))
 }
 
 func From(err error) error {
