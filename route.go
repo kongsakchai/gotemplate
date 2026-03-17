@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 
@@ -20,7 +21,7 @@ const (
 	MB
 )
 
-func router(cfg config.Config) (app.App, []shutdownFunc) {
+func router(cfg config.Config) (app.App, shutdownFunc) {
 	db, closeDB := database.NewMySQL(cfg.Database)
 	setMigration(db.DB, cfg.Migration)
 
@@ -36,9 +37,8 @@ func router(cfg config.Config) (app.App, []shutdownFunc) {
 	r.GET("/health", healthCheck(db))
 	r.GET("/metrics", metrics())
 
-	return r, []shutdownFunc{
-		r.Shutdown,
-		closeDB,
+	return r, func(ctx context.Context) error {
+		return closeDB(ctx)
 	}
 }
 

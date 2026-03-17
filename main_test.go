@@ -6,6 +6,8 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/signal"
 	"syscall"
 	"testing"
 	"time"
@@ -21,12 +23,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "modernc.org/sqlite"
 )
-
-func shutdownsAll(ctx context.Context, shutdowns []shutdownFunc) {
-	for _, fn := range shutdowns {
-		fn(ctx)
-	}
-}
 
 func TestSetupRoutes(t *testing.T) {
 	t.Run("should return healthy when can ping db success", func(t *testing.T) {
@@ -61,9 +57,9 @@ func TestSetupRoutes(t *testing.T) {
 				URL: fmt.Sprintf("root:example@(%s)/example", endpoint),
 			},
 		})
-		defer shutdownsAll(t.Context(), shutdown)
+		defer shutdown(context.Background())
 
-		go app.Start(":8888")
+		go app.Start(t.Context(), ":8888")
 		time.Sleep(1 * time.Second)
 
 		// act
@@ -122,10 +118,28 @@ func TestHealthCheck(t *testing.T) {
 	})
 }
 
+type mockApp struct {
+	startErr    error
+	shutdownErr error
+}
+
+func (m *mockApp) Start(ctx context.Context, addr string) error {
+	<-ctx.Done()
+	return m.startErr
+}
+
+func (m *mockApp) Shutdown(ctx context.Context) error {
+	<-ctx.Done()
+	return m.shutdownErr
+}
+
 func TestGracefulShutdown(t *testing.T) {
 	d := gracefulTimeout
 	gracefulTimeout = 1 * time.Second
 	t.Run("should not panic when graceful shutdown success", func(t *testing.T) {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+		defer stop()
+
 		idle := make(chan struct{})
 		go func() {
 			// check panic
@@ -134,10 +148,7 @@ func TestGracefulShutdown(t *testing.T) {
 				assert.Nil(t, p)
 			}()
 
-			gracefulShutdown(idle, func(ctx context.Context) error {
-				<-ctx.Done()
-				return nil
-			})
+			gracefulShutdown(idle, ctx, &mockApp{})
 		}()
 
 		time.Sleep(1 * time.Second)
@@ -150,6 +161,8 @@ func TestGracefulShutdown(t *testing.T) {
 	})
 
 	t.Run("should panic when graceful shutdown failed", func(t *testing.T) {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+		defer stop()
 		idle := make(chan struct{})
 		go func() {
 			// check panic
@@ -158,9 +171,7 @@ func TestGracefulShutdown(t *testing.T) {
 				assert.NotNil(t, p)
 			}()
 
-			gracefulShutdown(idle, func(ctx context.Context) error {
-				return fmt.Errorf("force shutdown")
-			})
+			gracefulShutdown(idle, ctx, &mockApp{shutdownErr: fmt.Errorf("failed to shutdown")})
 		}()
 
 		time.Sleep(1 * time.Second)

@@ -22,7 +22,7 @@ func NewEchoApp() *EchoApp {
 	return &EchoApp{e}
 }
 
-func (app *EchoApp) Start(addr string) error {
+func (app *EchoApp) Start(ctx context.Context, addr string) error {
 	return app.Echo.Start(addr)
 }
 

@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/logger"
 	migrate "github.com/kongsakchai/simple-migrate"
@@ -31,15 +32,19 @@ func main() {
 	cfg := config.Load(config.Env)
 	log := logger.New()
 
-	app, shutdowns := router(cfg)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
+
+	app, shutdown := router(cfg)
+	defer shutdown(context.Background())
 
 	idle := make(chan struct{})
-	go gracefulShutdown(idle, shutdowns...)
+	go gracefulShutdown(idle, ctx, app)
 
 	log.Info("starting "+cfg.App.Name, "version", cfg.App.Version, "env", config.Env)
 	log.Info("listening on port " + cfg.App.Port)
 
-	if err := app.Start(":" + cfg.App.Port); err != nil && err != http.ErrServerClosed {
+	if err := app.Start(ctx, ":"+cfg.App.Port); err != nil && err != http.ErrServerClosed {
 		slog.Error("shutting down the server: " + err.Error())
 		return
 	}
@@ -50,22 +55,17 @@ func main() {
 
 type shutdownFunc func(context.Context) error
 
-func gracefulShutdown(idle chan struct{}, shutdowns ...shutdownFunc) {
+func gracefulShutdown(idle chan struct{}, signal context.Context, app app.App) {
 	defer close(idle)
-
-	sig, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
-	defer stop()
-	<-sig.Done()
+	<-signal.Done()
 
 	slog.Info("shutting down the server...")
 	ctx, cancel := context.WithTimeout(context.Background(), gracefulTimeout)
 	defer cancel()
 
-	for _, shutdown := range shutdowns {
-		if err := shutdown(ctx); err != nil {
-			slog.Error("graceful shutdown failed: " + err.Error())
-			panic("force shutdown")
-		}
+	if err := app.Shutdown(ctx); err != nil {
+		slog.Error("graceful shutdown failed: " + err.Error())
+		panic("force shutdown")
 	}
 	slog.Info("graceful shutdown completed")
 }

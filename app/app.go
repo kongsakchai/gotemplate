@@ -9,7 +9,7 @@ import (
 
 type App interface {
 	Shutdown(ctx context.Context) error
-	Start(addr string) error
+	Start(ctx context.Context, addr string) error
 }
 
 type Response struct {

@@ -19,7 +19,7 @@ func TestEchoApp(t *testing.T) {
 		app := NewEchoApp()
 		go func() {
 			defer w.Done()
-			err := app.Start(":8080")
+			err := app.Start(t.Context(), ":8080")
 			assert.Error(t, http.ErrServerClosed, err)
 		}()
 
