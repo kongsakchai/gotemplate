@@ -349,20 +349,22 @@ func (h *handler) processGetUserByID(userID string) (*User, error) {
 
 This project uses [testify](https://github.com/stretchr/testify) for testing. The `app` package provides a helper for mocking Echo context.
 
-**Mocking Echo Context — `app/echo.go`**
+**Mocking Echo Context — `github.com/labstack/echo/v5/echotest`**
 
 ```go
-func NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder)
-```
+ctx := echotest.ContextConfig{
+	Headers: http.Header{
+		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+	},
+	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
+}.ToContext(t)
 
-**Usage**
-
-```go
-// GET request
-ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
-
-// POST request with body
-ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe"}`)
+ctx, rec := echotest.ContextConfig{
+	Headers: http.Header{
+		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+	},
+	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
+}.ToContextRecorder(t)
 ```
 
 The function returns:
@@ -374,7 +376,12 @@ The function returns:
 
 ```go
 func TestGetUser(t *testing.T) {
-    ctx, rec := app.NewMockContext(http.MethodGet, "/users/john", "")
+    ctx, rec := echotest.ContextConfig{
+        Headers: http.Header{
+            echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+        },
+        JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
+    }.ToContextRecorder(t)
 
     handler := NewHandler(mockStorage)
     err := handler.GetUser(ctx)
