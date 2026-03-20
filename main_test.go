@@ -17,8 +17,6 @@ import (
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "modernc.org/sqlite"
@@ -26,38 +24,14 @@ import (
 
 func TestSetupRoutes(t *testing.T) {
 	t.Run("should return healthy when can ping db success", func(t *testing.T) {
-		t.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-		// init container
-		ct, err := testcontainers.Run(
-			t.Context(),
-			"mariadb:latest",
-
-			testcontainers.WithProvider(testcontainers.ProviderPodman),
-			testcontainers.WithExposedPorts("3306/tcp"),
-			testcontainers.WithWaitStrategy(
-				wait.ForListeningPort("3306/tcp"),
-			),
-
-			testcontainers.WithEnv(map[string]string{
-				"MYSQL_ROOT_PASSWORD": "example",
-				"MYSQL_DATABASE":      "example",
-			}),
-		)
+		db, err := sqlx.Open("sqlite", ":memory:")
 		require.NoError(t, err)
-
-		// clear container
-		defer testcontainers.CleanupContainer(t, ct)
-
-		endpoint, err := ct.Endpoint(t.Context(), "")
-		require.NoError(t, err)
+		defer db.Close()
 
 		// arrange
-		app, shutdown := router(config.Config{
-			Database: config.Database{
-				URL: fmt.Sprintf("root:example@(%s)/example", endpoint),
-			},
+		app := router(config.Config{}, externalService{
+			DB: db,
 		}, slog.Default())
-		defer shutdown(context.Background())
 
 		go func() {
 			err := app.Start(t.Context(), ":8888")
@@ -219,4 +193,50 @@ func TestSetMigration(t *testing.T) {
 		setMigration(db.DB, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
+}
+
+func TestSetupExternalService(t *testing.T) {
+	t.Run("should return external service and close function", func(t *testing.T) {
+		cfg := config.Load(config.Env)
+		external, closeFunc := setupExternalService(cfg)
+		assert.NotNil(t, external)
+		assert.NotNil(t, closeFunc)
+	})
+}
+
+func TestToMB(t *testing.T) {
+	type testcase struct {
+		name     string
+		input    uint64
+		expected string
+	}
+
+	testcases := []testcase{
+		{name: "0 bytes", input: 0, expected: "0.00 MB"},
+		{name: "1 byte", input: 1, expected: "0.00 MB"},
+		{name: "1 KB", input: KB, expected: "0.00 MB"},
+		{name: "1 MB", input: MB, expected: "1.00 MB"},
+		{name: "1.5 MB", input: uint64(float64(MB) * 1.5), expected: "1.50 MB"},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := toMB(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestMetrics(t *testing.T) {
+	// arrange
+	ctx, rec := echotest.ContextConfig{}.ToContextRecorder(t)
+
+	handler := metrics()
+
+	// act
+	handler(ctx)
+
+	//assert
+	assert.NotNil(t, rec.Body)
+	assert.Equal(t, http.StatusOK, rec.Code)
 }

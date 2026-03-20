@@ -11,10 +11,12 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/logger"
 	migrate "github.com/kongsakchai/simple-migrate"
+	"github.com/redis/go-redis/v9"
 )
 
 var gracefulTimeout = time.Second * 10
@@ -35,8 +37,10 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	app, shutdown := router(cfg, log)
-	defer shutdown(context.Background())
+	external, closeExternal := setupExternalService(cfg)
+	defer closeExternal(context.Background())
+
+	app := router(cfg, external, log)
 
 	idle := make(chan struct{})
 	go gracefulShutdown(idle, ctx, app)
@@ -52,8 +56,6 @@ func main() {
 	<-idle
 	log.Info("bye bye")
 }
-
-type shutdownFunc func(context.Context) error
 
 func gracefulShutdown(idle chan struct{}, signal context.Context, app app.App) {
 	defer close(idle)
@@ -83,5 +85,19 @@ func setMigration(db *sql.DB, cfg config.Migration) {
 
 	if err != nil {
 		panic("migration failed: " + err.Error())
+	}
+}
+
+type externalService struct {
+	DB    *sqlx.DB
+	Redis *redis.Client
+}
+
+func setupExternalService(cfg config.Config) (externalService, func(context.Context) error) {
+	// db, closeDB := database.NewM(cfg.Database)
+	// rd := cache.NewRedis(cfg.Redis)
+
+	return externalService{}, func(ctx context.Context) error {
+		return nil
 	}
 }

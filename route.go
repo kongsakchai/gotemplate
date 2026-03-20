@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"runtime"
@@ -11,7 +10,6 @@ import (
 	"github.com/kongsakchai/gotemplate/app/apperror"
 	"github.com/kongsakchai/gotemplate/app/middleware"
 	"github.com/kongsakchai/gotemplate/config"
-	"github.com/kongsakchai/gotemplate/database"
 	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v5"
 )
@@ -22,10 +20,7 @@ const (
 	MB
 )
 
-func router(cfg config.Config, logger *slog.Logger) (app.App, shutdownFunc) {
-	db, closeDB := database.NewMySQL(cfg.Database)
-	setMigration(db.DB, cfg.Migration)
-
+func router(cfg config.Config, external externalService, logger *slog.Logger) app.App {
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
 	r.HTTPErrorHandler = apperror.ErrorHandler
@@ -36,12 +31,10 @@ func router(cfg config.Config, logger *slog.Logger) (app.App, shutdownFunc) {
 		middleware.Logger(cfg.Log.Enable),
 	)
 
-	r.GET("/health", healthCheck(db))
+	r.GET("/health", healthCheck(external.DB))
 	r.GET("/metrics", metrics())
 
-	return r, func(ctx context.Context) error {
-		return closeDB(ctx)
-	}
+	return r
 }
 
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
