@@ -2,37 +2,30 @@ package app
 
 import (
 	"context"
-	"net/http/httptest"
-	"strings"
+	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 type EchoApp struct {
 	*echo.Echo
+
+	server *http.Server
 }
 
 func NewEchoApp() *EchoApp {
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
 	e.Use(middleware.Recover())
 
-	return &EchoApp{e}
+	return &EchoApp{Echo: e}
 }
 
 func (app *EchoApp) Start(ctx context.Context, addr string) error {
-	return app.Echo.Start(addr)
+	app.server = &http.Server{Addr: addr, Handler: app.Echo}
+	return app.server.ListenAndServe()
 }
 
 func (app *EchoApp) Shutdown(ctx context.Context) error {
-	return app.Echo.Shutdown(ctx)
-}
-
-func NewMockContext(method, target, payload string) (echo.Context, *httptest.ResponseRecorder) {
-	e := echo.New()
-	req := httptest.NewRequest(method, target, strings.NewReader(payload))
-	rec := httptest.NewRecorder()
-	return e.NewContext(req, rec), rec
+	return app.server.Shutdown(ctx)
 }

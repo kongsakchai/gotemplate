@@ -8,117 +8,124 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func handler(c echo.Context) error {
-	return c.String(http.StatusOK, "Pong!")
-}
-
 func setupLogger(w io.Writer) *slog.Logger {
-	defaultLogger := slog.Default()
 	logger := slog.New(slog.NewTextHandler(w, nil))
-	slog.SetDefault(logger)
-
-	return defaultLogger
+	return logger
 }
 
-func resetLogger(logger *slog.Logger) {
-	slog.SetDefault(logger)
-}
-
-type mockReader struct {
+type mockReaderError struct {
 	err error
 }
 
-func (m *mockReader) Read(p []byte) (n int, err error) {
+func (m *mockReaderError) Read(p []byte) (n int, err error) {
 	return 0, m.err
 }
 
 func TestLoggerMiddleware(t *testing.T) {
-	t.Run("should log request with non json content type", func(t *testing.T) {
-		e := echo.New()
-		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(true))
-		e.GET("/", handler)
+	t.Run("should go next when disable logger", func(t *testing.T) {
+		// arrange
+		next := func(ctx *echo.Context) error {
+			require.NotNil(t, ctx)
+			return nil
+		}
+		enable := false
 
-		buf := bytes.NewBuffer([]byte{})
-		defaultLogger := setupLogger(buf)
-		defer resetLogger(defaultLogger)
+		ctx := echotest.ContextConfig{}.ToContext(t)
 
-		req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader([]byte("Ping!")))
-		req.Header.Set("X-Request-ID", "abcde")
-		rec := httptest.NewRecorder()
+		// act
+		middleware := Logger(enable)
+		err := middleware(next)(ctx)
 
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, buf.String(), "level=INFO")
-		assert.Contains(t, buf.String(), "traceID=abcde")
-		assert.Contains(t, buf.String(), "body=\"\"")
+		// assert
+		assert.NoError(t, err)
 	})
 
-	t.Run("should log request", func(t *testing.T) {
-		e := echo.New()
-		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(true))
-		e.GET("/", handler)
+	t.Run("should log request with header type when header isn't json", func(t *testing.T) {
+		// arrange
+		var buf bytes.Buffer
+		logger := setupLogger(&buf)
 
-		buf := bytes.NewBuffer([]byte{})
-		defaultLogger := setupLogger(buf)
-		defer resetLogger(defaultLogger)
+		next := func(ctx *echo.Context) error {
+			require.NotNil(t, ctx)
+			return nil
+		}
+		enable := true
 
-		req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader([]byte("Ping!")))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		req.Header.Set("X-Request-ID", "12345")
-		rec := httptest.NewRecorder()
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{"custom/type"},
+			},
+		}.ToContext(t)
 
-		e.ServeHTTP(rec, req)
+		ctx.SetLogger(logger)
 
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, buf.String(), "level=INFO")
-		assert.Contains(t, buf.String(), "traceID=12345")
-		assert.Contains(t, buf.String(), "body=Ping!")
+		// act
+		middleware := Logger(enable)
+		err := middleware(next)(ctx)
+
+		// assert
+		assert.NoError(t, err)
+		assert.Contains(t, buf.String(), "body=custom/type")
 	})
 
-	t.Run("should return error when request body cannot be read", func(t *testing.T) {
-		e := echo.New()
-		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(true))
-		e.GET("/", handler)
+	t.Run("should log request with JSON body when header is JSON", func(t *testing.T) {
+		// arrange
+		var buf bytes.Buffer
+		logger := setupLogger(&buf)
 
-		buf := bytes.NewBuffer([]byte{})
-		defaultLogger := setupLogger(buf)
-		defer resetLogger(defaultLogger)
+		next := func(ctx *echo.Context) error {
+			require.NotNil(t, ctx)
+			return nil
+		}
+		enable := true
 
-		req := httptest.NewRequest(http.MethodGet, "/", &mockReader{err: io.ErrUnexpectedEOF})
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
+		ctx := echotest.ContextConfig{
+			JSONBody: []byte(`{"message":"hello"}`),
+		}.ToContext(t)
 
-		e.ServeHTTP(rec, req)
+		ctx.SetLogger(logger)
 
-		assert.Equal(t, http.StatusInternalServerError, rec.Code)
-		assert.Contains(t, buf.String(), "level=ERROR")
+		// act
+		middleware := Logger(enable)
+		err := middleware(next)(ctx)
+
+		// assert
+		assert.NoError(t, err)
+		assert.Contains(t, buf.String(), "body=\"{\\\"message\\\":\\\"hello\\\"}\"")
+	})
+
+	t.Run("should log error when fail to read body", func(t *testing.T) {
+		// arrange
+		var buf bytes.Buffer
+		logger := setupLogger(&buf)
+
+		next := func(ctx *echo.Context) error {
+			require.NotNil(t, ctx)
+			return nil
+		}
+		enable := true
+
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			Request: httptest.NewRequest(http.MethodPost, "/test", &mockReaderError{err: io.ErrUnexpectedEOF}),
+		}.ToContext(t)
+
+		ctx.SetLogger(logger)
+
+		// act
+		middleware := Logger(enable)
+		err := middleware(next)(ctx)
+
+		// assert
+		assert.ErrorIs(t, err, io.ErrUnexpectedEOF)
 		assert.Contains(t, buf.String(), "failed to read request body")
-	})
-
-	t.Run("should not log when logger is disabled", func(t *testing.T) {
-		e := echo.New()
-		e.Use(RefID("X-Request-ID"))
-		e.Use(Logger(false))
-		e.GET("/", handler)
-
-		buf := bytes.NewBuffer([]byte{})
-		defaultLogger := setupLogger(buf)
-		defer resetLogger(defaultLogger)
-
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "", buf.String())
 	})
 }

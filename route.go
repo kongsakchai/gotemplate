@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"runtime"
 
 	"github.com/jmoiron/sqlx"
@@ -12,7 +13,7 @@ import (
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/database"
 	"github.com/kongsakchai/gotemplate/validator"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -21,16 +22,17 @@ const (
 	MB
 )
 
-func router(cfg config.Config) (app.App, shutdownFunc) {
+func router(cfg config.Config, logger *slog.Logger) (app.App, shutdownFunc) {
 	db, closeDB := database.NewMySQL(cfg.Database)
 	setMigration(db.DB, cfg.Migration)
 
 	r := app.NewEchoApp()
 	r.Validator = validator.NewReqValidator()
 	r.HTTPErrorHandler = apperror.ErrorHandler
+	r.Logger = logger
 
 	r.Use(
-		middleware.RefID(cfg.Header.RefIDKey),
+		middleware.RefID(cfg.Header.RefIDKey, cfg.Log.Tags),
 		middleware.Logger(cfg.Log.Enable),
 	)
 
@@ -43,7 +45,7 @@ func router(cfg config.Config) (app.App, shutdownFunc) {
 }
 
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
+	return func(ctx *echo.Context) error {
 		if db.Ping() != nil {
 			return app.Fail(ctx, app.InternalError(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
 		}
@@ -56,7 +58,7 @@ func toMB(b uint64) string {
 }
 
 func metrics() echo.HandlerFunc {
-	return func(ctx echo.Context) error {
+	return func(ctx *echo.Context) error {
 		var mem runtime.MemStats
 		runtime.ReadMemStats(&mem)
 		return app.Ok(ctx, map[string]string{

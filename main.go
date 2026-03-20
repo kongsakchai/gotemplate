@@ -35,7 +35,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	app, shutdown := router(cfg)
+	app, shutdown := router(cfg, log)
 	defer shutdown(context.Background())
 
 	idle := make(chan struct{})
@@ -45,7 +45,7 @@ func main() {
 	log.Info("listening on port " + cfg.App.Port)
 
 	if err := app.Start(ctx, ":"+cfg.App.Port); err != nil && err != http.ErrServerClosed {
-		slog.Error("shutting down the server: " + err.Error())
+		log.Error("shutting down the server: " + err.Error())
 		return
 	}
 
@@ -64,8 +64,7 @@ func gracefulShutdown(idle chan struct{}, signal context.Context, app app.App) {
 	defer cancel()
 
 	if err := app.Shutdown(ctx); err != nil {
-		slog.Error("graceful shutdown failed: " + err.Error())
-		panic("force shutdown")
+		panic("graceful shutdown failed: " + err.Error())
 	}
 	slog.Info("graceful shutdown completed")
 }

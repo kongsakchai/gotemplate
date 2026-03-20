@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kongsakchai/gotemplate/app"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type echoResponseWriter struct {
@@ -18,6 +18,7 @@ type echoResponseWriter struct {
 	url     string
 	now     time.Time
 	traceID string
+	tag     string
 }
 
 func (w *echoResponseWriter) WriteHeader(status int) {
@@ -35,13 +36,15 @@ func (w *echoResponseWriter) Write(b []byte) (int, error) {
 		slog.InfoContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
 			"body", body,
 			"latency", time.Since(w.now).String(),
-			app.TraceIDKey, w.traceID,
+			app.TraceID, w.traceID,
+			app.Tag, w.tag,
 		)
 	} else {
 		slog.ErrorContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
 			"body", body,
 			"latency", time.Since(w.now).String(),
-			app.TraceIDKey, w.traceID,
+			app.TraceID, w.traceID,
+			app.Tag, w.tag,
 		)
 	}
 

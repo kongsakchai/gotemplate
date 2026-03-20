@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/config"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -56,10 +56,13 @@ func TestSetupRoutes(t *testing.T) {
 			Database: config.Database{
 				URL: fmt.Sprintf("root:example@(%s)/example", endpoint),
 			},
-		})
+		}, slog.Default())
 		defer shutdown(context.Background())
 
-		go app.Start(t.Context(), ":8888")
+		go func() {
+			err := app.Start(t.Context(), ":8888")
+			assert.NoError(t, err)
+		}()
 		time.Sleep(1 * time.Second)
 
 		// act
@@ -79,11 +82,7 @@ func TestHealthCheck(t *testing.T) {
 		defer db.Close()
 
 		// arrange
-		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
-		rec := httptest.NewRecorder()
-
-		e := echo.New()
-		ctx := e.NewContext(req, rec)
+		ctx, rec := echotest.ContextConfig{}.ToContextRecorder(t)
 
 		handler := healthCheck(db)
 
@@ -101,11 +100,7 @@ func TestHealthCheck(t *testing.T) {
 		defer db.Close()
 
 		// arrange
-		req := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
-		rec := httptest.NewRecorder()
-
-		e := echo.New()
-		ctx := e.NewContext(req, rec)
+		ctx, rec := echotest.ContextConfig{}.ToContextRecorder(t)
 
 		handler := healthCheck(db)
 

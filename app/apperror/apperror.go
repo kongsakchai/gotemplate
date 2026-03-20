@@ -6,11 +6,10 @@ import (
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/errs"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func ErrorHandler(err error, ctx echo.Context) {
-	traceID, _ := ctx.Get(app.RefIDKey).(string)
+func ErrorHandler(ctx *echo.Context, err error) {
 	c := ctx.Request().Context()
 
 	var msg string
@@ -25,17 +24,17 @@ func ErrorHandler(err error, ctx echo.Context) {
 	case *echo.HTTPError:
 		msg = "http error"
 		logs = errs.Logs(e)
-		appErr = app.Error{HTTPCode: e.Code, Code: fmt.Sprintf("http %d", e.Code), Message: e.Message.(string)}
+		appErr = app.Error{HTTPCode: e.Code, Code: fmt.Sprintf("http %d", e.Code), Message: e.Message}
 	default:
 		msg = "service error"
 		logs = errs.Logs(err)
 		appErr = app.InternalError(app.ErrInternalCode, app.ErrInternalMsg, err)
 	}
 
-	slog.LogAttrs(c, slog.LevelError, msg, append(logs, slog.String(app.TraceIDKey, traceID))...)
+	ctx.Logger().LogAttrs(c, slog.LevelError, msg, logs...)
 	err = app.Fail(ctx, appErr)
 
 	if err != nil {
-		slog.ErrorContext(c, "error handler fail", "err", err.Error())
+		ctx.Logger().ErrorContext(c, "error handler fail", "err", err.Error()) // rare case
 	}
 }

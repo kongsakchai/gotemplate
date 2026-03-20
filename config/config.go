@@ -48,8 +48,9 @@ type Redis struct {
 }
 
 type Log struct {
-	Enable     bool `env:"LOG_ENABLE"`
-	HttpEnable bool `env:"LOG_HTTP_ENABLE"`
+	Enable     bool              `env:"LOG_ENABLE"`
+	HttpEnable bool              `env:"LOG_HTTP_ENABLE"`
+	Tags       map[string]string `env:"LOG_TAGS" envSeparator:"," envKeyValSeparator:":"`
 }
 
 var config Config

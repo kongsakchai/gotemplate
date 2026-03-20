@@ -1,6 +1,6 @@
 module github.com/kongsakchai/gotemplate
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/caarlos0/env/v11 v11.3.2-0.20250505082809-56a09d295d93
@@ -47,6 +47,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/labstack/echo/v5 v5.0.4 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect

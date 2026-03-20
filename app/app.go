@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type App interface {
@@ -19,7 +19,7 @@ type Response struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func Ok(ctx echo.Context, data any, msg ...string) error {
+func Ok(ctx *echo.Context, data any, msg ...string) error {
 	message := ""
 	if len(msg) > 0 {
 		message = msg[0]
@@ -32,7 +32,7 @@ func Ok(ctx echo.Context, data any, msg ...string) error {
 	})
 }
 
-func Created(ctx echo.Context, data any, msg ...string) error {
+func Created(ctx *echo.Context, data any, msg ...string) error {
 	message := ""
 	if len(msg) > 0 {
 		message = msg[0]
@@ -45,7 +45,7 @@ func Created(ctx echo.Context, data any, msg ...string) error {
 	})
 }
 
-func Fail(ctx echo.Context, err Error) error {
+func Fail(ctx *echo.Context, err Error) error {
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
 		Success: false,
