@@ -7,19 +7,29 @@ import (
 	"testing"
 
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHandlerGetUsers(t *testing.T) {
 	t.Run("should return internal error when storage users fails", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		storage.EXPECT().Users().Return(nil, errors.New("db error"))
 
-		ctx, _ := app.NewMockContext(http.MethodGet, "/users", "")
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+		}.ToContext(t)
+
+		// act
 		err := h.GetUsers(ctx)
 
+		// assert
 		assert.Error(t, err)
 		appErr, ok := err.(app.Error)
 		assert.True(t, ok)
@@ -28,6 +38,7 @@ func TestHandlerGetUsers(t *testing.T) {
 	})
 
 	t.Run("should return ok with users data when success", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
@@ -37,9 +48,16 @@ func TestHandlerGetUsers(t *testing.T) {
 		}
 		storage.EXPECT().Users().Return(expectedUsers, nil)
 
-		ctx, rec := app.NewMockContext(http.MethodGet, "/users", "")
+		ctx, rec := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+		}.ToContextRecorder(t)
+
+		// act
 		err := h.GetUsers(ctx)
 
+		// assert
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 

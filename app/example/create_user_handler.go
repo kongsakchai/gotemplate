@@ -2,7 +2,7 @@ package example
 
 import (
 	"github.com/kongsakchai/gotemplate/app"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type CreateUserRequest struct {
@@ -11,7 +11,7 @@ type CreateUserRequest struct {
 	Age       int    `json:"age" validate:"required,gte=0,lte=130"`
 }
 
-func (h *handler) CreateUser(ctx echo.Context) error {
+func (h *handler) CreateUser(ctx *echo.Context) error {
 	var req CreateUserRequest
 	if err := ctx.Bind(&req); err != nil {
 		return app.BadRequest("4001", "invalid request body", err)

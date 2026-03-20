@@ -7,20 +7,30 @@ import (
 	"testing"
 
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHandlerGetUser(t *testing.T) {
 	t.Run("should return bad request when name param is empty", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
-		ctx, _ := app.NewMockContext(http.MethodGet, "/users", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("")
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			PathValues: echo.PathValues{
+				{Name: "name", Value: ""},
+			},
+		}.ToContext(t)
 
+		// act
 		err := h.GetUser(ctx)
 
+		// assert
 		assert.Error(t, err)
 		appErr, ok := err.(app.Error)
 		assert.True(t, ok)
@@ -29,17 +39,25 @@ func TestHandlerGetUser(t *testing.T) {
 	})
 
 	t.Run("should return internal error when storage lookup fails", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		storage.EXPECT().UserByName("john").Return(User{}, errors.New("db error"))
 
-		ctx, _ := app.NewMockContext(http.MethodGet, "/users/john", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("john")
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			PathValues: echo.PathValues{
+				{Name: "name", Value: "john"},
+			},
+		}.ToContext(t)
 
+		// act
 		err := h.GetUser(ctx)
 
+		// assert
 		assert.Error(t, err)
 		appErr, ok := err.(app.Error)
 		assert.True(t, ok)
@@ -48,17 +66,25 @@ func TestHandlerGetUser(t *testing.T) {
 	})
 
 	t.Run("should return not found when user does not exist", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		storage.EXPECT().UserByName("john").Return(User{}, nil)
 
-		ctx, _ := app.NewMockContext(http.MethodGet, "/users/john", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("john")
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			PathValues: echo.PathValues{
+				{Name: "name", Value: "john"},
+			},
+		}.ToContext(t)
 
+		// act
 		err := h.GetUser(ctx)
 
+		// assert
 		assert.Error(t, err)
 		appErr, ok := err.(app.Error)
 		assert.True(t, ok)
@@ -66,18 +92,26 @@ func TestHandlerGetUser(t *testing.T) {
 	})
 
 	t.Run("should return ok with user data when found", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		expectedUser := User{FirstName: "john", LastName: "doe", Age: 30}
 		storage.EXPECT().UserByName("john").Return(expectedUser, nil)
 
-		ctx, rec := app.NewMockContext(http.MethodGet, "/users/john", "")
-		ctx.SetParamNames("name")
-		ctx.SetParamValues("john")
+		ctx, rec := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			PathValues: echo.PathValues{
+				{Name: "name", Value: "john"},
+			},
+		}.ToContextRecorder(t)
 
+		// act
 		err := h.GetUser(ctx)
 
+		// assert
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 
@@ -90,39 +124,48 @@ func TestHandlerGetUser(t *testing.T) {
 
 func TestHandlerGetUserFunction(t *testing.T) {
 	t.Run("should return internal error when user lookup fails", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		storage.EXPECT().UserByName("john").Return(User{}, errors.New("db error"))
 
+		// act
 		_, err := h.getUser("john")
 
+		// assert
 		assert.False(t, err.IsEmpty())
 		assert.Equal(t, http.StatusInternalServerError, err.HTTPCode)
 		assert.Equal(t, "5001", err.Code)
 	})
 
 	t.Run("should return not found when user not present", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		storage.EXPECT().UserByName("john").Return(User{}, nil)
 
+		// act
 		_, err := h.getUser("john")
 
+		// assert
 		assert.False(t, err.IsEmpty())
 		assert.Equal(t, "4002", err.Code)
 	})
 
 	t.Run("should return user and empty error on success", func(t *testing.T) {
+		// arrange
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
 		expectedUser := User{FirstName: "john", LastName: "doe", Age: 30}
 		storage.EXPECT().UserByName("john").Return(expectedUser, nil)
 
+		// act
 		user, err := h.getUser("john")
 
+		// assert
 		assert.True(t, err.IsEmpty())
 		assert.Equal(t, expectedUser, user)
 	})

@@ -8,7 +8,8 @@ import (
 
 	"github.com/kongsakchai/gotemplate/app"
 	appValidator "github.com/kongsakchai/gotemplate/validator"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,8 +18,12 @@ func TestHandlerCreateUser(t *testing.T) {
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
-		ctx, _ := app.NewMockContext(http.MethodPost, "/users", "{invalid-json")
-		ctx.Request().Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+			JSONBody: []byte(`invalid json`),
+		}.ToContext(t)
 		ctx.Echo().Validator = appValidator.NewReqValidator()
 
 		err := h.CreateUser(ctx)
@@ -34,8 +39,11 @@ func TestHandlerCreateUser(t *testing.T) {
 		storage := newMockStorager(t)
 		h := NewHandler(storage)
 
-		ctx, _ := app.NewMockContext(http.MethodPost, "/users", `{}`)
-		ctx.Request().Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx := echotest.ContextConfig{
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+		}.ToContext(t)
 		ctx.Echo().Validator = appValidator.NewReqValidator()
 
 		err := h.CreateUser(ctx)
@@ -53,8 +61,12 @@ func TestHandlerCreateUser(t *testing.T) {
 
 		storage.EXPECT().UserByName("john").Return(User{FirstName: "john"}, nil)
 
-		ctx, _ := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe","age":30}`)
-		ctx.Request().Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx := echotest.ContextConfig{
+			JSONBody: []byte(`{"firstName":"john","lastName":"doe","age":30}`),
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+		}.ToContext(t)
 		ctx.Echo().Validator = appValidator.NewReqValidator()
 
 		err := h.CreateUser(ctx)
@@ -73,8 +85,12 @@ func TestHandlerCreateUser(t *testing.T) {
 		storage.EXPECT().UserByName("john").Return(User{}, nil)
 		storage.EXPECT().CreateUser(User{FirstName: "john", LastName: "doe", Age: 30}).Return(nil)
 
-		ctx, rec := app.NewMockContext(http.MethodPost, "/users", `{"firstName":"john","lastName":"doe","age":30}`)
-		ctx.Request().Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx, rec := echotest.ContextConfig{
+			JSONBody: []byte(`{"firstName":"john","lastName":"doe","age":30}`),
+			Headers: http.Header{
+				echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+			},
+		}.ToContextRecorder(t)
 		ctx.Echo().Validator = appValidator.NewReqValidator()
 
 		err := h.CreateUser(ctx)

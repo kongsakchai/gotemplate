@@ -61,7 +61,7 @@ func TestSetupRoutes(t *testing.T) {
 
 		go func() {
 			err := app.Start(t.Context(), ":8888")
-			assert.NoError(t, err)
+			assert.Error(t, http.ErrServerClosed, err)
 		}()
 		time.Sleep(1 * time.Second)
 

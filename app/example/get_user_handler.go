@@ -2,10 +2,10 @@ package example
 
 import (
 	"github.com/kongsakchai/gotemplate/app"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func (h *handler) GetUser(ctx echo.Context) error {
+func (h *handler) GetUser(ctx *echo.Context) error {
 	name := ctx.Param("name")
 	if name == "" {
 		return app.BadRequest("4001", "name parameter is required", nil)

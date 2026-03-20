@@ -23,6 +23,7 @@ BEGIN {
 /FAIL/ { color=RED }
 /SKIP/ { color=SAPPHIRE }
 
+/.*\.go/ { color=YELLOW }
 /.*_test\.go/ { color=MAUVE }
 
 /Error:/ { color=YELLOW }
