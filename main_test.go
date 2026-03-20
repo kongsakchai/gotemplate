@@ -158,7 +158,7 @@ func TestSetMigration(t *testing.T) {
 
 	{
 		// act
-		setMigration(db.DB, config.Migration{Enable: true, Version: "0000", Directory: "./migrations/mock"})
+		migrateDB(db.DB, config.Migration{Enable: true, Version: "0000", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -167,7 +167,7 @@ func TestSetMigration(t *testing.T) {
 
 	{
 		// act
-		setMigration(db.DB, config.Migration{Enable: true, Version: "", Directory: "./migrations/mock"})
+		migrateDB(db.DB, config.Migration{Enable: true, Version: "", Directory: "./migrations/mock"})
 		// assert
 		data, err := db.QueryContext(t.Context(), "SELECT * FROM mock_data")
 		assert.NoError(t, err)
@@ -182,7 +182,7 @@ func TestSetMigration(t *testing.T) {
 	}
 
 	{
-		setMigration(db.DB, config.Migration{Enable: false, Directory: "invalid"})
+		migrateDB(db.DB, config.Migration{Enable: false, Directory: "invalid"})
 	}
 
 	{
@@ -190,7 +190,7 @@ func TestSetMigration(t *testing.T) {
 			p := recover()
 			assert.NotNil(t, p)
 		}()
-		setMigration(db.DB, config.Migration{Enable: true, Directory: "invalid"})
+		migrateDB(db.DB, config.Migration{Enable: true, Directory: "invalid"})
 	}
 
 }

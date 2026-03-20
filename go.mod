@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/kongsakchai/paint v0.0.2
-	github.com/kongsakchai/simple-migrate v0.0.2
+	github.com/kongsakchai/simple-migrate v0.0.6
 	github.com/labstack/echo/v5 v5.0.4
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.8.0

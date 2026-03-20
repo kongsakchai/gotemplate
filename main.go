@@ -71,18 +71,16 @@ func gracefulShutdown(idle chan struct{}, signal context.Context, app app.App) {
 	slog.Info("graceful shutdown completed")
 }
 
-func setMigration(db *sql.DB, cfg config.Migration) {
+func migrateDB(db *sql.DB, cfg config.Migration) {
 	if !cfg.Enable {
 		return
 	}
-
 	var err error
 	if cfg.Version != "" {
 		err = migrate.New(db, cfg.Directory).SetVersion(cfg.Version)
 	} else {
 		err = migrate.New(db, cfg.Directory).Up()
 	}
-
 	if err != nil {
 		panic("migration failed: " + err.Error())
 	}
