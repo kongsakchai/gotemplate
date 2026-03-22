@@ -1,8 +1,11 @@
 package apperror
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/errs"
@@ -12,26 +15,43 @@ import (
 func ErrorHandler(ctx *echo.Context, err error) {
 	c := ctx.Request().Context()
 
-	var msg string
+	var errMsg string
 	var logs []slog.Attr
 	var appErr app.Error
 
-	switch e := err.(type) {
-	case app.Error:
-		msg = "app error"
+	if e, ok := err.(app.Error); ok {
+		errMsg = "app error"
 		logs = errs.Logs(e.Err)
 		appErr = e
-	case *echo.HTTPError:
-		msg = "http error"
-		logs = errs.Logs(e)
-		appErr = app.Error{HTTPCode: e.Code, Code: fmt.Sprintf("http %d", e.Code), Message: e.Message}
-	default:
-		msg = "service error"
+	} else {
+		httpCode := http.StatusInternalServerError
+		var sc echo.HTTPStatusCoder
+		if errors.As(err, &sc) {
+			if tmp := sc.StatusCode(); tmp != 0 {
+				httpCode = tmp
+			}
+		}
+
+		msg := ""
+		switch e := sc.(type) {
+		case json.Marshaler:
+			b, _ := e.MarshalJSON()
+			msg = string(b)
+		case *echo.HTTPError:
+			msg = e.Message
+			if msg == "" {
+				msg = http.StatusText(httpCode)
+			}
+		default:
+			msg = http.StatusText(httpCode)
+		}
+
+		errMsg = "unexpected error"
 		logs = errs.Logs(err)
-		appErr = app.InternalError(app.ErrInternalCode, app.ErrInternalMsg, err)
+		appErr = app.Error{HTTPCode: httpCode, Code: fmt.Sprintf("%d", httpCode), Message: msg}
 	}
 
-	ctx.Logger().LogAttrs(c, slog.LevelError, msg, logs...)
+	ctx.Logger().LogAttrs(c, slog.LevelError, errMsg, logs...)
 	err = app.Fail(ctx, appErr)
 
 	if err != nil {
