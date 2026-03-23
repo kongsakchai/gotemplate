@@ -17,6 +17,7 @@ type EchoApp struct {
 func NewEchoApp() *EchoApp {
 	e := echo.New()
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORS("*"))
 
 	return &EchoApp{Echo: e}
 }

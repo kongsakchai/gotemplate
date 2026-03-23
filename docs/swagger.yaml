@@ -1,0 +1,107 @@
+basePath: /
+consumes:
+    - application/json
+host: localhost:8080
+info:
+    description: Documentation of our Go Template API.
+    title: Go Template.
+    version: 1.0.0
+paths:
+    /health:
+        get:
+            operationId: idOfHealthEndpoint
+            responses:
+                "200":
+                    $ref: '#/responses/healthResponse'
+                "500":
+                    $ref: '#/responses/errorHealthResponse'
+            summary: Health check endpoint.
+            tags:
+                - common
+    /metrics:
+        get:
+            operationId: idOfMetricsEndpoint
+            responses:
+                "200":
+                    $ref: '#/responses/metricsResponse'
+            summary: Metrics endpoint.
+            tags:
+                - common
+produces:
+    - application/json
+responses:
+    errorHealthResponse:
+        description: ""
+        schema:
+            properties:
+                code:
+                    example: "9999"
+                    type: string
+                    x-go-name: Code
+                message:
+                    example: Internal Server Error
+                    type: string
+                    x-go-name: Message
+                success:
+                    example: false
+                    type: boolean
+                    x-go-name: Success
+            type: object
+    healthResponse:
+        description: ""
+        schema:
+            properties:
+                code:
+                    example: "0000"
+                    type: string
+                    x-go-name: Code
+                message:
+                    example: health
+                    type: string
+                    x-go-name: Message
+                success:
+                    example: true
+                    type: boolean
+                    x-go-name: Success
+            type: object
+    metricsResponse:
+        description: ""
+        schema:
+            properties:
+                code:
+                    example: "0000"
+                    type: string
+                    x-go-name: Code
+                data:
+                    properties:
+                        alloc:
+                            example: 1.23 MB
+                            type: string
+                            x-go-name: Alloc
+                        sysAlloc:
+                            example: 7.89 MB
+                            type: string
+                            x-go-name: SysAlloc
+                        totalAlloc:
+                            example: 4.56 MB
+                            type: string
+                            x-go-name: TotalAlloc
+                    type: object
+                    x-go-name: Data
+                success:
+                    example: true
+                    type: boolean
+                    x-go-name: Success
+            type: object
+schemes:
+    - http
+    - https
+security:
+    - key:
+        - '[]'
+securityDefinitions:
+    key:
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

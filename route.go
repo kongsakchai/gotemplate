@@ -39,7 +39,7 @@ func router(cfg config.Config, external externalService, logger *slog.Logger) ap
 
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
 	return func(ctx *echo.Context) error {
-		if db.Ping() != nil {
+		if db != nil && db.Ping() != nil {
 			return app.Fail(ctx, app.InternalError(app.ErrInternalCode, app.ErrDatabaseMsg, nil))
 		}
 		return app.Ok(ctx, nil, "healthy")
