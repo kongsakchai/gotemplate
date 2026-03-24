@@ -9,7 +9,7 @@ info:
 paths:
     /health:
         get:
-            operationId: idOfHealthEndpoint
+            operationId: none
             responses:
                 "200":
                     $ref: '#/responses/healthResponse'
@@ -20,7 +20,7 @@ paths:
                 - common
     /metrics:
         get:
-            operationId: idOfMetricsEndpoint
+            operationId: none
             responses:
                 "200":
                     $ref: '#/responses/metricsResponse'
@@ -75,15 +75,50 @@ responses:
                 data:
                     properties:
                         alloc:
-                            example: 1.23 MB
+                            description: |-
+                                {
+                                "code": "0000",
+                                "success": true,
+                                "data": {
+                                "alloc": "0.77 MB",
+                                "heapIdle": "2.34 MB",
+                                "heapInuse": "1.38 MB",
+                                "heapReleased": "2.28 MB",
+                                "stackInuse": "0.28 MB",
+                                "stackSys": "0.28 MB",
+                                "sysAlloc": "8.02 MB",
+                                "totalAlloc": "0.77 MB"
+                                }
+                                }
+                            example: 0.77 MB
                             type: string
                             x-go-name: Alloc
+                        heapIdle:
+                            example: 2.34 MB
+                            type: string
+                            x-go-name: HeapIdle
+                        heapInuse:
+                            example: 1.38 MB
+                            type: string
+                            x-go-name: HeapInuse
+                        heapReleased:
+                            example: 2.28 MB
+                            type: string
+                            x-go-name: HeapReleased
+                        stackInuse:
+                            example: 0.28 MB
+                            type: string
+                            x-go-name: StackInuse
+                        stackSys:
+                            example: 0.28 MB
+                            type: string
+                            x-go-name: StackSys
                         sysAlloc:
-                            example: 7.89 MB
+                            example: 0.28 MB
                             type: string
                             x-go-name: SysAlloc
                         totalAlloc:
-                            example: 4.56 MB
+                            example: 0.28 MB
                             type: string
                             x-go-name: TotalAlloc
                     type: object

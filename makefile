@@ -23,10 +23,10 @@ init:
 	@go install github.com/vektra/mockery/v3@v3.7.3
 	@go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
-.PHONY: gen-mock
+.PHONY: genmock
 gen-mock:
 	@mockery
 
-.PHONY: swagger
+.PHONY: gendocs
 swagger:
 	swagger generate spec -o ./docs/swagger.yaml --scan-models --tags=docs

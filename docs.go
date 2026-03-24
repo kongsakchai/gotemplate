@@ -29,7 +29,7 @@ package main
 
 import "github.com/kongsakchai/gotemplate/app"
 
-// swagger:route GET /health common idOfHealthEndpoint
+// swagger:route GET /health common none
 // Health check endpoint.
 // responses:
 //   200: healthResponse
@@ -55,7 +55,7 @@ type errorHealthResponseWrapper struct {
 	}
 }
 
-// swagger:route GET /metrics common idOfMetricsEndpoint
+// swagger:route GET /metrics common none
 // Metrics endpoint.
 // responses:
 //   200: metricsResponse
@@ -66,12 +66,40 @@ type metricsResponseWrapper struct {
 	Body struct {
 		app.SwaggerSuccessResponse
 		Data struct {
-			// example: 1.23 MB
+			/*
+							{
+				  "code": "0000",
+				  "success": true,
+				  "data": {
+				    "alloc": "0.77 MB",
+				    "heapIdle": "2.34 MB",
+				    "heapInuse": "1.38 MB",
+				    "heapReleased": "2.28 MB",
+				    "stackInuse": "0.28 MB",
+				    "stackSys": "0.28 MB",
+				    "sysAlloc": "8.02 MB",
+				    "totalAlloc": "0.77 MB"
+				  }
+				}
+			*/
+			// example: 0.77 MB
 			Alloc string `json:"alloc"`
-			// example: 4.56 MB
-			TotalAlloc string `json:"totalAlloc"`
-			// example: 7.89 MB
+			// example: 2.34 MB
+			HeapIdle string `json:"heapIdle"`
+			// example: 1.38 MB
+			HeapInuse string `json:"heapInuse"`
+			// example: 2.28 MB
+			HeapReleased string `json:"heapReleased"`
+			// example: 0.28 MB
+			StackInuse string `json:"stackInuse"`
+			// example: 0.28 MB
+			StackSys string `json:"stackSys"`
+			// example: 0.28 MB
 			SysAlloc string `json:"sysAlloc"`
+			// example: 0.28 MB
+			TotalAlloc string `json:"totalAlloc"`
+			// example: 0.28 MB
+
 		} `json:"data"`
 	}
 }
