@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"runtime"
@@ -12,6 +13,7 @@ import (
 	"github.com/kongsakchai/gotemplate/config"
 	"github.com/kongsakchai/gotemplate/validator"
 	"github.com/labstack/echo/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -19,6 +21,20 @@ const (
 	KB
 	MB
 )
+
+type externalService struct {
+	DB    *sqlx.DB
+	Redis *redis.Client
+}
+
+func setupExternalService(cfg config.Config) (externalService, func(context.Context) error) {
+	// db, closeDB := database.NewM(cfg.Database)
+	// rd := cache.NewRedis(cfg.Redis)
+
+	return externalService{}, func(ctx context.Context) error {
+		return nil
+	}
+}
 
 func router(cfg config.Config, external externalService, logger *slog.Logger) app.App {
 	r := app.NewEchoApp()
