@@ -46,8 +46,9 @@ func TestNew(t *testing.T) {
 		defaultLogger := slog.Default()
 		defer resetLogger(defaultLogger)
 
-		logger := New()
+		logger := New(GCPKeyReplacer)
 		assert.NotNil(t, logger)
+		logger.Info("Test log message", slog.String("key", "value"))
 	})
 
 	t.Run("should create a new logger with text format", func(t *testing.T) {
@@ -55,8 +56,9 @@ func TestNew(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		t.Setenv("LOG_FORMAT", "text")
-		logger := New()
+		logger := New(GCPKeyReplacer)
 		assert.NotNil(t, logger)
+		logger.Info("Test log message", slog.String("key", "value"))
 	})
 
 	t.Run("should create a new logger with JSON format", func(t *testing.T) {
@@ -64,7 +66,8 @@ func TestNew(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		t.Setenv("LOG_FORMAT", "json")
-		logger := New()
+		logger := New(GCPKeyReplacer)
 		assert.NotNil(t, logger)
+		logger.Info("Test log message", slog.String("key", "value"))
 	})
 }

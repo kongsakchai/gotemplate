@@ -33,7 +33,18 @@ func init() {
 	SetLevel(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_ENABLE"))
 }
 
-func New() *slog.Logger {
+type ReplaceFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
+
+func New(replaceAttrs ...ReplaceFunc) *slog.Logger {
+	replaceAttr := func(groups []string, a slog.Attr) slog.Attr {
+		for _, replace := range replaceAttrs {
+			if v, ok := replace(groups, a); ok {
+				return v
+			}
+		}
+		return a
+	}
+
 	var handler slog.Handler
 	if os.Getenv("LOG_FORMAT") == "text" {
 		handler = paint.NewTextHandler(os.Stdout, &paint.HandlerOptions{
