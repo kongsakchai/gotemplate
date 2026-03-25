@@ -7,7 +7,7 @@ import (
 )
 
 type Timer struct {
-	*mock.Mock
+	mock.Mock
 }
 
 func NewTimer(t *testing.T) *Timer {

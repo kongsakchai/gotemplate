@@ -2,12 +2,21 @@ package timer
 
 import "time"
 
-type timer struct{}
+type Timer interface {
+	Now() time.Time
+}
 
-func New() *timer {
-	return &timer{}
+type timer struct {
+	loc *time.Location
+}
+
+func New(loc *time.Location) *timer {
+	if loc == nil {
+		loc = time.Local
+	}
+	return &timer{loc: loc}
 }
 
 func (t *timer) Now() time.Time {
-	return time.Now()
+	return time.Now().In(t.loc)
 }
