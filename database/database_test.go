@@ -3,7 +3,6 @@ package database
 import (
 	"testing"
 
-	"github.com/kongsakchai/gotemplate/config"
 	"github.com/stretchr/testify/assert"
 
 	_ "modernc.org/sqlite"
@@ -43,9 +42,7 @@ func TestNewDatabase(t *testing.T) {
 			assert.NotNil(t, p)
 		}()
 
-		NewMySQL(config.Database{
-			URL: "root:example@(localhost:1111)/example",
-		})
+		NewMySQL("root:example@(localhost:1111)/example")
 	})
 
 	// Postgres
@@ -56,8 +53,6 @@ func TestNewDatabase(t *testing.T) {
 			assert.NotNil(t, p)
 		}()
 
-		NewPostgres(config.Database{
-			URL: "root:example@(localhost:1111)/example",
-		})
+		NewPostgres("root:example@(localhost:1111)/example")
 	})
 }

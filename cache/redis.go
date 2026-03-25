@@ -1,11 +1,21 @@
 package cache
 
 import (
-	"github.com/kongsakchai/gotemplate/config"
+	"time"
+
 	redis "github.com/redis/go-redis/v9"
 )
 
-func NewRedis(conf config.Redis) *redis.Client {
+type RedisConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	DB       int
+	Timeout  time.Duration
+}
+
+func NewRedis(conf RedisConfig) *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:         conf.Host + ":" + conf.Port,
 		Username:     conf.Username,

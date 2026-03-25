@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kongsakchai/gotemplate/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,7 +68,7 @@ func TestNewRequest(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.title, func(t *testing.T) {
-			c := New(config.Config{}, func(r *http.Request, ctx context.Context) context.Context {
+			c := New(Config{}, func(r *http.Request, ctx context.Context) context.Context {
 				r.Header.Set("Option", "option pass")
 				return ctx
 			})
@@ -94,7 +93,7 @@ func TestDoRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 		c.logEnable = true
 
 		req, err := newRequest(context.Background(), c, http.MethodPost, serve.URL, "some payload")
@@ -120,7 +119,7 @@ func TestDoRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 		c.logEnable = true
 
 		req, err := newRequest(context.Background(), c, http.MethodPost, serve.URL, "some payload")
@@ -150,7 +149,7 @@ func TestDoRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 		c.logEnable = true
 
 		req, err := newRequest(context.Background(), c, http.MethodPost, serve.URL, "some payload")
@@ -177,7 +176,7 @@ func TestDoRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 		c.logEnable = true
 
 		req, err := newRequest(context.Background(), c, http.MethodPost, serve.URL, "some payload")
@@ -196,7 +195,7 @@ func TestDoRequest(t *testing.T) {
 	})
 
 	t.Run("should return error when invalid endpoint", func(t *testing.T) {
-		c := New(config.Config{})
+		c := New(Config{})
 		req, err := newRequest(context.Background(), c, http.MethodPost, "error", "some payload")
 		require.NoError(t, err)
 
@@ -223,7 +222,7 @@ func TestDoRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 		c.logEnable = true
 		c._forceResponseNil = true
 
@@ -251,7 +250,7 @@ func TestCallRequest(t *testing.T) {
 		}))
 		defer serve.Close()
 
-		c := New(config.Config{})
+		c := New(Config{})
 
 		// act
 		resp, err := callRequest[string](t.Context(), c, http.MethodGet, serve.URL, nil)
@@ -263,7 +262,7 @@ func TestCallRequest(t *testing.T) {
 	})
 
 	t.Run("should return error when invalid url", func(t *testing.T) {
-		c := New(config.Config{})
+		c := New(Config{})
 
 		// act
 		_, err := callRequest[string](t.Context(), c, http.MethodGet, ":", nil)
@@ -314,7 +313,7 @@ func TestMethod(t *testing.T) {
 			}))
 			defer serve.Close()
 
-			c := New(config.Config{})
+			c := New(Config{})
 
 			// act
 			resp, err := tc.call(t.Context(), c, serve.URL)

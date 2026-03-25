@@ -10,8 +10,6 @@ import (
 	"maps"
 	"net/http"
 	"time"
-
-	"github.com/kongsakchai/gotemplate/config"
 )
 
 const (
@@ -20,6 +18,11 @@ const (
 	maxIdleConnsPerHost = 100
 	timeout             = 10 * time.Second
 )
+
+type Config struct {
+	RefIDKey  string
+	LogEnable bool
+}
 
 type Client struct {
 	*http.Client
@@ -31,7 +34,7 @@ type Client struct {
 	_forceResponseNil bool //this use for only unit test
 }
 
-func New(cfg config.Config, options ...OptionFunc) *Client {
+func New(cfg Config, options ...OptionFunc) *Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.MaxIdleConns = maxIdleConns
 	t.MaxConnsPerHost = maxConnsPerHost
@@ -45,8 +48,8 @@ func New(cfg config.Config, options ...OptionFunc) *Client {
 	return &Client{
 		Client:    c,
 		options:   options,
-		refIDKey:  cfg.Header.RefIDKey,
-		logEnable: cfg.Log.HttpEnable,
+		refIDKey:  cfg.RefIDKey,
+		logEnable: cfg.LogEnable,
 	}
 }
 
