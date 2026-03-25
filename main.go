@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,7 +20,6 @@ import (
 var gracefulTimeout = time.Second * 10
 
 func init() {
-	fmt.Println("initializing the application...")
 	if os.Getenv("GOMAXPROCS") == "" {
 		runtime.GOMAXPROCS(1) // 0 - 999m
 	}
