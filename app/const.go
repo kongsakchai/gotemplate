@@ -4,9 +4,10 @@ const (
 	TraceID = "traceID"
 	Tag     = "tag"
 
-	SuccessCode     = "0000"
-	ErrInternalCode = "9999"
+	SuccessCode = "0000"
 
-	ErrDatabaseMsg = "database is not ready"
-	ErrInternalMsg = "internal error"
+	ErrDatabaseCode = "9998"
+	ErrDatabaseMsg  = "database is not ready"
+	ErrInternalCode = "9999"
+	ErrInternalMsg  = "internal error"
 )

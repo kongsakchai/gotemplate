@@ -33,7 +33,7 @@ import "github.com/kongsakchai/gotemplate/app"
 // Health check endpoint.
 // responses:
 //   200: healthResponse
-//   500: errorHealthResponse
+//   500: errorDatabaseResponse
 
 // swagger:response healthResponse
 type healthResponseWrapper struct {
@@ -41,16 +41,6 @@ type healthResponseWrapper struct {
 	Body struct {
 		app.SwaggerSuccessResponse
 		// example: health
-		Message string `json:"message"`
-	}
-}
-
-// swagger:response errorHealthResponse
-type errorHealthResponseWrapper struct {
-	// in:body
-	Body struct {
-		app.SwaggerErrorResponse
-		// example: Internal Server Error
 		Message string `json:"message"`
 	}
 }

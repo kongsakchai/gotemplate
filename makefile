@@ -28,7 +28,7 @@ gen-mock:
 	@mockery
 
 .PHONY: gendocs
-swagger:
+gendocs:
 	@swagger generate spec -o ./docs/swagger.yaml --scan-models --tags=docs
 
 .PHONY: docs

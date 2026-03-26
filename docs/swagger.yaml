@@ -14,7 +14,7 @@ paths:
                 "200":
                     $ref: '#/responses/healthResponse'
                 "500":
-                    $ref: '#/responses/errorHealthResponse'
+                    $ref: '#/responses/errorDatabaseResponse'
             summary: Health check endpoint.
             tags:
                 - common
@@ -30,7 +30,24 @@ paths:
 produces:
     - application/json
 responses:
-    errorHealthResponse:
+    errorDatabaseResponse:
+        description: ""
+        schema:
+            properties:
+                code:
+                    example: "9998"
+                    type: string
+                    x-go-name: Code
+                message:
+                    example: database is not ready
+                    type: string
+                    x-go-name: Message
+                success:
+                    example: false
+                    type: boolean
+                    x-go-name: Success
+            type: object
+    errorInternalResponse:
         description: ""
         schema:
             properties:
@@ -39,7 +56,7 @@ responses:
                     type: string
                     x-go-name: Code
                 message:
-                    example: Internal Server Error
+                    example: internal error
                     type: string
                     x-go-name: Message
                 success:
