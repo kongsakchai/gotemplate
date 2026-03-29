@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/kongsakchai/gotemplate/common/errs"
+	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/labstack/echo/v5"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kongsakchai/gotemplate/template/app"
 	appValidator "github.com/kongsakchai/gotemplate/common/validator"
+	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"

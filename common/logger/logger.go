@@ -36,26 +36,17 @@ func init() {
 type ReplaceFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
 
 func New(replaceAttrs ...ReplaceFunc) *slog.Logger {
-	replaceAttr := func(groups []string, a slog.Attr) slog.Attr {
-		for _, replace := range replaceAttrs {
-			if v, ok := replace(groups, a); ok {
-				return v
-			}
-		}
-		return a
-	}
-
 	var handler slog.Handler
 	if os.Getenv("LOG_FORMAT") == "text" {
 		handler = paint.NewTextHandler(os.Stdout, &paint.HandlerOptions{
 			Level:       logLevel,
-			ReplaceAttr: replaceAttr,
+			ReplaceAttr: newReplaceFuncGroup(replaceAttrs...),
 			TimeFormat:  "[2006/01/02 15:04:05]",
 		})
 	} else {
 		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level:       logLevel,
-			ReplaceAttr: replaceAttr,
+			ReplaceAttr: newReplaceFuncGroup(replaceAttrs...),
 		})
 	}
 
@@ -63,4 +54,15 @@ func New(replaceAttrs ...ReplaceFunc) *slog.Logger {
 	slog.SetDefault(logger)
 
 	return logger
+}
+
+func newReplaceFuncGroup(replaceAttrs ...ReplaceFunc) func(groups []string, a slog.Attr) slog.Attr {
+	return func(groups []string, a slog.Attr) slog.Attr {
+		for _, replace := range replaceAttrs {
+			if v, ok := replace(groups, a); ok {
+				return v
+			}
+		}
+		return a
+	}
 }

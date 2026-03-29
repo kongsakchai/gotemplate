@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 		defaultLogger := slog.Default()
 		defer resetLogger(defaultLogger)
 
-		logger := New(GCPKeyReplacer)
+		logger := New()
 		assert.NotNil(t, logger)
 		logger.Info("Test log message", slog.String("key", "value"))
 	})
@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		t.Setenv("LOG_FORMAT", "text")
-		logger := New(GCPKeyReplacer)
+		logger := New()
 		assert.NotNil(t, logger)
 		logger.Info("Test log message", slog.String("key", "value"))
 	})
@@ -66,8 +66,31 @@ func TestNew(t *testing.T) {
 		defer resetLogger(defaultLogger)
 
 		t.Setenv("LOG_FORMAT", "json")
-		logger := New(GCPKeyReplacer)
+		logger := New()
 		assert.NotNil(t, logger)
 		logger.Info("Test log message", slog.String("key", "value"))
+	})
+}
+
+func TestNewReplaceFuncGroup(t *testing.T) {
+	t.Run("should return new attr when replace func return true", func(t *testing.T) {
+		// arrang
+		req := []slog.Attr{
+			slog.String("other", "value"),
+			slog.String("msg", "value"),
+		}
+		expected := []slog.Attr{
+			slog.String("other", "value"),
+			slog.String("message", "value"),
+		}
+		fn := newReplaceFuncGroup(GCPKeyReplacer)
+
+		//act
+		for i, r := range req {
+			res := fn(nil, r)
+
+			//assert
+			assert.Equal(t, expected[i], res)
+		}
 	})
 }

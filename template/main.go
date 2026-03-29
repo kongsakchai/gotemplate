@@ -11,9 +11,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/kongsakchai/gotemplate/common/logger"
 	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/kongsakchai/gotemplate/template/config"
-	"github.com/kongsakchai/gotemplate/common/logger"
 	migrate "github.com/kongsakchai/simple-sql-migrate"
 )
 

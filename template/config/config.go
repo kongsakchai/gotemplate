@@ -31,7 +31,7 @@ type Migration struct {
 	Enable    bool   `env:"MIGRATION_ENABLE" envDefault:"false"`
 	Directory string `env:"MIGRATION_DIR" envDefault:"./migrations"`
 	Version   string `env:"MIGRATION_VERSION"`
-	TableName string `env:"MIGRATION_TABLE_NAME"`
+	Repeat    string `env:"MIGRATION_REPEAT"`
 }
 
 type Database struct {

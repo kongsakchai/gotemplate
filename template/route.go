@@ -7,11 +7,11 @@ import (
 	"runtime"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/kongsakchai/gotemplate/common/validator"
 	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/kongsakchai/gotemplate/template/app/apperror"
 	"github.com/kongsakchai/gotemplate/template/app/middleware"
 	"github.com/kongsakchai/gotemplate/template/config"
-	"github.com/kongsakchai/gotemplate/common/validator"
 	"github.com/labstack/echo/v5"
 	"github.com/redis/go-redis/v9"
 )
