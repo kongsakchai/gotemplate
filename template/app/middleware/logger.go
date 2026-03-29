@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/labstack/echo/v5"
 )
 

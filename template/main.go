@@ -11,10 +11,10 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/app"
-	"github.com/kongsakchai/gotemplate/config"
-	"github.com/kongsakchai/gotemplate/logger"
-	migrate "github.com/kongsakchai/simple-migrate"
+	"github.com/kongsakchai/gotemplate/template/app"
+	"github.com/kongsakchai/gotemplate/template/config"
+	"github.com/kongsakchai/gotemplate/common/logger"
+	migrate "github.com/kongsakchai/simple-sql-migrate"
 )
 
 var gracefulTimeout = time.Second * 10
@@ -73,13 +73,11 @@ func migrateDB(db *sql.DB, cfg config.Migration) {
 	if !cfg.Enable {
 		return
 	}
-	var err error
-	if cfg.Version != "" {
-		err = migrate.New(db, cfg.Directory).SetVersion(cfg.Version)
-	} else {
-		err = migrate.New(db, cfg.Directory).Up()
-	}
-	if err != nil {
+	if err := migrate.Migrate(db, migrate.Options{
+		Source:  cfg.Directory,
+		Version: cfg.Version,
+		Repeat:  migrate.GetRepeatAction(cfg.Repeat),
+	}); err != nil {
 		panic("migration failed: " + err.Error())
 	}
 }

@@ -27,7 +27,7 @@
 // swagger:meta
 package main
 
-import "github.com/kongsakchai/gotemplate/app"
+import "github.com/kongsakchai/gotemplate/template/app"
 
 // swagger:route GET /health common none
 // Health check endpoint.

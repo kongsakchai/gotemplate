@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"

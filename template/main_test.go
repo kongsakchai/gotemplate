@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/kongsakchai/gotemplate/config"
+	"github.com/kongsakchai/gotemplate/template/config"
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
