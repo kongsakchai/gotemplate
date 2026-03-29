@@ -13,51 +13,132 @@ go install golang.org/x/tools/cmd/gonew@latest
 - Create a new project
 
 ```sh
-gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
+gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
 ```
 
 ---
 
 ## 🌱 Project structure
 
+**Common**
+
 ```sh
 ./
-├── app
-│   └── middleware
 ├── cache
-├── config
 ├── database
 ├── errs
 ├── httpclient
 ├── logger
-├── middleware
-├── migrations
+├── pkg
 └── validator
 ```
 
-- **app** Application layer and business logic.
-
 - **cache** Cache connectors, such as Redis.
-
-- **config** Application configuration files and environment variable management.
-
 - **database** Database connectors and setup, e.g., MySQL or PostgreSQL.
-
 - **errs** Custom error types and centralized error handling for error tracking.
-
 - **httpclient** HTTP client utilities for calling external services or APIs.
-
 - **logger** Logging configuration and shared logger instances.
-
-- **middleware** HTTP middleware for request processing, such as authentication, authorization, and logging.
-
+- **pkg** A collection of small helper packages used across the project.
 - **validator** Request data validation logic, e.g., using [go-playground/validator](https://github.com/go-playground/validator).
 
-- **migrations** Database migration files (.sql) for schema changes, e.g., using [kongsakchai/simple-migrate](https://github.com/kongsakchai/simple-migrate).
+**Template**
+
+```sh
+./
+├── .script
+├── app
+│   ├── apperror
+│   └── middleware
+├── config
+├── docs
+└── migrations
+```
+
+- **app** Application layer and business logic.
+- **app/apperror** Global error handler.
+- **app/middleware** HTTP middleware for request processing, such as authentication, authorization, and logging.
+- **config** Application configuration files and environment variable management.
+- **docs** API documentation, e.g., using [go-swagger](https://github.com/go-swagger/go-swagger).
+- **migrations** Database migration files (.sql) for schema changes, e.g., using [kongsakchai/simple-sql-migrate](https://github.com/kongsakchai/simple-sql-migrate).
 
 ---
 
 ## 📚 Guideline Template
+
+### Common
+
+### Package `cache/`
+
+A helper package for interacting with caching systems. It includes utilities such as a Redis client factory. You may also integrate other caching solutions, such as [github.com/patrickmn/go-cache](https://github.com/patrickmn/go-cache).
+
+### Package `database/`
+
+A package for creating database connectors. Files should be organized by database type, for example:
+
+- database/mysql.go
+- database/postgres.go
+- database/mongo.go
+
+### Package `errs/`
+
+A helper package for error handling and error tracing:
+
+```go
+newErr := errs.Wrap(/* normal error */ err)
+// OR
+newErr := errs.New("some error")
+
+fmt.Println(newErr.Error())
+```
+
+```
+error: msg at (file.go:line) package.function
+```
+
+### Package `/httpclient`
+
+A helper package for interact with external API using HTTP client. Contain a function to call external API and return the ressult
+
+```go
+type Response[T any] struct {
+	Code    int // http code
+	Data    T
+	RawData []byte // raw rasponse
+}
+```
+
+```go
+httpclient.Get[Resp any](ctx context.Context, client *Client, url string, headers ...http.Header) (Response[Resp], error)
+httpclient.Post[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
+httpclient.Put[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
+httpclient.Delete[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
+```
+
+### Package `/logger`
+
+A helper package for configuring the application logger.
+You can control the log level, format, and enable/disable logging via environment variables.
+
+```env
+LOG_ENABLE=true
+LOG_HTTP_ENABLE=true
+LOG_LEVEL=debug|info|warning|error|critical
+LOG_FORMAT=text|json
+```
+
+Sensitive data masking (such as passwords, tokens, or PII) can be configured in `logger/replace.go`.
+
+### Package `/pkg`
+
+- `pkg/timer` — A small package that defines a `Timer` interface and a concrete implementation. Purpose: allow injecting the time source so code that depends on the current time can be tested deterministically.
+- `pkg/mockutil` — Test helpers and mocks used in unit tests to replace real implementations with controllable test doubles.
+
+### Package `/validator`
+
+A package for defining validation rules for requests or structs using validation tags,
+powered by [go-playground/validator](https://github.com/go-playground/validator).
+
+### template
 
 ### Package `app/`
 
@@ -157,12 +238,14 @@ status: 500
 body: { 'code': '9999', 'success': false, 'message': 'internal error' }
 ```
 
+### Package `/app/apperror`
+
 **Global Error Handler**
 
 ```go
-app.ErrorHandler(err error, ctx echo.Context)
+apperror.ErrorHandler(err error, ctx echo.Context)
 // Usage
-echoApp.HTTPErrorHandler = app.ErrorHandler // already configured in route.go
+echoApp.HTTPErrorHandler = apperror.ErrorHandler // already configured in route.go
 ```
 
 You can return an `app.Error` directly from a handler:
@@ -198,10 +281,6 @@ If the reference ID is not present in the request header, a new one will be gene
 
 Middleware for logging API request and response data.
 
-### Package `cache/`
-
-A helper package for interacting with caching systems. It includes utilities such as a Redis client factory. You may also integrate other caching solutions, such as [github.com/patrickmn/go-cache](https://github.com/patrickmn/go-cache).
-
 ### Package `config/`
 
 All configuration should be read and stored as structs within this package. You can differentiate environments using the `ENV` variable and per-environment prefixes:
@@ -219,68 +298,6 @@ type Database struct {
 	URL string `env:"DATABASE_URL"`
 }
 ```
-
-### Package `database/`
-
-A package for creating database connectors. Files should be organized by database type, for example:
-
-- database/mysql.go
-- database/postgres.go
-- database/mongo.go
-
-### Package `errs/`
-
-A helper package for error handling and error tracing:
-
-```go
-newErr := errs.Wrap(/* normal error */ err)
-// OR
-newErr := errs.New("some error")
-
-fmt.Println(newErr.Error())
-```
-
-```
-error: msg at (file.go:line) package.function
-```
-
-### Package `/httpclient`
-
-A helper package for interact with external API using HTTP client. Contain a function to call external API and return the ressult
-
-```go
-type Response[T any] struct {
-	Code    int // http code
-	Data    T
-	RawData []byte // raw rasponse
-}
-```
-
-```go
-httpclient.Get[Resp any](ctx context.Context, client *Client, url string, headers ...http.Header) (Response[Resp], error)
-httpclient.Post[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Put[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Delete[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-```
-
-### Package `/logger`
-
-A helper package for configuring the application logger.
-You can control the log level, format, and enable/disable logging via environment variables.
-
-```env
-LOG_ENABLE=true
-LOG_HTTP_ENABLE=true
-LOG_LEVEL=debug|info|warning|error|critical
-LOG_FORMAT=text|json
-```
-
-Sensitive data masking (such as passwords, tokens, or PII) can be configured in `logger/replace.go`.
-
-### Package `/validator`
-
-A package for defining validation rules for requests or structs using validation tags,
-powered by [go-playground/validator](https://github.com/go-playground/validator).
 
 ### Folder `/migrations`
 
@@ -304,11 +321,11 @@ Migration behavior can be configured via environment variables:
 MIGRATION_ENABLE=true
 MIGRATION_DIR=./migrations
 MIGRATION_VERSION=0001
-MIGRATION_TABLE_NAME=schema_migrations # table used to store migration logs
+MIGRATION_REPEAT=none
 ```
 
-- If `MIGRATION_VERSION` is not specified, the latest version will be used
-- If `MIGRATION_TABLE_NAME` or `MIGRATION_DIR` is not specified, default values will be applied
+- If `MIGRATION_VERSION`, `MIGRATION_VERSION` and, `MIGRATION_REPEAT` is not specified, the latest version will be used
+- `MIGRATION_DIR` should not empty
 
 ### Recommended patterns
 
