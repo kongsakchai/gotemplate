@@ -32,4 +32,5 @@ gendocs:
 	@swagger generate spec -o ./docs/swagger.yaml --scan-models --tags=docs
 
 .PHONY: docs
+docs:
 	@swagger serve -F=swagger ./docs/swagger.yaml

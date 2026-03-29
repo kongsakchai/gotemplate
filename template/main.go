@@ -80,4 +80,7 @@ func migrateDB(db *sql.DB, cfg config.Migration) {
 	}); err != nil {
 		panic("migration failed: " + err.Error())
 	}
+
+	version, _ := migrate.Version(db)
+	slog.Info("migration completed", "version", version)
 }
