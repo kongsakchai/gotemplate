@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"time"
 
 	"github.com/kongsakchai/gotemplate/template/app"
@@ -21,21 +22,25 @@ func Logger(enable bool) echo.MiddlewareFunc {
 				return next(ctx)
 			}
 
+			logger := ctx.Logger().With(
+				slog.String(traceID, traceID),
+				slog.String(tag, tag),
+			)
+
 			responseWriter := ctx.Response()
 			ctx.SetResponse(&echoResponseWriter{
 				ResponseWriter: responseWriter,
+				logger:         logger,
 				ctx:            req.Context(),
 				url:            req.URL.String(),
 				now:            time.Now(),
-				traceID:        traceID,
-				tag:            tag,
 			})
 
 			switch req.Header.Get(echo.HeaderContentType) {
 			case echo.MIMEApplicationJSON, echo.MIMETextPlain:
 				break
 			default:
-				ctx.Logger().InfoContext(req.Context(), fmt.Sprintf("request %s", req.URL),
+				logger.InfoContext(req.Context(), fmt.Sprintf("request %s", req.URL),
 					"method", req.Method,
 					"body", req.Header.Get(echo.HeaderContentType),
 					app.TraceID, traceID,
@@ -46,7 +51,7 @@ func Logger(enable bool) echo.MiddlewareFunc {
 
 			b, err := io.ReadAll(req.Body)
 			if err != nil {
-				ctx.Logger().ErrorContext(req.Context(), "failed to read request body",
+				logger.ErrorContext(req.Context(), "failed to read request body",
 					"error", err,
 					app.TraceID, traceID,
 					app.Tag, tag,
@@ -54,7 +59,7 @@ func Logger(enable bool) echo.MiddlewareFunc {
 				return err
 			}
 
-			ctx.Logger().InfoContext(req.Context(), fmt.Sprintf("request %s", req.URL),
+			logger.InfoContext(req.Context(), fmt.Sprintf("request %s", req.URL),
 				"method", req.Method,
 				"body", string(b),
 				app.TraceID, traceID,
@@ -63,6 +68,7 @@ func Logger(enable bool) echo.MiddlewareFunc {
 
 			req.Body.Close()
 			req.Body = io.NopCloser(bytes.NewBuffer(b))
+			ctx.SetLogger(logger)
 
 			return next(ctx)
 		}

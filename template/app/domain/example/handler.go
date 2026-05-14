@@ -2,7 +2,7 @@ package example
 
 //mockery:generate: true
 type Storager interface {
-	Users() ([]User, error)
+	Users() []User
 	UserByName(name string) (User, error)
 	CreateUser(user User) error
 }

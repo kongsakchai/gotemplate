@@ -7,18 +7,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/template/app"
 	"github.com/labstack/echo/v5"
 )
 
 type echoResponseWriter struct {
 	http.ResponseWriter
-	ctx     context.Context
-	status  int
-	url     string
-	now     time.Time
-	traceID string
-	tag     string
+	logger *slog.Logger
+	ctx    context.Context
+	status int
+	url    string
+	now    time.Time
 }
 
 func (w *echoResponseWriter) WriteHeader(status int) {
@@ -33,18 +31,14 @@ func (w *echoResponseWriter) Write(b []byte) (int, error) {
 	}
 
 	if w.status == http.StatusOK || w.status == http.StatusCreated {
-		slog.InfoContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
+		w.logger.InfoContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
 			"body", body,
 			"latency", time.Since(w.now).String(),
-			app.TraceID, w.traceID,
-			app.Tag, w.tag,
 		)
 	} else {
-		slog.ErrorContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
+		w.logger.ErrorContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
 			"body", body,
 			"latency", time.Since(w.now).String(),
-			app.TraceID, w.traceID,
-			app.Tag, w.tag,
 		)
 	}
 

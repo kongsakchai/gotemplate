@@ -22,3 +22,7 @@ func (s *storage) UserByName(name string) (User, error) {
 	}
 	return User{}, nil
 }
+
+func (s *storage) Users() []User {
+	return s.users
+}

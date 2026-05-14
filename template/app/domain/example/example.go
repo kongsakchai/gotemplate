@@ -5,3 +5,13 @@ type User struct {
 	LastName  string `json:"lastName"`
 	Age       int    `json:"age"`
 }
+
+type domain struct {
+	Handler *handler
+}
+
+func New() *domain {
+	st := NewStorage()
+	h := NewHandler(st)
+	return &domain{Handler: h}
+}

@@ -34,9 +34,9 @@ func TestEchoResponseWriter_Write(t *testing.T) {
 		rec := httptest.NewRecorder()
 		w := &echoResponseWriter{
 			ResponseWriter: rec,
+			logger:         slog.Default(),
 			ctx:            context.Background(),
 			url:            "/users",
-			traceID:        "trace-1",
 		}
 
 		w.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -59,9 +59,9 @@ func TestEchoResponseWriter_Write(t *testing.T) {
 		rec := httptest.NewRecorder()
 		w := &echoResponseWriter{
 			ResponseWriter: rec,
+			logger:         slog.Default(),
 			ctx:            context.Background(),
 			url:            "/ping",
-			traceID:        "trace-2",
 		}
 
 		w.Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
@@ -84,9 +84,9 @@ func TestEchoResponseWriter_Write(t *testing.T) {
 		rec := httptest.NewRecorder()
 		w := &echoResponseWriter{
 			ResponseWriter: rec,
+			logger:         slog.Default(),
 			ctx:            context.Background(),
 			url:            "/error",
-			traceID:        "trace-3",
 		}
 
 		w.Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)

@@ -147,7 +147,7 @@ func (_c *mockStorager_UserByName_Call) RunAndReturn(run func(name string) (User
 }
 
 // Users provides a mock function for the type mockStorager
-func (_mock *mockStorager) Users() ([]User, error) {
+func (_mock *mockStorager) Users() []User {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
@@ -155,10 +155,6 @@ func (_mock *mockStorager) Users() ([]User, error) {
 	}
 
 	var r0 []User
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func() ([]User, error)); ok {
-		return returnFunc()
-	}
 	if returnFunc, ok := ret.Get(0).(func() []User); ok {
 		r0 = returnFunc()
 	} else {
@@ -166,12 +162,7 @@ func (_mock *mockStorager) Users() ([]User, error) {
 			r0 = ret.Get(0).([]User)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func() error); ok {
-		r1 = returnFunc()
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // mockStorager_Users_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Users'
@@ -191,12 +182,12 @@ func (_c *mockStorager_Users_Call) Run(run func()) *mockStorager_Users_Call {
 	return _c
 }
 
-func (_c *mockStorager_Users_Call) Return(users []User, err error) *mockStorager_Users_Call {
-	_c.Call.Return(users, err)
+func (_c *mockStorager_Users_Call) Return(users []User) *mockStorager_Users_Call {
+	_c.Call.Return(users)
 	return _c
 }
 
-func (_c *mockStorager_Users_Call) RunAndReturn(run func() ([]User, error)) *mockStorager_Users_Call {
+func (_c *mockStorager_Users_Call) RunAndReturn(run func() []User) *mockStorager_Users_Call {
 	_c.Call.Return(run)
 	return _c
 }

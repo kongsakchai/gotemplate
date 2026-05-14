@@ -199,6 +199,7 @@ func TestSetupExternalService(t *testing.T) {
 	t.Run("should return external service and close function", func(t *testing.T) {
 		cfg := config.Load(config.Env)
 		external, closeFunc := setupExternalService(cfg)
+		defer closeFunc(t.Context())
 		assert.NotNil(t, external)
 		assert.NotNil(t, closeFunc)
 	})

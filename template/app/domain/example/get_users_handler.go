@@ -6,9 +6,6 @@ import (
 )
 
 func (h *handler) GetUsers(ctx *echo.Context) error {
-	users, err := h.storage.Users()
-	if err != nil {
-		return app.InternalError("5001", "failed to get users", err)
-	}
+	users := h.storage.Users()
 	return app.Ok(ctx, users)
 }

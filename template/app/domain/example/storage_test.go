@@ -20,9 +20,11 @@ func TestStorageCreateUser(t *testing.T) {
 
 	err := s.CreateUser(user)
 
+	users := s.Users()
+
 	assert.NoError(t, err)
-	assert.Len(t, s.users, 1)
-	assert.Equal(t, user, s.users[0])
+	assert.Len(t, users, 1)
+	assert.Equal(t, user, users[0])
 }
 
 func TestStorageUserByName(t *testing.T) {
