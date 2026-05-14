@@ -1,16 +1,16 @@
 # 🚀 Go Template
 
-🎉 This is a template for creating a Go web service API project. Intended to be used as a starting point for creating a new Go web service API project and be a guideline for the project structure.
+A starting point for Go web service API projects.
 
 ## 🔥 Usage
 
-- Install `gonew`
+Install `gonew`:
 
 ```sh
 go install golang.org/x/tools/cmd/gonew@latest
 ```
 
-- Create a new project
+Create a new project:
 
 ```sh
 gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
@@ -18,11 +18,11 @@ gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
 
 ---
 
-## 🌱 Project structure
+## 🌱 Project Structure
 
-**Common**
+**Common packages**
 
-```sh
+```
 ./
 ├── cache
 ├── database
@@ -33,17 +33,19 @@ gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
 └── validator
 ```
 
-- **cache** Cache connectors, such as Redis.
-- **database** Database connectors and setup, e.g., MySQL or PostgreSQL.
-- **errs** Custom error types and centralized error handling for error tracking.
-- **httpclient** HTTP client utilities for calling external services or APIs.
-- **logger** Logging configuration and shared logger instances.
-- **pkg** A collection of small helper packages used across the project.
-- **validator** Request data validation logic, e.g., using [go-playground/validator](https://github.com/go-playground/validator).
+| Package      | Description                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| `cache`      | Cache connectors (e.g., Redis)                                                                       |
+| `database`   | Database connectors and setup (e.g., MySQL, PostgreSQL)                                              |
+| `errs`       | Custom error types and centralized error handling                                                    |
+| `httpclient` | HTTP client utilities for calling external services                                                  |
+| `logger`     | Logging configuration and shared logger instances                                                    |
+| `pkg`        | Small helper packages used across the project                                                        |
+| `validator`  | Request validation logic using [go-playground/validator](https://github.com/go-playground/validator) |
 
-**Template**
+**Template packages**
 
-```sh
+```
 ./
 ├── .script
 ├── app
@@ -54,70 +56,66 @@ gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
 └── migrations
 ```
 
-- **app** Application layer and business logic.
-- **app/apperror** Global error handler.
-- **app/middleware** HTTP middleware for request processing, such as authentication, authorization, and logging.
-- **config** Application configuration files and environment variable management.
-- **docs** API documentation, e.g., using [go-swagger](https://github.com/go-swagger/go-swagger).
-- **migrations** Database migration files (.sql) for schema changes, e.g., using [kongsakchai/simple-sql-migrate](https://github.com/kongsakchai/simple-sql-migrate).
+| Package          | Description                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `app`            | Application layer and business logic                                                                |
+| `app/apperror`   | Global error handler                                                                                |
+| `app/middleware` | HTTP middleware (auth, logging, etc.)                                                               |
+| `config`         | Configuration and environment variable management                                                   |
+| `docs`           | API documentation (e.g., [go-swagger](https://github.com/go-swagger/go-swagger))                    |
+| `migrations`     | SQL migration files (e.g., [simple-sql-migrate](https://github.com/kongsakchai/simple-sql-migrate)) |
 
 ---
 
-## 📚 Guideline Template
+## 📚 Package Guidelines
 
-### Common
+### `cache/`
 
-### Package `cache/`
+Utilities for caching systems such as Redis. Other options like [go-cache](https://github.com/patrickmn/go-cache) can also be integrated.
 
-A helper package for interacting with caching systems. It includes utilities such as a Redis client factory. You may also integrate other caching solutions, such as [github.com/patrickmn/go-cache](https://github.com/patrickmn/go-cache).
+### `database/`
 
-### Package `database/`
+Organize database connector files by type:
 
-A package for creating database connectors. Files should be organized by database type, for example:
+```
+database/mysql.go
+database/postgres.go
+database/mongo.go
+```
 
-- database/mysql.go
-- database/postgres.go
-- database/mongo.go
+### `errs/`
 
-### Package `errs/`
-
-A helper package for error handling and error tracing:
+Error handling and tracing utilities:
 
 ```go
-newErr := errs.Wrap(/* normal error */ err)
-// OR
-newErr := errs.New("some error")
+err := errs.Wrap(err)
+// or
+err := errs.New("some error")
 
-fmt.Println(newErr.Error())
+fmt.Println(err.Error())
+// error: msg at (file.go:line) package.function
 ```
 
-```
-error: msg at (file.go:line) package.function
-```
+### `httpclient/`
 
-### Package `/httpclient`
-
-A helper package for interact with external API using HTTP client. Contain a function to call external API and return the ressult
+Helpers for calling external APIs:
 
 ```go
 type Response[T any] struct {
-	Code    int // http code
-	Data    T
-	RawData []byte // raw rasponse
+    Code    int
+    Data    T
+    RawData []byte
 }
+
+httpclient.Get[T](ctx, client, url, headers...)
+httpclient.Post[T](ctx, client, url, payload, headers...)
+httpclient.Put[T](ctx, client, url, payload, headers...)
+httpclient.Delete[T](ctx, client, url, payload, headers...)
 ```
 
-```go
-httpclient.Get[Resp any](ctx context.Context, client *Client, url string, headers ...http.Header) (Response[Resp], error)
-httpclient.Post[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Put[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Delete[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-```
+### `logger/`
 
-### Package `/logger`
-
-A helper package for configuring the application logger.
-You can control the log level, format, and enable/disable logging via environment variables.
+Configure logging via environment variables:
 
 ```env
 LOG_ENABLE=true
@@ -126,110 +124,82 @@ LOG_LEVEL=debug|info|warning|error|critical
 LOG_FORMAT=text|json
 ```
 
-Sensitive data masking (such as passwords, tokens, or PII) can be configured in `logger/replace.go`.
+Sensitive data masking (passwords, tokens, PII) can be configured in `logger/replace.go`.
 
-### Package `/pkg`
+### `pkg/`
 
-- `pkg/timer` — A small package that defines a `Timer` interface and a concrete implementation. Purpose: allow injecting the time source so code that depends on the current time can be tested deterministically.
-- `pkg/mockutil` — Test helpers and mocks used in unit tests to replace real implementations with controllable test doubles.
+- `pkg/timer` — `Timer` interface for injecting a time source, useful for deterministic testing.
+- `pkg/mockutil` — Test helpers and mocks for unit tests.
 
-### Package `/validator`
+### `validator/`
 
-A package for defining validation rules for requests or structs using validation tags,
-powered by [go-playground/validator](https://github.com/go-playground/validator).
+Define validation rules using struct tags powered by [go-playground/validator](https://github.com/go-playground/validator).
 
-### template
+---
 
-### Package `app/`
+## 📦 App Layer
 
-This is the main package we will focus on. Business logic and application layers should reside in this package, with each module clearly separated. Example:
+### `app/`
 
-```sh
-./
-└── app
-    ├── user
-    └── admin
-        ├── admin.go
-        └── handler.go
+All business logic lives here, organized by module:
+
+```
+app/
+├── user/
+└── admin/
+    ├── admin.go
+    └── handler.go
 ```
 
-- app/register
-- app/booking
-- app/product
-
 > [!CAUTION]
-> Business logic should not be written in any package other than `app/`.
+> Business logic must not be written outside the `app/` package.
 
-#### API Response
+### API Responses
 
-`app/app.go` provides helpers for API responses:
+**Success responses — `app/app.go`**
 
 ```go
 type Response struct {
-	Code    string `json:"code"` // business code
-	Success  string `json:"success"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
+    Code    string `json:"code"`
+    Success bool   `json:"success"`
+    Message string `json:"message,omitempty"`
+    Data    any    `json:"data,omitempty"`
 }
-```
 
-**OK 200**
-
-```go
-app.Ok(ctx echo.Context, data any, msg ...string) error
-// usage
-app.OK(ctx, "data","success")
+app.Ok(ctx, data, msg...)      // 200
+app.Created(ctx, data, msg...) // 201
 ```
 
 ```yaml
+# Example
 status: 200
-body: { 'code': '0000', 'success': true, 'data': 'data', 'message': 'success' }
+body: { 'code': '0000', 'success': true, 'data': '...', 'message': 'success' }
 ```
 
-**Created 201**
-
-```go
-app.Created(ctx echo.Context, data any, msg ...string) error
-// usage
-app.Created(ctx, "data","success")
-```
-
-```yaml
-status: 201
-body: { 'code': '0000', 'success': true, 'data': 'data', 'message': 'success' }
-```
-
-**API Error Response — `app/error.go`**
+**Error responses — `app/error.go`**
 
 ```go
 type Error struct {
-	HTTPCode int    // HTTP status code: 500, 400, 401, 403, 409
-	Code     string // Business code
-	Message  string
-	Data     any
-	Err      error  // Used for server-side logging only
+    HTTPCode int
+    Code     string
+    Message  string
+    Data     any
+    Err      error // server-side logging only
 }
-```
 
-```go
-app.InternalServer(code string, msg string, err error, data ...any) app.Error
-app.BadRequest(code string, msg string, err error, data ...any) app.Error
-app.NotFound(code string, msg string, err error, data ...any) app.Error
-app.Unauthorized(code string, msg string, err error, data ...any) app.Error
-app.Forbidden(code string, msg string, err error, data ...any) app.Error
-app.Conflict(code string, msg string, err error, data ...any) app.Error
+app.InternalServer(code, msg, err, data...)
+app.BadRequest(code, msg, err, data...)
+app.NotFound(code, msg, err, data...)
+app.Unauthorized(code, msg, err, data...)
+app.Forbidden(code, msg, err, data...)
+app.Conflict(code, msg, err, data...)
 ```
 
 > [!NOTE]
->
-> - Why I do not use HTTP `404` for data not found ? `404` is a standard HTTP error that represents a missing endpoint or resource. Using it for missing data can cause confusion between “data not found” and “route not found”, and it also adds unnecessary complexity on the client side.
-> - Why I use HTTP `400` for data not found ? I see missing data as something that usually results from an invalid or incorrect request from the client, while the system itself is still operating normally.
-
-**500 Internal Server Error**
+> This template uses `400` instead of `404` for missing data, since `404` should indicate a missing route, not a missing record. Missing data is typically the result of an invalid client request.
 
 ```go
-app.Fail(ctx echo.Context, err app.Error) error
-// usage
+// Usage
 app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
 ```
 
@@ -238,52 +208,42 @@ status: 500
 body: { 'code': '9999', 'success': false, 'message': 'internal error' }
 ```
 
-### Package `/app/apperror`
+### `app/apperror/`
 
-**Global Error Handler**
+Global error handler — already wired into the router:
 
 ```go
-apperror.ErrorHandler(err error, ctx echo.Context)
-// Usage
-echoApp.HTTPErrorHandler = apperror.ErrorHandler // already configured in route.go
+echoApp.HTTPErrorHandler = apperror.ErrorHandler
 ```
 
-You can return an `app.Error` directly from a handler:
+Handlers can return `app.Error` directly:
 
 ```go
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		if db.Ping() != nil {
-			return app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil)
-		}
-		return app.Ok(ctx, nil, "healthy")
-	}
+    return func(ctx echo.Context) error {
+        if db.Ping() != nil {
+            return app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil)
+        }
+        return app.Ok(ctx, nil, "healthy")
+    }
 }
 ```
 
-### Package `/app/middleware`
+### `app/middleware/`
 
-A helper package for HTTP middleware used in request processing,
-such as authentication, authorization, logging, and request tracing.
-
-**app/middleware/refid.go**
-
-Middleware for managing a **reference ID** to make log tracing easier.
-The header key can be configured via an environment variable.
+**`middleware/refid.go`** — Injects a reference ID for log tracing. Reads from the request header or generates a new UUID if absent.
 
 ```env
 HEADER_REF_ID_KEY=
 ```
 
-If the reference ID is not present in the request header, a new one will be generated using [github.com/google/uuid](https://github.com/google/uuid).
+**`middleware/logger.go`** — Logs API request and response data.
 
-**app/middleware/logger.go**
+---
 
-Middleware for logging API request and response data.
+## ⚙️ Config
 
-### Package `config/`
-
-All configuration should be read and stored as structs within this package. You can differentiate environments using the `ENV` variable and per-environment prefixes:
+Read environment variables into typed structs. Use `ENV` to differentiate environments:
 
 ```env
 ENV=LOCAL|DEV|PROD
@@ -295,27 +255,25 @@ PROD_DATABASE_URL=
 
 ```go
 type Database struct {
-	URL string `env:"DATABASE_URL"`
+    URL string `env:"DATABASE_URL"`
 }
 ```
 
-### Folder `/migrations`
+---
 
-A folder containing SQL files for database migrations or schema updates.
-Migration files follow this naming convention:
+## 🗄️ Migrations
 
-```text
+SQL migration files follow this naming convention:
+
+```
 version_name.up.sql
 version_name.down.sql
-```
 
-**Example:**
-
-```text
+# Example
 0001_init_schema.up.sql
 ```
 
-Migration behavior can be configured via environment variables:
+Configure via environment variables:
 
 ```env
 MIGRATION_ENABLE=true
@@ -324,72 +282,64 @@ MIGRATION_VERSION=0001
 MIGRATION_REPEAT=none
 ```
 
-- If `MIGRATION_VERSION`, `MIGRATION_VERSION` and, `MIGRATION_REPEAT` is not specified, the latest version will be used
-- `MIGRATION_DIR` should not empty
+If `MIGRATION_VERSION` and `MIGRATION_REPEAT` are not set, the latest version is used. `MIGRATION_DIR` must not be empty.
 
-### Recommended patterns
+---
 
-When using this Go template, I recommend the following patterns:
+## ✅ Recommended Patterns
 
-- **Storage pattern / Repository pattern** for managing database or external API interactions to separate concerns and improve testability.
-- **Combine Handler with Service** I don't see the necessity to separate Handler from Service, as it may overcomplicate the code, especially for small to medium projects. Combining them reduces file count and improves code clarity and maintainability. However, I recommend breaking down Handler into smaller functions for better organization:
-  - `Handle` function: manages HTTP requests
-  - `Process` function: handles business logic (Service layer)
+**Repository pattern** — Separate database/external API interactions for better testability.
 
-Example:
+**Combined Handler + Service** — Avoid splitting Handler from Service unnecessarily. For small to medium projects, combining them reduces complexity. Break logic into two functions instead:
+
+- `Handle` — manages the HTTP request
+- `Process` — contains business logic
 
 ```go
 type handler struct {
-	storage Storager
+    storage Storager
 }
 
 func (h *handler) GetUserByID(ctx echo.Context) error {
-	userID := ctx.Param("id")
-	_, err := h.processGetUserByID(userID)
-	if err != nil {
-		return err
-	}
-	return nil
+    userID := ctx.Param("id")
+    _, err := h.processGetUserByID(userID)
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
 func (h *handler) processGetUserByID(userID string) (*User, error) {
-	// business logic here
+    // business logic here
 }
 ```
 
-- **One file per endpoint** for clarity and easier maintenance. In larger projects, organizing files by endpoint improves code organization and makes features easier to locate and modify.
-- **Separate modules by business domain** for better organization and maintainability. Domain-driven module separation improves code clarity and reduces cognitive load.
-- **File naming** should represent the responsibility and purpose of the file.
-- **Error handling** Use centralized error handling by creating custom error types and leveraging the global error handler to manage all errors in one place. This keeps code clean and simplifies maintenance.
+**One file per endpoint** — Improves readability and makes features easier to locate.
 
-### Testing
+**Domain-separated modules** — Group code by business domain to reduce cognitive load.
 
-This project uses [testify](https://github.com/stretchr/testify) for testing. The `app` package provides a helper for mocking Echo context.
+**Descriptive file names** — File names should reflect their responsibility.
 
-**Mocking Echo Context — `github.com/labstack/echo/v5/echotest`**
+**Centralized error handling** — Use custom error types and the global error handler to keep code clean.
+
+---
+
+## 🧪 Testing
+
+Uses [testify](https://github.com/stretchr/testify).
+
+### Mocking Echo Context
 
 ```go
-ctx := echotest.ContextConfig{
-	Headers: http.Header{
-		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
-	},
-	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
-}.ToContext(t)
-
 ctx, rec := echotest.ContextConfig{
-	Headers: http.Header{
-		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
-	},
-	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
+    Headers: http.Header{
+        echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
+    },
+    JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
 }.ToContextRecorder(t)
 ```
 
-The function returns:
-
-- `echo.Context` — for passing to handlers
-- `*httptest.ResponseRecorder` — for asserting HTTP response
-
-**Example**
+Returns `echo.Context` for passing to handlers and `*httptest.ResponseRecorder` for asserting responses.
 
 ```go
 func TestGetUser(t *testing.T) {
@@ -409,11 +359,9 @@ func TestGetUser(t *testing.T) {
 }
 ```
 
-**Dependecy injection**
+### Dependency Injection with Mockery
 
-Use `mockery` for generating mocks of interfaces. This allows you to easily create mock implementations of your interfaces for testing.
-
-- add directive `//mockery:generate: true` to interface:
+Add the directive to the interface:
 
 ```go
 //mockery:generate: true
@@ -424,52 +372,36 @@ type Storager interface {
 }
 ```
 
-- Install mockery:
+Install and run:
 
-```bash
-
+```sh
 go install github.com/vektra/mockery/v2@latest
+mockery
 ```
 
-- Run mock generation: `mockery`
+### Database Testing
 
-**Database testing**
-
-- Use `modernc.org/sqlite` for testing database interactions. This allows you to create an in-memory SQLite database for testing purposes, which is fast and does not require any setup.
+**In-memory SQLite** (fast, no setup):
 
 ```go
 import (
-		_ "modernc.org/sqlite"
-		"github.com/jmoiron/sqlx"
+    _ "modernc.org/sqlite"
+    "github.com/jmoiron/sqlx"
 )
 
-func TestDatabase(t *testing.T) {
-	db, err := sqlx.Open("sqlite", ":memory:")
-	require.NoError(t, err)
-	defer db.Close()
-
-	// Run migrations or setup schema here
-
-	// Perform database operations and assertions
-}
+db, err := sqlx.Open("sqlite", ":memory:")
+require.NoError(t, err)
+defer db.Close()
 ```
 
-- Use `github.com/DATA-DOG/go-sqlmock` for testing database interactions without an actual database. This allows you to mock database queries and responses, making it easier to test your database logic in isolation.
+**SQL mock** (no database required):
 
 ```go
-import (
-		"github.com/DATA-DOG/go-sqlmock"
-)
+import "github.com/DATA-DOG/go-sqlmock"
 
-func TestDatabase(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer db.Close()
-
-	// Setup expected queries and responses here
-
-	// Perform database operations and assertions
-}
+db, mock, err := sqlmock.New()
+require.NoError(t, err)
+defer db.Close()
 ```
 
-> https://github.com/DATA-DOG/go-sqlmock
+> Reference: https://github.com/DATA-DOG/go-sqlmock
