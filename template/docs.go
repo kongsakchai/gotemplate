@@ -36,7 +36,7 @@ import "github.com/kongsakchai/gotemplate/template/app"
 //   500: errorDatabaseResponse
 
 // swagger:response healthResponse
-type healthResponseWrapper struct {
+type HealthResponseWrapper struct {
 	// in:body
 	Body struct {
 		app.SwaggerSuccessResponse
@@ -51,13 +51,13 @@ type healthResponseWrapper struct {
 //   200: metricsResponse
 
 // swagger:response metricsResponse
-type metricsResponseWrapper struct {
+type MetricsResponseWrapper struct {
 	// in:body
 	Body struct {
 		app.SwaggerSuccessResponse
 		Data struct {
 			/*
-							{
+				{
 				  "code": "0000",
 				  "success": true,
 				  "data": {

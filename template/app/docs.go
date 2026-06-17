@@ -10,7 +10,7 @@ type SwaggerSuccessResponse struct {
 }
 
 // swagger:response errorInternalResponse
-type errorInternalResponse struct {
+type ErrorInternalResponse struct {
 	// in:body
 	Body struct {
 		// example: 9999
@@ -23,7 +23,7 @@ type errorInternalResponse struct {
 }
 
 // swagger:response errorDatabaseResponse
-type errorDatabaseResponse struct {
+type ErrorDatabaseResponse struct {
 	// in:body
 	Body struct {
 		// example: 9998

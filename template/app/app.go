@@ -1,16 +1,8 @@
 package app
 
 import (
-	"context"
 	"net/http"
-
-	"github.com/labstack/echo/v5"
 )
-
-type App interface {
-	Shutdown(ctx context.Context) error
-	Start(ctx context.Context, addr string) error
-}
 
 type Response struct {
 	Code    string `json:"code"`
@@ -19,7 +11,26 @@ type Response struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func Ok(ctx *echo.Context, data any, msg ...string) error {
+type RequestContext interface {
+	Bind(i any) error
+	Validate(i any) error
+}
+
+func Request(ctx RequestContext, target any) error {
+	if err := ctx.Bind(target); err != nil {
+		return BadRequest(BadRequestCode, BadRequestMsg, err)
+	}
+	if err := ctx.Validate(target); err != nil {
+		return BadRequest(InValidCode, InValidMsg, err, err)
+	}
+	return nil
+}
+
+type Context interface {
+	JSON(code int, i any) (err error)
+}
+
+func Ok(ctx Context, data any, msg ...string) error {
 	message := ""
 	if len(msg) > 0 {
 		message = msg[0]
@@ -32,7 +43,7 @@ func Ok(ctx *echo.Context, data any, msg ...string) error {
 	})
 }
 
-func Created(ctx *echo.Context, data any, msg ...string) error {
+func Created(ctx Context, data any, msg ...string) error {
 	message := ""
 	if len(msg) > 0 {
 		message = msg[0]
@@ -45,7 +56,7 @@ func Created(ctx *echo.Context, data any, msg ...string) error {
 	})
 }
 
-func Fail(ctx *echo.Context, err Error) error {
+func Fail(ctx Context, err Error) error {
 	return ctx.JSON(err.HTTPCode, Response{
 		Code:    err.Code,
 		Success: false,

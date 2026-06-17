@@ -4,12 +4,14 @@ go 1.26.1
 
 require (
 	github.com/caarlos0/env/v11 v11.4.0
+	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/kongsakchai/gotemplate/common v0.1.1
+	github.com/kongsakchai/paint v0.0.2
 	github.com/kongsakchai/simple-sql-migrate v0.1.5
 	github.com/labstack/echo/v5 v5.0.4
+	github.com/lib/pq v1.12.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/stretchr/testify v1.11.1
 	modernc.org/sqlite v1.48.0
@@ -24,8 +26,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.30.1 // indirect
-	github.com/kongsakchai/paint v0.0.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect

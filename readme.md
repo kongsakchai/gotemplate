@@ -13,7 +13,7 @@ go install golang.org/x/tools/cmd/gonew@latest
 - Create a new project
 
 ```sh
-gonew github.com/kongsakchai/gotemplate/template github.com/yourname/projectname
+gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
 ```
 
 ---
@@ -333,8 +333,8 @@ When using this Go template, I recommend the following patterns:
 
 - **Storage pattern / Repository pattern** for managing database or external API interactions to separate concerns and improve testability.
 - **Combine Handler with Service** I don't see the necessity to separate Handler from Service, as it may overcomplicate the code, especially for small to medium projects. Combining them reduces file count and improves code clarity and maintainability. However, I recommend breaking down Handler into smaller functions for better organization:
-  - `Handle` function: manages HTTP requests
-  - `Process` function: handles business logic (Service layer)
+    - `Handle` function: manages HTTP requests
+    - `Process` function: handles business logic (Service layer)
 
 Example:
 
