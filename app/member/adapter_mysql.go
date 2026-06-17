@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/kongsakchai/gotemplate/template/pkg/errs"
+	"github.com/kongsakchai/gotemplate/pkg/errs"
 )
 
 type storage struct {

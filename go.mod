@@ -1,4 +1,4 @@
-module github.com/kongsakchai/gotemplate/template
+module github.com/kongsakchai/gotemplate
 
 go 1.26.1
 

@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/kongsakchai/gotemplate/template/app"
-	"github.com/kongsakchai/gotemplate/template/app/member"
-	"github.com/kongsakchai/gotemplate/template/pkg/clock"
-	"github.com/kongsakchai/gotemplate/template/pkg/config"
-	"github.com/kongsakchai/gotemplate/template/pkg/database"
-	"github.com/kongsakchai/gotemplate/template/pkg/logger"
+	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/app/member"
+	"github.com/kongsakchai/gotemplate/pkg/clock"
+	"github.com/kongsakchai/gotemplate/pkg/config"
+	"github.com/kongsakchai/gotemplate/pkg/database"
+	"github.com/kongsakchai/gotemplate/pkg/logger"
 	"github.com/labstack/echo/v5"
 )
 

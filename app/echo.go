@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/template/pkg/config"
-	"github.com/kongsakchai/gotemplate/template/pkg/errs"
-	"github.com/kongsakchai/gotemplate/template/pkg/validator"
+	"github.com/kongsakchai/gotemplate/pkg/config"
+	"github.com/kongsakchai/gotemplate/pkg/errs"
+	"github.com/kongsakchai/gotemplate/pkg/validator"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )

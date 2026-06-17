@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kongsakchai/gotemplate/template/pkg/config"
+	"github.com/kongsakchai/gotemplate/pkg/config"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
