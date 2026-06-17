@@ -94,74 +94,12 @@ func (_c *mockStorager_Create_Call) RunAndReturn(run func(ctx context.Context, m
 	return _c
 }
 
-// GetAll provides a mock function for the type mockStorager
-func (_mock *mockStorager) GetAll(ctx context.Context) ([]Member, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetAll")
-	}
-
-	var r0 []Member
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]Member, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []Member); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]Member)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// mockStorager_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
-type mockStorager_GetAll_Call struct {
-	*mock.Call
-}
-
-// GetAll is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *mockStorager_Expecter) GetAll(ctx interface{}) *mockStorager_GetAll_Call {
-	return &mockStorager_GetAll_Call{Call: _e.mock.On("GetAll", ctx)}
-}
-
-func (_c *mockStorager_GetAll_Call) Run(run func(ctx context.Context)) *mockStorager_GetAll_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *mockStorager_GetAll_Call) Return(members []Member, err error) *mockStorager_GetAll_Call {
-	_c.Call.Return(members, err)
-	return _c
-}
-
-func (_c *mockStorager_GetAll_Call) RunAndReturn(run func(ctx context.Context) ([]Member, error)) *mockStorager_GetAll_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetByUsername provides a mock function for the type mockStorager
-func (_mock *mockStorager) GetByUsername(ctx context.Context, username string) (Member, bool, error) {
+// Member provides a mock function for the type mockStorager
+func (_mock *mockStorager) Member(ctx context.Context, username string) (Member, bool, error) {
 	ret := _mock.Called(ctx, username)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetByUsername")
+		panic("no return value specified for Member")
 	}
 
 	var r0 Member
@@ -188,19 +126,19 @@ func (_mock *mockStorager) GetByUsername(ctx context.Context, username string) (
 	return r0, r1, r2
 }
 
-// mockStorager_GetByUsername_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUsername'
-type mockStorager_GetByUsername_Call struct {
+// mockStorager_Member_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Member'
+type mockStorager_Member_Call struct {
 	*mock.Call
 }
 
-// GetByUsername is a helper method to define mock.On call
+// Member is a helper method to define mock.On call
 //   - ctx context.Context
 //   - username string
-func (_e *mockStorager_Expecter) GetByUsername(ctx interface{}, username interface{}) *mockStorager_GetByUsername_Call {
-	return &mockStorager_GetByUsername_Call{Call: _e.mock.On("GetByUsername", ctx, username)}
+func (_e *mockStorager_Expecter) Member(ctx interface{}, username interface{}) *mockStorager_Member_Call {
+	return &mockStorager_Member_Call{Call: _e.mock.On("Member", ctx, username)}
 }
 
-func (_c *mockStorager_GetByUsername_Call) Run(run func(ctx context.Context, username string)) *mockStorager_GetByUsername_Call {
+func (_c *mockStorager_Member_Call) Run(run func(ctx context.Context, username string)) *mockStorager_Member_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -218,12 +156,74 @@ func (_c *mockStorager_GetByUsername_Call) Run(run func(ctx context.Context, use
 	return _c
 }
 
-func (_c *mockStorager_GetByUsername_Call) Return(member Member, b bool, err error) *mockStorager_GetByUsername_Call {
+func (_c *mockStorager_Member_Call) Return(member Member, b bool, err error) *mockStorager_Member_Call {
 	_c.Call.Return(member, b, err)
 	return _c
 }
 
-func (_c *mockStorager_GetByUsername_Call) RunAndReturn(run func(ctx context.Context, username string) (Member, bool, error)) *mockStorager_GetByUsername_Call {
+func (_c *mockStorager_Member_Call) RunAndReturn(run func(ctx context.Context, username string) (Member, bool, error)) *mockStorager_Member_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Members provides a mock function for the type mockStorager
+func (_mock *mockStorager) Members(ctx context.Context) ([]Member, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Members")
+	}
+
+	var r0 []Member
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]Member, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []Member); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]Member)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// mockStorager_Members_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Members'
+type mockStorager_Members_Call struct {
+	*mock.Call
+}
+
+// Members is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *mockStorager_Expecter) Members(ctx interface{}) *mockStorager_Members_Call {
+	return &mockStorager_Members_Call{Call: _e.mock.On("Members", ctx)}
+}
+
+func (_c *mockStorager_Members_Call) Run(run func(ctx context.Context)) *mockStorager_Members_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *mockStorager_Members_Call) Return(members []Member, err error) *mockStorager_Members_Call {
+	_c.Call.Return(members, err)
+	return _c
+}
+
+func (_c *mockStorager_Members_Call) RunAndReturn(run func(ctx context.Context) ([]Member, error)) *mockStorager_Members_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -286,16 +286,16 @@ func (_c *mockStorager_Remove_Call) RunAndReturn(run func(ctx context.Context, u
 }
 
 // Update provides a mock function for the type mockStorager
-func (_mock *mockStorager) Update(ctx context.Context, username string, member Member) error {
-	ret := _mock.Called(ctx, username, member)
+func (_mock *mockStorager) Update(ctx context.Context, member Member) error {
+	ret := _mock.Called(ctx, member)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, Member) error); ok {
-		r0 = returnFunc(ctx, username, member)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, Member) error); ok {
+		r0 = returnFunc(ctx, member)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -309,30 +309,24 @@ type mockStorager_Update_Call struct {
 
 // Update is a helper method to define mock.On call
 //   - ctx context.Context
-//   - username string
 //   - member Member
-func (_e *mockStorager_Expecter) Update(ctx interface{}, username interface{}, member interface{}) *mockStorager_Update_Call {
-	return &mockStorager_Update_Call{Call: _e.mock.On("Update", ctx, username, member)}
+func (_e *mockStorager_Expecter) Update(ctx interface{}, member interface{}) *mockStorager_Update_Call {
+	return &mockStorager_Update_Call{Call: _e.mock.On("Update", ctx, member)}
 }
 
-func (_c *mockStorager_Update_Call) Run(run func(ctx context.Context, username string, member Member)) *mockStorager_Update_Call {
+func (_c *mockStorager_Update_Call) Run(run func(ctx context.Context, member Member)) *mockStorager_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 Member
 		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 Member
-		if args[2] != nil {
-			arg2 = args[2].(Member)
+			arg1 = args[1].(Member)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -343,7 +337,7 @@ func (_c *mockStorager_Update_Call) Return(err error) *mockStorager_Update_Call 
 	return _c
 }
 
-func (_c *mockStorager_Update_Call) RunAndReturn(run func(ctx context.Context, username string, member Member) error) *mockStorager_Update_Call {
+func (_c *mockStorager_Update_Call) RunAndReturn(run func(ctx context.Context, member Member) error) *mockStorager_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -19,8 +19,10 @@ func NewHandler(service Servicer) *handler {
 func (h *handler) RegisterMemberHandler(app *app.EchoApp) {
 	api := app.Group("/api/v1/members")
 	api.GET("/", h.members)
+	api.GET("/:username", h.member)
 	api.POST("/", h.create)
 	api.PUT("/:username", h.update)
+	api.DELETE("/:username", h.remove)
 }
 
 func (h *handler) handlerError(err error) error {
@@ -42,6 +44,35 @@ func (h *handler) members(ctx *echo.Context) error {
 		return h.handlerError(err)
 	}
 	return app.Ok(ctx, members)
+}
+
+type usernameParam struct {
+	Username string `param:"username" validate:"required"`
+}
+
+func (h *handler) member(ctx *echo.Context) error {
+	req := usernameParam{}
+	if err := ctx.Bind(&req); err != nil {
+		return app.BadRequest(app.BadRequestCode, app.BadRequestMsg, err)
+	}
+
+	member, err := h.service.Member(ctx.Request().Context(), req.Username)
+	if err != nil {
+		return h.handlerError(err)
+	}
+	return app.Ok(ctx, member)
+}
+
+func (h *handler) remove(ctx *echo.Context) error {
+	req := usernameParam{}
+	if err := ctx.Bind(&req); err != nil {
+		return app.BadRequest(app.BadRequestCode, app.BadRequestMsg, err)
+	}
+
+	if err := h.service.Remove(ctx.Request().Context(), req.Username); err != nil {
+		return h.handlerError(err)
+	}
+	return app.Ok(ctx, nil)
 }
 
 type createBody struct {
