@@ -39,6 +39,7 @@ type Servicer interface {
 	Update(ctx context.Context, username string, member Member) error
 }
 
+//mockery:generate: true
 type Clock interface {
 	Now() time.Time
 }

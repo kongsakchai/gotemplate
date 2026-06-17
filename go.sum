@@ -39,8 +39,6 @@ github.com/klauspost/cpuid/v2 v2.0.9 h1:lgaqFMSdTdQYdZ04uHyN2d/eKdOMyi2YLSvlQIBF
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/kongsakchai/paint v0.0.2 h1:332nsbGV4nZOqFH8psYIDJnVgUFt7c6K14/KfvMgWgc=
 github.com/kongsakchai/paint v0.0.2/go.mod h1:dzdvY9R59uwKqVc9fFtPmZex0Xw6Y52ZCS2DwJI1IKc=
-github.com/kongsakchai/simple-sql-migrate v0.1.5 h1:HTJRIr+aAy6fgNyeC1PY0dTxGIi5yGRgb/oUAMEUWFc=
-github.com/kongsakchai/simple-sql-migrate v0.1.5/go.mod h1:mpbU2VUmw7ps52Iaf4N1J38ZLpJQbFeNOyEhKZiu00c=
 github.com/labstack/echo/v5 v5.0.4 h1:ll3I/O8BifjMztj9dD1vx/peZQv8cR2CTUdQK6QxGGc=
 github.com/labstack/echo/v5 v5.0.4/go.mod h1:SyvlSdObGjRXeQfCCXW/sybkZdOOQZBmpKF0bvALaeo=
 github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=

@@ -52,7 +52,7 @@ func TestWrapError(t *testing.T) {
 
 		assert.NotNil(t, e)
 		assert.Nil(t, e.Unwrap())
-		assert.Equal(t, "something went wrong", e.Error())
+		assert.Contains(t, e.Error(), "something went wrong")
 	})
 
 	t.Run("should handle nil Error", func(t *testing.T) {

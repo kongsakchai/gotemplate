@@ -7,15 +7,6 @@ import (
 	mock "github.com/stretchr/testify/mock"
 )
 
-type mockClock struct {
-	mock.Mock
-}
-
-func (m *mockClock) Now() time.Time {
-	args := m.Called()
-	return args.Get(0).(time.Time)
-}
-
 func newFixture() (Member, time.Time) {
 	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	birthday := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,7 +18,6 @@ import (
 	"github.com/kongsakchai/gotemplate/template/pkg/config"
 	"github.com/kongsakchai/gotemplate/template/pkg/database"
 	"github.com/kongsakchai/gotemplate/template/pkg/logger"
-	migrate "github.com/kongsakchai/simple-sql-migrate"
 	"github.com/labstack/echo/v5"
 )
 
@@ -74,22 +72,6 @@ func runApp(app *app.EchoApp, cfg config.Config, gracefulTimeout time.Duration) 
 	}
 
 	slog.Info("bye bye")
-}
-
-func migrateDB(db *sql.DB, cfg config.Migration) {
-	if !cfg.Enable {
-		return
-	}
-	if err := migrate.Migrate(db, migrate.Options{
-		Source:  cfg.Directory,
-		Version: cfg.Version,
-		Repeat:  migrate.GetRepeatAction(cfg.Repeat),
-	}); err != nil {
-		panic("migration failed: " + err.Error())
-	}
-
-	version, _ := migrate.Version(db)
-	slog.Info("migration completed", "version", version)
 }
 
 func healthCheck(db *sqlx.DB) echo.HandlerFunc {

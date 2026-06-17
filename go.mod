@@ -9,7 +9,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/kongsakchai/paint v0.0.2
-	github.com/kongsakchai/simple-sql-migrate v0.1.5
 	github.com/labstack/echo/v5 v5.0.4
 	github.com/lib/pq v1.12.0
 	github.com/redis/go-redis/v9 v9.18.0

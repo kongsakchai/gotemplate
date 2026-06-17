@@ -3,6 +3,7 @@ package member
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/template/pkg/errs"
@@ -16,19 +17,37 @@ func NewStorage(db *sqlx.DB) *storage {
 	return &storage{db: db}
 }
 
+type memberRecord struct {
+	Username     string    `db:"username"`
+	FirstName    string    `db:"first_name"`
+	LastName     string    `db:"last_name"`
+	Birthday     time.Time `db:"birthday"`
+	RegisterDate time.Time `db:"register_date"`
+}
+
+func (m memberRecord) ToMember() Member {
+	return Member(m)
+}
+
 func (s *storage) Members(ctx context.Context) ([]Member, error) {
-	member := []Member{}
-	err := s.db.SelectContext(ctx, &member, "SELECT * FROM member")
-	return member, errs.From(err)
+	var result []memberRecord
+	err := s.db.SelectContext(ctx, &result, "SELECT * FROM member")
+
+	members := []Member{}
+	for _, m := range result {
+		members = append(members, m.ToMember())
+	}
+
+	return members, errs.From(err)
 }
 
 func (s *storage) Member(ctx context.Context, username string) (Member, bool, error) {
-	member := Member{}
-	err := s.db.GetContext(ctx, &member, "SELECT * FROM member WHERE usernmae = ?", username)
-	if err != sql.ErrNoRows {
-		return member, false, nil
+	member := memberRecord{}
+	err := s.db.GetContext(ctx, &member, "SELECT * FROM member WHERE username = ?", username)
+	if err == sql.ErrNoRows {
+		return member.ToMember(), false, nil
 	}
-	return member, err != nil, errs.From(err)
+	return member.ToMember(), err == nil, errs.From(err)
 }
 
 func (s *storage) Create(ctx context.Context, member Member) error {

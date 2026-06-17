@@ -9,6 +9,76 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockRequestContext struct {
+	bindFn     func(any) error
+	validateFn func(any) error
+}
+
+func (m *mockRequestContext) Bind(i any) error {
+	if m.bindFn != nil {
+		return m.bindFn(i)
+	}
+	return nil
+}
+
+func (m *mockRequestContext) Validate(i any) error {
+	if m.validateFn != nil {
+		return m.validateFn(i)
+	}
+	return nil
+}
+
+func TestRequest(t *testing.T) {
+	t.Run("should return bad request when Bind fails", func(t *testing.T) {
+		ctx := &mockRequestContext{
+			bindFn: func(i any) error {
+				return errors.New("bind error")
+			},
+		}
+
+		err := Request(ctx, &struct{}{})
+		assert.Error(t, err)
+
+		appErr, ok := err.(Error)
+		assert.True(t, ok)
+		assert.Equal(t, http.StatusBadRequest, appErr.HTTPCode)
+		assert.Equal(t, BadRequestCode, appErr.Code)
+	})
+
+	t.Run("should return invalid request when Validate fails", func(t *testing.T) {
+		ctx := &mockRequestContext{
+			bindFn: func(i any) error {
+				return nil
+			},
+			validateFn: func(i any) error {
+				return errors.New("validate error")
+			},
+		}
+
+		err := Request(ctx, &struct{}{})
+		assert.Error(t, err)
+
+		appErr, ok := err.(Error)
+		assert.True(t, ok)
+		assert.Equal(t, http.StatusBadRequest, appErr.HTTPCode)
+		assert.Equal(t, InValidCode, appErr.Code)
+	})
+
+	t.Run("should return nil when Bind and Validate succeed", func(t *testing.T) {
+		ctx := &mockRequestContext{
+			bindFn: func(i any) error {
+				return nil
+			},
+			validateFn: func(i any) error {
+				return nil
+			},
+		}
+
+		err := Request(ctx, &struct{}{})
+		assert.NoError(t, err)
+	})
+}
+
 func TestAppResponse(t *testing.T) {
 	t.Run("should return 200 OK when use Ok", func(t *testing.T) {
 		// arrange
