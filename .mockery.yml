@@ -1,6 +1,6 @@
 all: false
 dir: "{{.InterfaceDir}}"
-filename: mock_{{.InterfaceName | lower}}_test.go
+filename: mock_test.go
 force-file-write: true
 formatter: goimports
 generate: true
@@ -12,6 +12,5 @@ recursive: true
 require-template-schema-exists: true
 template: testify
 template-schema: "{{.Template}}.schema.json"
-exclude-subpkg-regex: ["app/apperror$", "app/appmiddleware$"]
 packages:
     github.com/kongsakchai/gotemplate/app:

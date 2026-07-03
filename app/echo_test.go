@@ -79,7 +79,7 @@ func (w *failWriter) Header() http.Header {
 }
 
 func TestErrorHandler(t *testing.T) {
-	t.Run("should handle app.Error", func(t *testing.T) {
+	t.Run("should handle Error", func(t *testing.T) {
 		ctx, rec := echotest.ContextConfig{
 			Request: httptest.NewRequest(http.MethodGet, "/test", nil),
 		}.ToContextRecorder(t)
@@ -91,7 +91,7 @@ func TestErrorHandler(t *testing.T) {
 		assert.JSONEq(t, `{"code":"4000","success":false,"message":"bad request"}`, rec.Body.String())
 	})
 
-	t.Run("should handle app.Error and response fail", func(t *testing.T) {
+	t.Run("should handle Error and response fail", func(t *testing.T) {
 		ctx, rec := echotest.ContextConfig{
 			Request: httptest.NewRequest(http.MethodGet, "/test", nil),
 		}.ToContextRecorder(t)

@@ -1,20 +1,18 @@
 package app
 
 import (
-	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v5"
 )
 
 type echoResponseWriter struct {
 	http.ResponseWriter
-	logger *slog.Logger
-	ctx    context.Context
-	status int
-	url    string
-	now    time.Time
+	ctx     *echo.Context
+	status  int
+	reqTime time.Time
 }
 
 func (w *echoResponseWriter) WriteHeader(status int) {
@@ -24,16 +22,20 @@ func (w *echoResponseWriter) WriteHeader(status int) {
 
 func (w *echoResponseWriter) Write(b []byte) (int, error) {
 	body := string(b)
+	ctx := w.ctx.Request().Context()
+	url := w.ctx.Request().URL.String()
 
 	if w.status == http.StatusOK || w.status == http.StatusCreated {
-		w.logger.InfoContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
+		w.ctx.Logger().InfoContext(ctx, fmt.Sprintf("response %d %s", w.status, url),
 			"body", body,
-			"latency", time.Since(w.now).String(),
+			"latency", time.Since(w.reqTime).String(),
+			"event", "api_response",
 		)
 	} else {
-		w.logger.ErrorContext(w.ctx, fmt.Sprintf("response %d %s", w.status, w.url),
+		w.ctx.Logger().ErrorContext(ctx, fmt.Sprintf("response %d %s", w.status, url),
 			"body", body,
-			"latency", time.Since(w.now).String(),
+			"latency", time.Since(w.reqTime).String(),
+			"event", "api_response",
 		)
 	}
 

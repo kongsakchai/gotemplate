@@ -86,7 +86,7 @@ func caller(skip int) string {
 	}
 	fn := runtime.FuncForPC(pc)
 
-	return fmt.Sprintf("(%s:%v) %s", f, line, fn.Name())
+	return fmt.Sprintf("(%s:%v) %s", f, line, filepath.Base(fn.Name()))
 }
 
 func SlogAttr(err error) []slog.Attr {

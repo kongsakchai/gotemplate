@@ -18,13 +18,4 @@ const (
 	DatabaseNotReadyMsg  = "database is not ready"
 	InternalErrorCode    = "9999"
 	InternalErrorMsg     = "internal error"
-
-	// Business Code
-
-	InvalidAgeCode          = "1001"
-	InvalidAgeMsg           = "age invalid; age >= 15 and age <= 60"
-	UsernameUnavailableCode = "1002"
-	UsernameUnavailableMsg  = "username unavaliable"
-	MemberNotFoundCode      = "1003"
-	MemberNotFoundMsg       = "member not found"
 )

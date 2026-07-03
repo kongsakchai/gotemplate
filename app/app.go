@@ -1,9 +1,5 @@
 package app
 
-import (
-	"net/http"
-)
-
 type Response struct {
 	Code    string `json:"code"`
 	Success bool   `json:"success"`
@@ -16,43 +12,43 @@ type RequestContext interface {
 	Validate(i any) error
 }
 
-func Request(ctx RequestContext, target any) error {
-	if err := ctx.Bind(target); err != nil {
-		return BadRequest(BadRequestCode, BadRequestMsg, err)
+func Request[Req any](ctx RequestContext) (Req, error) {
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return req, BadRequest(BadRequestCode, BadRequestMsg, err)
 	}
-	if err := ctx.Validate(target); err != nil {
-		return BadRequest(InValidCode, InValidMsg, err, err)
+	if err := ctx.Validate(req); err != nil {
+		return req, BadRequest(InValidCode, InValidMsg, err, err)
 	}
-	return nil
+	return req, nil
 }
 
 type Context interface {
-	JSON(code int, i any) (err error)
+	JSON(code int, i any) error
+}
+
+func firstMsg(msg []string) string {
+	if len(msg) > 0 {
+		return msg[0]
+	}
+	return ""
 }
 
 func Ok(ctx Context, data any, msg ...string) error {
-	message := ""
-	if len(msg) > 0 {
-		message = msg[0]
-	}
-	return ctx.JSON(http.StatusOK, Response{
+	return ctx.JSON(200, Response{
 		Code:    SuccessCode,
 		Success: true,
 		Data:    data,
-		Message: message,
+		Message: firstMsg(msg),
 	})
 }
 
 func Created(ctx Context, data any, msg ...string) error {
-	message := ""
-	if len(msg) > 0 {
-		message = msg[0]
-	}
-	return ctx.JSON(http.StatusCreated, Response{
+	return ctx.JSON(201, Response{
 		Code:    SuccessCode,
 		Success: true,
 		Data:    data,
-		Message: message,
+		Message: firstMsg(msg),
 	})
 }
 

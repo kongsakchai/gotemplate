@@ -18,18 +18,18 @@ func NewStorage(db *sqlx.DB) *storage {
 }
 
 type memberRecord struct {
-	Username     string    `db:"username"`
-	FirstName    string    `db:"first_name"`
-	LastName     string    `db:"last_name"`
-	Birthday     time.Time `db:"birthday"`
-	RegisterDate time.Time `db:"register_date"`
+	Username  string    `db:"username"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	Birthday  time.Time `db:"birthday"`
+	CreatedAt time.Time `db:"created_at"`
 }
 
 func (m memberRecord) ToMember() Member {
 	return Member(m)
 }
 
-func (s *storage) Members(ctx context.Context) ([]Member, error) {
+func (s *storage) GetMembers(ctx context.Context) ([]Member, error) {
 	var result []memberRecord
 	err := s.db.SelectContext(ctx, &result, "SELECT * FROM member")
 
@@ -41,7 +41,7 @@ func (s *storage) Members(ctx context.Context) ([]Member, error) {
 	return members, errs.From(err)
 }
 
-func (s *storage) Member(ctx context.Context, username string) (Member, bool, error) {
+func (s *storage) GetMember(ctx context.Context, username string) (Member, bool, error) {
 	member := memberRecord{}
 	err := s.db.GetContext(ctx, &member, "SELECT * FROM member WHERE username = ?", username)
 	if err == sql.ErrNoRows {
@@ -50,23 +50,22 @@ func (s *storage) Member(ctx context.Context, username string) (Member, bool, er
 	return member.ToMember(), err == nil, errs.From(err)
 }
 
-func (s *storage) Create(ctx context.Context, member Member) error {
+func (s *storage) CreateMember(ctx context.Context, member CreateMemberPayload) error {
 	query := `
 	INSERT INTO member (username, first_name, last_name, birthday, register_date)
-	VALUES (:username, :first_name, :last_name, :birthday, :register_date)`
+	VALUES (:username, :first_name, :last_name, :birthday)`
 
 	_, err := s.db.NamedExecContext(ctx, query, map[string]any{
-		"username":      member.Username,
-		"first_name":    member.Username,
-		"last_name":     member.Username,
-		"birthday":      member.Username,
-		"register_date": member.RegisterDate,
+		"username":   member.Username,
+		"first_name": member.Username,
+		"last_name":  member.Username,
+		"birthday":   member.Username,
 	})
 
 	return errs.From(err)
 }
 
-func (s *storage) Update(ctx context.Context, member Member) error {
+func (s *storage) UpdateMember(ctx context.Context, member UpdateMemberPayload) error {
 	query := `
 	UPDATE member SET first_name=?, last_name=?, birthday=?, register_date=? WHERE username=?`
 
@@ -74,14 +73,13 @@ func (s *storage) Update(ctx context.Context, member Member) error {
 		member.FirstName,
 		member.LastName,
 		member.Birthday,
-		member.RegisterDate,
 		member.Username,
 	)
 
 	return errs.From(err)
 }
 
-func (s *storage) Remove(ctx context.Context, username string) error {
+func (s *storage) RemoveMember(ctx context.Context, username string) error {
 	query := `DELETE FROM member WHERE username = ?`
 
 	_, err := s.db.ExecContext(ctx, query, username)

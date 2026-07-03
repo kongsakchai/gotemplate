@@ -38,7 +38,7 @@ func TestValidate(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.title, func(t *testing.T) {
-			validator := NewReqValidator()
+			validator := NewValidator()
 			err := validator.Validate(tc.data)
 			assert.Equal(t, tc.expected, err)
 			if err != nil {

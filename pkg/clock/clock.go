@@ -2,12 +2,12 @@ package clock
 
 import "time"
 
-type clock struct{}
+type Clock struct{}
 
-func New() *clock {
-	return &clock{}
+func New() *Clock {
+	return &Clock{}
 }
 
-func (c *clock) Now() time.Time {
+func (c *Clock) Now() time.Time {
 	return time.Now()
 }

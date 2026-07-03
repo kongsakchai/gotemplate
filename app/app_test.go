@@ -36,7 +36,7 @@ func TestRequest(t *testing.T) {
 			},
 		}
 
-		err := Request(ctx, &struct{}{})
+		_, err := Request[any](ctx)
 		assert.Error(t, err)
 
 		appErr, ok := err.(Error)
@@ -55,7 +55,7 @@ func TestRequest(t *testing.T) {
 			},
 		}
 
-		err := Request(ctx, &struct{}{})
+		_, err := Request[any](ctx)
 		assert.Error(t, err)
 
 		appErr, ok := err.(Error)
@@ -74,7 +74,7 @@ func TestRequest(t *testing.T) {
 			},
 		}
 
-		err := Request(ctx, &struct{}{})
+		_, err := Request[any](ctx)
 		assert.NoError(t, err)
 	})
 }

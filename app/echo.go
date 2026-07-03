@@ -21,13 +21,13 @@ type EchoApp struct {
 
 func NewEchoApp(cfg config.Config) *EchoApp {
 	e := echo.New()
-	e.Validator = validator.NewReqValidator()
+	e.Validator = validator.NewValidator()
 	e.HTTPErrorHandler = errorHandler
 
 	e.Use(
 		middleware.Recover(),
 		middleware.CORS("*"),
-		RefIDMiddleware(cfg.Header.RefIDKey, cfg.Log.Tags),
+		RefIDMiddleware(cfg.Header.RefIDKey),
 		LoggerMiddleware(cfg.Log.Enable),
 	)
 

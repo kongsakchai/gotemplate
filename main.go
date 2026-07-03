@@ -13,7 +13,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
-	"github.com/kongsakchai/gotemplate/app/member"
+	"github.com/kongsakchai/gotemplate/domain/member"
 	"github.com/kongsakchai/gotemplate/pkg/clock"
 	"github.com/kongsakchai/gotemplate/pkg/config"
 	"github.com/kongsakchai/gotemplate/pkg/database"
@@ -50,11 +50,13 @@ func main() {
 	app := app.NewEchoApp(cfg)
 	app.Logger = logger
 
-	app.GET("/health", healthCheck(nil))
+	app.GET("/health", healthCheck(db))
 	app.GET("/metrics", metrics())
 
-	memberMo := member.NewModule(member.External{DB: db, Clock: clock})
-	memberMo.Handler.RegisterMemberHandler(app)
+	{
+		handler := member.NewMemberHandler(member.Deps{DB: db, Clock: clock})
+		handler.RegisterMemberHandler(app.Echo)
+	}
 
 	runApp(app, cfg, gracefulTimeout)
 }

@@ -7,11 +7,11 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type reqValidator struct {
+type Validator struct {
 	Validator *validator.Validate
 }
 
-func NewReqValidator() *reqValidator {
+func NewValidator() *Validator {
 	validate := validator.New()
 
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -23,12 +23,12 @@ func NewReqValidator() *reqValidator {
 		return name
 	})
 
-	return &reqValidator{
+	return &Validator{
 		Validator: validate,
 	}
 }
 
-func (v *reqValidator) Validate(obj any) error {
+func (v *Validator) Validate(obj any) error {
 	if err := v.Validator.Struct(obj); err != nil {
 		errMap := make(errorMap)
 		if errs, ok := err.(validator.ValidationErrors); ok {

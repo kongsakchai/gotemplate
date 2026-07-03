@@ -51,6 +51,10 @@ func BadRequest(code string, msg string, err error, data ...any) Error {
 	}
 }
 
+// NotFound returns 400 Bad Request intentionally.
+// We avoid 404 to prevent callers from confusing "resource not found"
+// with "route not found". 400 signals the system worked correctly
+// but the requested data doesn't exist due to invalid user input.
 func NotFound(code string, msg string, err error, data ...any) Error {
 	return Error{
 		HTTPCode: http.StatusBadRequest,
