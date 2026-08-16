@@ -66,3 +66,21 @@ func newReplaceFuncGroup(replaceAttrs ...ReplaceFunc) func(groups []string, a sl
 		return a
 	}
 }
+
+type slogAttr interface {
+	LogAttrs() []slog.Attr
+}
+
+func ErrorAttrs(err error) []slog.Attr {
+	if err == nil {
+		return []slog.Attr{}
+	}
+
+	if errType, ok := err.(slogAttr); ok {
+		return errType.LogAttrs()
+	}
+
+	return []slog.Attr{
+		slog.String("err", err.Error()),
+	}
+}

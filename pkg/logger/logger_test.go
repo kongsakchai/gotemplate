@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"errors"
 	"log/slog"
 	"testing"
 
@@ -92,5 +93,39 @@ func TestNewReplaceFuncGroup(t *testing.T) {
 			//assert
 			assert.Equal(t, expected[i], res)
 		}
+	})
+}
+
+type errorWithLogAttrs struct {
+	attrs []slog.Attr
+}
+
+func (e *errorWithLogAttrs) Error() string {
+	return "errorWithLogAttrs"
+}
+
+func (e *errorWithLogAttrs) LogAttrs() []slog.Attr {
+	return e.attrs
+}
+
+func TestToLogs(t *testing.T) {
+	t.Run("should return 0 slog.Attr when error is nil", func(t *testing.T) {
+		var err error = nil
+
+		assert.Equal(t, 0, len(ErrorAttrs(err)))
+	})
+	t.Run("should return 2 slog.Attr when error is errorTrace", func(t *testing.T) {
+		err := &errorWithLogAttrs{attrs: []slog.Attr{
+			slog.String("key", "value"),
+			slog.String("key2", "value2"),
+		}}
+
+		assert.Equal(t, 2, len(ErrorAttrs(err)))
+	})
+
+	t.Run("should return 2 slog.Attr when error is normal", func(t *testing.T) {
+		err := errors.New("normal error")
+
+		assert.Equal(t, 1, len(ErrorAttrs(err)))
 	})
 }

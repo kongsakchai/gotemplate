@@ -21,8 +21,9 @@ func init() {
 }
 
 type errorTrace struct {
-	err error
-	at  string
+	err   error
+	at    string
+	attrs []slog.Attr
 }
 
 // Error returns error message
@@ -43,6 +44,19 @@ func (e *errorTrace) At() string {
 	return e.at
 }
 
+func (e *errorTrace) LogAttrs() []slog.Attr {
+	return e.attrs
+}
+
+func (e *errorTrace) With(attrs ...slog.Attr) *errorTrace {
+	e.attrs = append(e.attrs, attrs...)
+	return e
+}
+
+func (e *errorTrace) New(attrs ...slog.Attr) *errorTrace {
+	return wrap(e.err).With(attrs...)
+}
+
 func As(err error) (*errorTrace, bool) {
 	if e, ok := err.(*errorTrace); ok {
 		return e, true
@@ -51,11 +65,11 @@ func As(err error) (*errorTrace, bool) {
 	return nil, false
 }
 
-func New(str string, args ...any) error {
+func New(str string, args ...any) *errorTrace {
 	return wrap(fmt.Errorf(str, args...))
 }
 
-func From(err error) error {
+func From(err error) *errorTrace {
 	if err == nil {
 		return nil
 	}
@@ -63,14 +77,14 @@ func From(err error) error {
 }
 
 func wrap(err error) *errorTrace {
-	var errType *errorTrace
-	if errors.As(err, &errType) {
+	if errType, ok := errors.AsType[*errorTrace](err); ok {
 		return errType
 	}
-
+	at := caller(maxStackDepth)
 	return &errorTrace{
-		err: err,
-		at:  caller(maxStackDepth),
+		err:   err,
+		at:    at,
+		attrs: []slog.Attr{slog.String("err", err.Error()), slog.String("at", at)},
 	}
 }
 
@@ -86,22 +100,5 @@ func caller(skip int) string {
 	}
 	fn := runtime.FuncForPC(pc)
 
-	return fmt.Sprintf("(%s:%v) %s", f, line, filepath.Base(fn.Name()))
-}
-
-func SlogAttr(err error) []slog.Attr {
-	if err == nil {
-		return []slog.Attr{}
-	}
-
-	if errType, ok := As(err); ok {
-		return []slog.Attr{
-			slog.String("err", errType.err.Error()),
-			slog.String("at", errType.at),
-		}
-	}
-
-	return []slog.Attr{
-		slog.String("err", err.Error()),
-	}
+	return fmt.Sprintf("(%s:%d) %s", f, line, filepath.Base(fn.Name()))
 }

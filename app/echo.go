@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/kongsakchai/gotemplate/pkg/config"
-	"github.com/kongsakchai/gotemplate/pkg/errs"
+	"github.com/kongsakchai/gotemplate/pkg/logger"
 	"github.com/kongsakchai/gotemplate/pkg/validator"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -50,7 +50,7 @@ func (app *EchoApp) Start(ctx context.Context, addr string, gracefulTimeout time
 
 func errorHandler(ctx *echo.Context, err error) {
 	if appErr, ok := err.(Error); ok {
-		ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "app error", errs.SlogAttr(appErr.Err)...)
+		ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "app error", logger.ErrorAttrs(appErr.Err)...)
 		if err := Fail(ctx, appErr); err != nil {
 			ctx.Logger().ErrorContext(ctx.Request().Context(), "error handler fail", "err", err.Error()) // rare case
 		}
@@ -62,7 +62,7 @@ func errorHandler(ctx *echo.Context, err error) {
 
 // reference from echo.DefaultHTTPErrorHandler but convert to app.Error
 func defaultEchoErrorHandler(ctx *echo.Context, err error) {
-	ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "unhandle error", errs.SlogAttr(err)...)
+	ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "unhandle error", logger.ErrorAttrs(err)...)
 
 	appErr := Error{HTTPCode: http.StatusInternalServerError}
 	var sc echo.HTTPStatusCoder

@@ -13,8 +13,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
-	"github.com/kongsakchai/gotemplate/domain/member"
-	"github.com/kongsakchai/gotemplate/pkg/clock"
 	"github.com/kongsakchai/gotemplate/pkg/config"
 	"github.com/kongsakchai/gotemplate/pkg/database"
 	"github.com/kongsakchai/gotemplate/pkg/logger"
@@ -45,18 +43,13 @@ func main() {
 	db, close := database.NewMySQL(cfg.Database.URL)
 	defer close(context.Background())
 
-	clock := clock.New()
+	// clock := clock.New()
 
 	app := app.NewEchoApp(cfg)
 	app.Logger = logger
 
 	app.GET("/health", healthCheck(db))
 	app.GET("/metrics", metrics())
-
-	{
-		handler := member.NewMemberHandler(member.Deps{DB: db, Clock: clock})
-		handler.RegisterMemberHandler(app.Echo)
-	}
 
 	runApp(app, cfg, gracefulTimeout)
 }

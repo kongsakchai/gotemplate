@@ -1,21 +1,7 @@
 # Ping
 GET http://localhost:8080/health
-
-HTTP/1.1 200  - OK
-content-type: application/json
-vary: Origin
-date: Tue, 30 Jun 2026 09:39:03 GMT
-content-length: 51
-connection: close
 ###
 GET http://localhost:8080/metrics
-
-HTTP/1.1 200  - OK
-content-type: application/json
-vary: Origin
-date: Tue, 30 Jun 2026 09:39:05 GMT
-content-length: 214
-connection: close
 ###
 POST http://localhost:8080/api/v1/members
 Content-Type: application/json
@@ -26,10 +12,3 @@ Content-Type: application/json
 	"lastName": "required",
 	"username": "required"
 }
-
-HTTP/1.1 400  - Bad Request
-content-type: application/json
-vary: Origin
-date: Fri, 03 Jul 2026 10:08:18 GMT
-content-length: 74
-connection: close

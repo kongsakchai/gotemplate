@@ -10,10 +10,10 @@ description: >
 
 | When you are...                                 | Read this file                                       |
 | ----------------------------------------------- | ---------------------------------------------------- |
-| Creating a new domain or module, wiring, config | [`sub/architecture.md`](./sub/architecture.md)       |
-| Writing handlers, services, or API responses    | [`sub/handler-service.md`](./sub/handler-service.md) |
-| Writing any Go code (pointers, errors, logging) | [`sub/coding.md`](./sub/coding.md)                   |
-| Writing or editing tests                        | [`sub/testing.md`](./sub/testing.md)                 |
+| Creating a new domain,                          | [`ref/architecture.md`](./ref/architecture.md)       |
+| Writing handlers, services, or API responses    | [`ref/handler-service.md`](./ref/handler-service.md) |
+| Writing any Go code (pointers, errors, logging) | [`ref/coding.md`](./ref/coding.md)                   |
+| Writing or editing tests                        | [`ref/testing.md`](./ref/testing.md)                 |
 
 ## Makefile reference
 

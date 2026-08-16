@@ -106,22 +106,3 @@ func TestNewError(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 }
-
-func TestToLogs(t *testing.T) {
-	t.Run("should return 0 slog.Attr when error is nil", func(t *testing.T) {
-		err := From(nil)
-
-		assert.Equal(t, 0, len(SlogAttr(err)))
-	})
-	t.Run("should return 2 slog.Attr when error is errorTrace", func(t *testing.T) {
-		err := New("unit test")
-
-		assert.Equal(t, 2, len(SlogAttr(err)))
-	})
-
-	t.Run("should return 2 slog.Attr when error is normal", func(t *testing.T) {
-		err := errors.New("unit test")
-
-		assert.Equal(t, 1, len(SlogAttr(err)))
-	})
-}
