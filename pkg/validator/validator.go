@@ -8,7 +8,7 @@ import (
 )
 
 type Validator struct {
-	Validator *validator.Validate
+	validator *validator.Validate
 }
 
 func NewValidator() *Validator {
@@ -24,12 +24,12 @@ func NewValidator() *Validator {
 	})
 
 	return &Validator{
-		Validator: validate,
+		validator: validate,
 	}
 }
 
 func (v *Validator) Validate(obj any) error {
-	if err := v.Validator.Struct(obj); err != nil {
+	if err := v.validator.Struct(obj); err != nil {
 		errMap := make(errorMap)
 		if errs, ok := err.(validator.ValidationErrors); ok {
 			for _, e := range errs {

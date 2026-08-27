@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/kongsakchai/gotemplate/pkg/errs"
 )
 
 var (
 	ErrInvalidToken  = errors.New("invalid token")
 	ErrTokenExpired  = errors.New("token is expired")
-	ErrClaimsInvalid = errors.New("claims are invalid")
+	ErrInvalidClaims = errors.New("invalid claims")
 	ErrSubIsRequired = errors.New("sub is required")
 	ErrJTIIsRequired = errors.New("jti is required")
 )
@@ -76,7 +75,7 @@ func (s *jwtManager) Sign(sub, jti string, extra map[string]any) (string, error)
 	token := jwt.NewWithClaims(s.method, jwt.MapClaims(payload))
 	tokenString, err := token.SignedString(s.secretKey)
 	if err != nil {
-		return "", errs.From(err)
+		return "", err
 	}
 	return tokenString, nil
 }
@@ -99,7 +98,7 @@ func (v *jwtManager) Verify(tokenString string) (map[string]any, error) {
 		return nil, ErrTokenExpired
 	}
 	if err != nil {
-		return nil, errs.From(err)
+		return nil, err
 	}
 	if !token.Valid {
 		return nil, ErrInvalidToken
@@ -107,7 +106,7 @@ func (v *jwtManager) Verify(tokenString string) (map[string]any, error) {
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errs.New("invalid claims")
+		return nil, ErrInvalidClaims
 	}
 	return claims, nil
 }

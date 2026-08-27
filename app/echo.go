@@ -27,6 +27,7 @@ func NewEchoApp(cfg config.Config) *EchoApp {
 	e.Use(
 		middleware.Recover(),
 		middleware.CORS("*"),
+		TagMiddleware(),
 		RefIDMiddleware(cfg.Header.RefIDKey),
 		LoggerMiddleware(cfg.Log.Enable),
 	)
@@ -48,6 +49,56 @@ func (app *EchoApp) Start(ctx context.Context, addr string, gracefulTimeout time
 	return sc.Start(ctx, app)
 }
 
+// func (app *EchoApp) POST(name string, path string, handler echo.HandlerFunc, middlewares ...echo.MiddlewareFunc) {
+// 	app.Router().Add(echo.Route{
+// 		Method:      http.MethodPost,
+// 		Path:        path,
+// 		Handler:     handler,
+// 		Middlewares: middlewares,
+// 		Name:        name,
+// 	})
+// }
+
+// func (app *EchoApp) GET(name string, path string, handler echo.HandlerFunc, middlewares ...echo.MiddlewareFunc) {
+// 	app.Router().Add(echo.Route{
+// 		Method:      http.MethodGet,
+// 		Path:        path,
+// 		Handler:     handler,
+// 		Middlewares: middlewares,
+// 		Name:        name,
+// 	})
+// }
+
+// func (app *EchoApp) PUT(name string, path string, handler echo.HandlerFunc, middlewares ...echo.MiddlewareFunc) {
+// 	app.Router().Add(echo.Route{
+// 		Method:      http.MethodPut,
+// 		Path:        path,
+// 		Handler:     handler,
+// 		Middlewares: middlewares,
+// 		Name:        name,
+// 	})
+// }
+
+// func (app *EchoApp) DELETE(name string, path string, handler echo.HandlerFunc, middlewares ...echo.MiddlewareFunc) {
+// 	app.Router().Add(echo.Route{
+// 		Method:      http.MethodDelete,
+// 		Path:        path,
+// 		Handler:     handler,
+// 		Middlewares: middlewares,
+// 		Name:        name,
+// 	})
+// }
+
+// func (app *EchoApp) PATCH(name string, path string, handler echo.HandlerFunc, middlewares ...echo.MiddlewareFunc) {
+// 	app.Router().Add(echo.Route{
+// 		Method:      http.MethodPatch,
+// 		Path:        path,
+// 		Handler:     handler,
+// 		Middlewares: middlewares,
+// 		Name:        name,
+// 	})
+// }
+
 func errorHandler(ctx *echo.Context, err error) {
 	if appErr, ok := err.(Error); ok {
 		ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "app error", logger.ErrorAttrs(appErr.Err)...)
@@ -64,7 +115,7 @@ func errorHandler(ctx *echo.Context, err error) {
 func defaultEchoErrorHandler(ctx *echo.Context, err error) {
 	ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "unhandle error", logger.ErrorAttrs(err)...)
 
-	appErr := Error{HTTPCode: http.StatusInternalServerError}
+	appErr := Error{Code: "xxxx", HTTPCode: http.StatusInternalServerError}
 	var sc echo.HTTPStatusCoder
 
 	if errors.As(err, &sc) {

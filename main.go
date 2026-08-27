@@ -14,12 +14,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/pkg/config"
-	"github.com/kongsakchai/gotemplate/pkg/database/mysqldb"
+	"github.com/kongsakchai/gotemplate/pkg/database/sqlitedb"
 	"github.com/kongsakchai/gotemplate/pkg/logger"
 	"github.com/kongsakchai/gotemplate/pkg/migrate"
 	"github.com/labstack/echo/v5"
 
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 )
 
 const gracefulTimeout = time.Second * 10
@@ -43,17 +43,34 @@ func main() {
 	logger := logger.New()
 	cfg := config.Load(config.Env)
 
-	db, close := mysqldb.New(cfg.Database.URL)
+	db, close := sqlitedb.New(cfg.Database.URL)
 	defer close(context.Background())
 
-	migrate.Migrate(db.DB, cfg.Migration)
-	// clock := clock.New()
+	migrate.Migrate(cfg.Migration)
 
 	app := app.NewEchoApp(cfg)
 	app.Logger = logger
 
-	app.GET("/health", healthCheck(db))
-	app.GET("/metrics", metrics())
+	app.GET("/api/health", healthCheck(db))
+	app.GET("/api/metrics", metrics())
+
+	// jwt := jwttoken.NewJWTManager(jwttoken.JWTOptions{
+	// 	Secret:    cfg.Token.SecretKey,
+	// 	VerifyKey: cfg.Token.VerifyKey,
+	// 	Issuer:    cfg.Token.Issuer,
+	// 	Audience:  cfg.Token.Audience,
+	// 	Expired:   cfg.Token.Expired,
+	// })
+
+	// hasher := hash.NewHasher(12)
+
+	// {
+	// 	authapp.NewAuthApp(authapp.Deps{
+	// 		DB: db,
+	// 		// Hasher: hasher,
+	// 		// Signer: jwt,
+	// 	}).RegisterRoute(app)
+	// }
 
 	runApp(app, cfg, gracefulTimeout)
 }

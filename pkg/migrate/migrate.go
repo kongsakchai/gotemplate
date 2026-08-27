@@ -1,7 +1,6 @@
 package migrate
 
 import (
-	"database/sql"
 	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -9,7 +8,7 @@ import (
 	"github.com/kongsakchai/gotemplate/pkg/config"
 )
 
-func Migrate(db *sql.DB, cfg config.Migration) {
+func Migrate(cfg config.Migration) {
 	if !cfg.Enable {
 		return
 	}

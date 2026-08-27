@@ -46,7 +46,7 @@ func TestStart(t *testing.T) {
 	t.Run("should start and shutdown gracefully", func(t *testing.T) {
 		cfg := config.Config{}
 		e := NewEchoApp(cfg)
-		e.GET("/", func(c *echo.Context) error {
+		e.GET("", "/", func(c *echo.Context) error {
 			return c.JSON(200, "ok")
 		})
 
