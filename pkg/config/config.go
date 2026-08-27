@@ -28,9 +28,10 @@ type Header struct {
 }
 
 type Migration struct {
-	Enable   bool     `env:"MIGRATION_ENABLE" envDefault:"false"`
-	Source   string   `env:"MIGRATION_SRC" envDefault:"./migrations"`
-	Versions []string `env:"MIGRATION_VERSION" envSeparator:","`
+	Enable      bool   `env:"MIGRATION_ENABLE" envDefault:"false"`
+	Source      string `env:"MIGRATION_SRC" envDefault:"file://migrations"`
+	DatabaseURL string `env:"MIGRATION_DATABASE_URL"`
+	Version     int    `env:"MIGRATION_VERSION" envDefault:"-1"`
 }
 
 type Database struct {

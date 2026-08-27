@@ -1,13 +1,13 @@
-package mysql
+package mysqldb
 
 import (
 	"context"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/kongsakchai/gotemplate/pkg/database"
+	"github.com/kongsakchai/gotemplate/pkg/database/sqldb"
 )
 
 func New(datasource string) (*sqlx.DB, func(context.Context) error) {
-	return database.NewDatabase("mysql", datasource)
+	return sqldb.New("mysql", datasource)
 }

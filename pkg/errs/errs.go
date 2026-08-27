@@ -53,7 +53,7 @@ func (e *errorTrace) With(attrs ...slog.Attr) *errorTrace {
 	return e
 }
 
-func (e *errorTrace) New(attrs ...slog.Attr) *errorTrace {
+func (e *errorTrace) WithNew(attrs ...slog.Attr) *errorTrace {
 	return wrap(e.err).With(attrs...)
 }
 

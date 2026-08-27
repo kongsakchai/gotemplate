@@ -1,4 +1,4 @@
-package database
+package sqldb
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestNewDatabase(t *testing.T) {
 			assert.NotNil(t, p)
 		}()
 
-		NewDatabase("unknow", "invalid")
+		New("unknow", "invalid")
 	})
 
 	t.Run("should ping success when db connet", func(t *testing.T) {
@@ -26,7 +26,7 @@ func TestNewDatabase(t *testing.T) {
 			assert.Nil(t, p)
 		}()
 
-		db, close := NewDatabase("sqlite", ":memory:")
+		db, close := New("sqlite", ":memory:")
 		defer close(t.Context())
 
 		err := db.Ping()

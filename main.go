@@ -14,10 +14,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/pkg/config"
-	"github.com/kongsakchai/gotemplate/pkg/database/mysql"
+	"github.com/kongsakchai/gotemplate/pkg/database/mysqldb"
 	"github.com/kongsakchai/gotemplate/pkg/logger"
 	"github.com/kongsakchai/gotemplate/pkg/migrate"
 	"github.com/labstack/echo/v5"
+
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 )
 
 const gracefulTimeout = time.Second * 10
@@ -41,7 +43,7 @@ func main() {
 	logger := logger.New()
 	cfg := config.Load(config.Env)
 
-	db, close := mysql.New(cfg.Database.URL)
+	db, close := mysqldb.New(cfg.Database.URL)
 	defer close(context.Background())
 
 	migrate.Migrate(db.DB, cfg.Migration)

@@ -1,4 +1,4 @@
-package database
+package sqldb
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func NewDatabase(driverName string, dataSourceName string) (*sqlx.DB, func(context.Context) error) {
+func New(driverName string, dataSourceName string) (*sqlx.DB, func(context.Context) error) {
 	db, err := sqlx.Open(driverName, dataSourceName)
 	if err != nil {
 		panic("Connect to database error: " + err.Error())

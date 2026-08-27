@@ -1,4 +1,4 @@
-package mysql
+package postgresdb
 
 import (
 	"testing"
@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewMySQL(t *testing.T) {
-	// MySQL
-	t.Run("should error when mysql connection fail", func(t *testing.T) {
+func TestNewPostgres(t *testing.T) {
+	// Postgres
+	t.Run("should error when postgres connection fail", func(t *testing.T) {
 		// check panic
 		defer func() {
 			p := recover()
