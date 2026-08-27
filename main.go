@@ -14,8 +14,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
 	"github.com/kongsakchai/gotemplate/pkg/config"
-	"github.com/kongsakchai/gotemplate/pkg/database"
+	"github.com/kongsakchai/gotemplate/pkg/database/mysql"
 	"github.com/kongsakchai/gotemplate/pkg/logger"
+	"github.com/kongsakchai/gotemplate/pkg/migrate"
 	"github.com/labstack/echo/v5"
 )
 
@@ -40,9 +41,10 @@ func main() {
 	logger := logger.New()
 	cfg := config.Load(config.Env)
 
-	db, close := database.NewMySQL(cfg.Database.URL)
+	db, close := mysql.New(cfg.Database.URL)
 	defer close(context.Background())
 
+	migrate.Migrate(db.DB, cfg.Migration)
 	// clock := clock.New()
 
 	app := app.NewEchoApp(cfg)

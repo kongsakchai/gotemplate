@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/kongsakchai/gotemplate/pkg/token"
+	"github.com/kongsakchai/gotemplate/pkg/jwttoken"
 	"github.com/labstack/echo/v5"
 )
 
@@ -13,7 +13,7 @@ const (
 	bearerPrefix        = "Bearer "
 )
 
-func AuthMiddleware(verifier token.Verifier) echo.MiddlewareFunc {
+func AuthMiddleware(verifier jwttoken.Verifier) echo.MiddlewareFunc {
 	prefixLen := len(bearerPrefix)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

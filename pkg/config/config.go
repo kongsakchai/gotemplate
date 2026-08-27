@@ -28,10 +28,9 @@ type Header struct {
 }
 
 type Migration struct {
-	Enable    bool   `env:"MIGRATION_ENABLE" envDefault:"false"`
-	Directory string `env:"MIGRATION_DIR" envDefault:"./migrations"`
-	Version   string `env:"MIGRATION_VERSION"`
-	Repeat    string `env:"MIGRATION_REPEAT"`
+	Enable   bool     `env:"MIGRATION_ENABLE" envDefault:"false"`
+	Source   string   `env:"MIGRATION_SRC" envDefault:"./migrations"`
+	Versions []string `env:"MIGRATION_VERSION" envSeparator:","`
 }
 
 type Database struct {
@@ -48,9 +47,8 @@ type Redis struct {
 }
 
 type Log struct {
-	Enable     bool              `env:"LOG_ENABLE"`
-	HttpEnable bool              `env:"LOG_HTTP_ENABLE"`
-	Tags       map[string]string `env:"LOG_TAGS" envSeparator:"," envKeyValSeparator:":"`
+	Enable     bool `env:"LOG_ENABLE"`
+	HttpEnable bool `env:"LOG_HTTP_ENABLE"`
 }
 
 var config Config

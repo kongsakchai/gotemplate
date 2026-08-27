@@ -16,7 +16,7 @@ func TestNewDatabase(t *testing.T) {
 			assert.NotNil(t, p)
 		}()
 
-		newDatabase("unknow", "invalid")
+		NewDatabase("unknow", "invalid")
 	})
 
 	t.Run("should ping success when db connet", func(t *testing.T) {
@@ -26,33 +26,11 @@ func TestNewDatabase(t *testing.T) {
 			assert.Nil(t, p)
 		}()
 
-		db, close := newDatabase("sqlite", ":memory:")
+		db, close := NewDatabase("sqlite", ":memory:")
 		defer close(t.Context())
 
 		err := db.Ping()
 
 		assert.NoError(t, err)
-	})
-
-	// MySQL
-	t.Run("should error when mysql connection fail", func(t *testing.T) {
-		// check panic
-		defer func() {
-			p := recover()
-			assert.NotNil(t, p)
-		}()
-
-		NewMySQL("root:example@(localhost:1111)/example")
-	})
-
-	// Postgres
-	t.Run("should error when mysql connection fail", func(t *testing.T) {
-		// check panic
-		defer func() {
-			p := recover()
-			assert.NotNil(t, p)
-		}()
-
-		NewPostgres("root:example@(localhost:1111)/example")
 	})
 }
