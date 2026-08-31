@@ -1,0 +1,76 @@
+จากที่ทำมา ฉันสรุป skill ที่จำเป็นสำหรับโปรเจคนี้ได้ดังนี้
+# architecture การวางของในโปรเจค การแบ่งแบบ domain การตั้งชื่อ
+- core/business ตั้งชื่อ internal/{domain_name}
+- ถ้าต่อกับ service นอกจะนำหน้าด้วย adapter_{3party}.go
+- เช่น adapter_storage.go, adapter_cache.go, adapter_client.go
+- ถ้า service มี 3-4 export function อยู่ใน service.go ได้เลย
+- ถ้า service มี export function มากกว่านั้นให้แยก business ละ 1 file (1 bussiness หมายถึง 1 function ที่ handler เรียกใช้ หรือ 1 endpoint) และใช้ prefix service_{core}.go
+- เช่น service_logic.go, service_register.go, service_get_todo.go
+- ให้เอาประเภทเป็น prefix มีประโยชน์ตอนหาไฟล์ มันจะจัดกลุ่มตาม sort name ให้เอง
+- ส่วน function ย่อย ๆ ที่แบ่งออกมาให้อยู่ภายในไฟล์ที่เรียกใช้ แบ่ง function ให้เล็กและ test ง่าย
+- ถ้า test ยากให้แบ่งย่อยออกมา
+- ถ้า function ไหนใช้หลายไป ไปรวมไว้ที่ service_helper.go
+# การใช้ app handler
+- สร้าง handler ใน app/{domain}app เพื่อแยกแต่ละ module
+- ถ้ามี consumer/non-HTTP entrypoint จริง ๆ ค่อยเพิ่มเป็น consumer/{domain}consumer เพื่อแยกแต่ละ module (optional ยังไม่มีในโปรเจคตอนนี้)
+- เหตุผลที่สร้างแยกใน app หรือ consumer เพื่อให้สามารถขยายได้ เช่น internal/A ใช้ใน app และ consumer, ทั้ง app และ consumer จะได้ไม่มีต้องมีโค้ดของกันและกันติดไปด้วย
+- common code เพิ่มใน app ส่วน business code เพิ่มแต่ละ module
+- ใช้ app.Ok, app.Created, app.Fail สำหรับ ส่ง response
+- response shape เป็น {code, success, message, data} โดย code เป็น string เช่น "0000"
+- request validation ให้ใช้ app.Request[Req](c) ซึ่งทำ Bind + Validate ใน step เดียว (ได้ bad request code "1001")
+- ใส่ tag validate เช่น validate:"required" และ param:"id" สำหรับ path param
+- ใช้ app.InternalError, app.BadRequest, app.NotFound, app.Unauthorized ... ใน app/error.go ในการสร้าง error code
+- ใช้ 400 สำหรับ not found เพราะบ่งบอกถึงว่า user ส่งมาผิดถ้าจึงหาข้อมูลไม่เจอ ถ้าใช้ 404 caller จะต้องเพิ่ม logic แยกว่าไม่เจอเพราะหาไม่เจอ หรือไม่มี path
+- app/{domain}app/{domain}app.go มี RegisterRoute(echo *app.EchoApp) สำหรับ register route เพื่อกรณีแยก main ทำ micro service ทำให้แยกได้ง่ายขึ้น
+- route registration ใช้ helper ใน app/echo_route.go เช่น app.GET(echo, "route_name", path, handler, middlewares...) ชื่อ route ต้องอ่านรู้เรื่องเพราะถูกใช้เป็น tag ใน log/metrics
+- เอา ErrorMiddleware มา put ไว้ที่ group เดียวบนสุดของ route ไม่ใช้ในแต่ละ handler
+# middleware stack และ context propagation
+- global middleware ใน NewEchoApp เรียง Recover -> CORS -> Tag -> RefID -> Logger
+- TagMiddleware เอา route name ไป set ใน context + logger
+- RefIDMiddleware สร้าง/อ่าน X-Ref-ID ไปเป็น traceID ใส่ context + logger
+- AuthMiddleware(verifier) ตรวจ JWT แล้วเอา claims ใส่ context ทุก key แล้ว handler อ่าน c.Get("sub").(string)
+- log ที่ใช้ใน handler คือ ctx.Logger() (มี traceID/tag ฝังมาแล้ว)
+- default error handler แปลง error ที่ไม่ได้เป็น app.Error ให้เป็น envelope มาตรฐาน: ถ้าเป็น echo.HTTPStatusCoder (เช่น 404 route ไม่เจอ) จะได้ code เป็น HTTP_<status> และคง HTTP status เดิม ถ้าไม่ใช่ fallback เป็น InternalErrorCode 9999 / 500
+# error code และ response
+- global error code รวมอยู่ใน app/const.go: 0000 success, 1000 bad request, 1001 invalid request, 10002-10005 token/auth, 9998 database not ready, 9999 internal error
+- business error code ใช้ serror.NewCoded แต่อย่าไปกำหนดเป็น pattern ตายตัวเพราะ internal เป็นแค่ example
+# swagger / api docs
+- ใช้ go-swagger ผ่าน build tag docs (docs.go) ประกาศ meta และ swagger:route / swagger:response / swagger:parameters
+- handler response wrap ด้วย app.SwaggerSuccessResponse (code 0000, success true)
+- generate ด้วย make gendocs (เขียน docs/swagger.yaml) และ preview ด้วย make docs
+# coding rule ใช้ pointer ให้น้อยลง ถ้าจะเช็ความมีของหรือไม่ ให้ return boolean มาแทน
+- การใช้ serror wrap error ของ 3rd party เพื่อให้ track ง่ายขึ้น
+- ใช้ serror.NewCoded สำหรับกำหนด business code และ serror.From / serror.NewWithCode สำหรับ wrap error ที่ได้จาก external
+- chain ได้ด้วย .WithData(...) / .WithAttr(...) ซึ่ง Data จะไปแสดงผลเป็น app.Error.Data และ Attrs ใช้ใน logger.ErrorAttrs(err)
+- การใช้ log ที่อยู่ใน echo context
+- function return concrete type ห้าม return interface
+# ในแต่ละ app/{domain}app
+- มี func handleError(err error) app.Error สำหรับ map ระหว่าง bussiness code กับ app.Error
+หน้าตาแบบนี้
+```
+func handleError(err error) app.Error {
+	if e, ok := serror.As(err); ok {
+		switch e.Code() {
+		case auth.ErrUserNotFound.Code:
+			return app.NotFound(e.Code(), e.Msg(), e, e.Data...)
+		case auth.ErrInvalidPassword.Code, auth.ErrUserAlreadyExists.Code:
+			return app.BadRequest(e.Code(), e.Msg(), e, e.Data...)
+		}
+	}
+	return app.InternalError(app.InternalErrorCode, app.InternalErrorMsg, err)
+}
+```
+- เวลาใช้ handleError ให้ wrap ด้วย app.ErrorMiddleware เพื่อจัดการ error เช็คว่าเป็น app.Error อยู่แล้วหรือเปล่า
+- ข้อดูของการใช้ app.ErrorMiddleware ทำให้เราใส่ไว้ที่เดียวคือ group หรือบนสุดของ route เพื่อกันลืมเรียกใช้ในแต่ละ hanlder focus แค่ return error ออกมาได้เลย
+# การทำ unit test
+- ใช้ mockery สร้าง mock script ขึ้นมา
+- การใส่ //mockery:generate: true สำหรับ interface ที่ต้องการ mock
+- ถ้าใช้ interface อื่นแล้วต้องการ mock ให้ใช้ท่าแบบ [@authapp.go (12:13)](file:///Users/ar677213/kong/labs/gotemplate/app/authapp/authapp.go#L12:13)
+- db test ด้วย github.com/DATA-DOG/go-sqlmock
+- test handler ใช้ github.com/labstack/echo/v5/echotest + echotest.ContextConfig เพื่อ mock ctx
+- ใช้ github.com/stretchr/testify เป็นหลัก
+# ของใช้หลักในโปรเจค
+- infra ที่ reuse ได้ เก็บ pkg/ เช่น config, logger, serror, validator, jwttoken, hash, httpclient, database, cache, clock, null, migrate
+- config อ่าน env ผ่าน tag env:"..." แล้ว load ด้วย config.Load(config.Env) (ตัวเล็ก env ต่างจากตัวใหญ่ Env)
+- migration ใช้ golang-migrate ไฟล์ใน migrations/ เปิด/ปิดผ่าน config MIGRATION_*
+- makefile: make test / testcover / coverage / genmock / gendocs / docs / init

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/kongsakchai/gotemplate/pkg/config"
 )
 
 var (
@@ -17,43 +18,55 @@ var (
 )
 
 type Signer interface {
-	Sign(sub, jti string, extra map[string]any) (string, error)
+	Sign(sub, id string, extra map[string]any) (string, error)
 }
 
 type Verifier interface {
 	Verify(tokenString string) (map[string]any, error)
 }
 
-type JWTOptions struct {
-	Secret    string
-	VerifyKey string
-	Method    string
-	Expired   time.Duration
-	Issuer    string
-	Audience  string
+type jwtToken struct {
+	method       jwt.SigningMethod
+	secretKey    []byte
+	verifyKey    []byte
+	expired      time.Duration
+	issuer       string
+	audience     string
+	parseOptions []jwt.ParserOption
 }
 
-type jwtManager struct {
-	method    jwt.SigningMethod
-	secretKey []byte
-	verifyKey string
-	expired   time.Duration
-	issuer    string
-	audience  string
-}
+func NewJWTToken(cfg config.JWT) *jwtToken {
+	if cfg.Method == "" {
+		panic("Missing jwt method")
+	}
+	if cfg.SecretKey == "" {
+		panic("Missing jwt secret key")
+	}
+	if cfg.VerifyKey == "" {
+		panic("Missing jwt verify key")
+	}
+	parseOptions := []jwt.ParserOption{
+		jwt.WithValidMethods([]string{cfg.Method}),
+		jwt.WithExpirationRequired(),
+	}
+	if cfg.Audience != "" {
+		parseOptions = append(parseOptions, jwt.WithAudience(cfg.Audience))
+	}
+	if cfg.Issuer != "" {
+		parseOptions = append(parseOptions, jwt.WithIssuer(cfg.Issuer))
+	}
 
-func NewJWTManager(opt JWTOptions) *jwtManager {
-	return &jwtManager{
-		method:    jwt.GetSigningMethod(opt.Method),
-		secretKey: []byte(opt.Secret),
-		verifyKey: opt.VerifyKey,
-		expired:   opt.Expired,
-		issuer:    opt.Issuer,
-		audience:  opt.Audience,
+	return &jwtToken{
+		method:    jwt.GetSigningMethod(cfg.Method),
+		secretKey: []byte(cfg.SecretKey),
+		verifyKey: []byte(cfg.VerifyKey),
+		expired:   cfg.Expired,
+		issuer:    cfg.Issuer,
+		audience:  cfg.Audience,
 	}
 }
 
-func (s *jwtManager) Sign(sub, jti string, extra map[string]any) (string, error) {
+func (s *jwtToken) Sign(sub, jti string, extra map[string]any) (string, error) {
 	if sub == "" {
 		return "", ErrSubIsRequired
 	}
@@ -80,19 +93,16 @@ func (s *jwtManager) Sign(sub, jti string, extra map[string]any) (string, error)
 	return tokenString, nil
 }
 
-func validateKey(key string) func(token *jwt.Token) (any, error) {
+func validateKey(key []byte) func(token *jwt.Token) (any, error) {
 	return func(token *jwt.Token) (any, error) {
 		return key, nil
 	}
 }
 
-func (v *jwtManager) Verify(tokenString string) (map[string]any, error) {
+func (v *jwtToken) Verify(tokenString string) (map[string]any, error) {
 	token, err := jwt.Parse(tokenString,
 		validateKey(v.verifyKey),
-		jwt.WithValidMethods([]string{v.method.Alg()}),
-		jwt.WithAudience(v.audience),
-		jwt.WithIssuer(v.issuer),
-		jwt.WithExpirationRequired(),
+		v.parseOptions...,
 	)
 	if err == jwt.ErrTokenExpired {
 		return nil, ErrTokenExpired

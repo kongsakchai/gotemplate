@@ -67,7 +67,7 @@ func newReplaceFuncGroup(replaceAttrs ...ReplaceFunc) func(groups []string, a sl
 	}
 }
 
-type slogAttr interface {
+type LogAttributer interface {
 	LogAttrs() []slog.Attr
 }
 
@@ -76,7 +76,7 @@ func ErrorAttrs(err error) []slog.Attr {
 		return []slog.Attr{}
 	}
 
-	if errType, ok := err.(slogAttr); ok {
+	if errType, ok := err.(LogAttributer); ok {
 		return errType.LogAttrs()
 	}
 

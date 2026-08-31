@@ -24,7 +24,7 @@ init:
 	@go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
 .PHONY: genmock
-gen-mock:
+genmock:
 	@mockery
 
 .PHONY: gendocs

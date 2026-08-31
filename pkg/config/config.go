@@ -15,7 +15,7 @@ type Config struct {
 	Database  Database
 	Redis     Redis
 	Log       Log
-	Token     Token
+	AppJWT    JWT
 }
 
 type App struct {
@@ -53,12 +53,13 @@ type Log struct {
 	HttpEnable bool `env:"LOG_HTTP_ENABLE"`
 }
 
-type Token struct {
-	SecretKey string        `env:"TOKEN_SECRET_KEY"`
-	VerifyKey string        `env:"TOKEN_VERIFY_KEY"`
-	Issuer    string        `env:"TOKEN_ISSUER"`
-	Audience  string        `env:"TOKEN_AUDIENCE"`
-	Expired   time.Duration `env:"TOKEN_EXPIRED" envDefault:"15m"`
+type JWT struct {
+	Method    string        `env:"JWT_METHOD"`
+	SecretKey string        `env:"JWT_SECRET_KEY"`
+	VerifyKey string        `env:"JWT_VERIFY_KEY"`
+	Issuer    string        `env:"JWT_ISSUER"`
+	Audience  string        `env:"JWT_AUDIENCE"`
+	Expired   time.Duration `env:"JWT_EXPIRED" envDefault:"15m"`
 }
 
 var config Config

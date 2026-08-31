@@ -12,8 +12,8 @@ import (
 type service struct {
 	st Storager
 
-	hasher hash.Hasher
-	signer jwttoken.Signer
+	hasher Hasher
+	signer Signer
 }
 
 type ServiceDeps struct {
@@ -64,7 +64,7 @@ func (s *service) Login(ctx context.Context, username, password string) (string,
 		return "", err
 	}
 
-	token, err := s.signer.Sign(user.Id, "", nil)
+	token, err := s.signer.Sign(user.Id, uuid.NewString(), nil)
 	if err != nil {
 		return "", err
 	}

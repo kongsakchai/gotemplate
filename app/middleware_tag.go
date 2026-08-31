@@ -12,11 +12,11 @@ func TagMiddleware() echo.MiddlewareFunc {
 			req := ctx.Request()
 
 			name := ctx.RouteInfo().Name
-			ctx.Set(TagKey, name)
-			ctx.SetRequest(req.WithContext(context.WithValue(req.Context(), TagKey, name)))
-			ctx.SetLogger(ctx.Logger().With(
-				TagKey, name,
-			))
+			if name != "" {
+				ctx.Set(TagKey, name)
+				ctx.SetRequest(req.WithContext(context.WithValue(req.Context(), TagKey, name)))
+				ctx.SetLogger(ctx.Logger().With(TagKey, name))
+			}
 
 			return next(ctx)
 		}

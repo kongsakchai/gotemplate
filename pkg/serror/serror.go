@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 )
 
@@ -22,10 +21,12 @@ func init() {
 }
 
 type serror struct {
-	err   error
-	code  string
-	at    string
-	attrs []slog.Attr
+	err  error
+	code string
+	at   string
+
+	Attrs []slog.Attr
+	Data  []any
 }
 
 // Error returns the error message
@@ -33,8 +34,8 @@ func (e serror) Error() string {
 	return fmt.Sprintf("error: %v, code: %s, at: %s", e.err, e.code, e.at)
 }
 
-// Message returns the wrapped error message
-func (e *serror) Message() string {
+// Msg returns the wrapped error message
+func (e *serror) Msg() string {
 	return e.err.Error()
 }
 
@@ -53,15 +54,24 @@ func (e *serror) At() string {
 	return e.at
 }
 
+// LogAttrs returns all slog attributes; implement logger.LogAttributer
 func (e *serror) LogAttrs() []slog.Attr {
-	return e.attrs
+	return e.Attrs
 }
 
-func (e *serror) With(attrs ...slog.Attr) *serror {
-	e.attrs = append([]slog.Attr{}, attrs...)
+// WithAttr appends slog attributes and returns the same error for chaining
+func (e *serror) WithAttr(attrs ...slog.Attr) *serror {
+	e.Attrs = append(e.Attrs, attrs...)
 	return e
 }
 
+// WithData appends data fields and returns the same error for chaining
+func (e *serror) WithData(data ...any) *serror {
+	e.Data = append(e.Data, data...)
+	return e
+}
+
+// Implement errors.Is
 func (e *serror) Is(err error) bool {
 	if target, ok := As(err); ok {
 		return errors.Is(e.err, target.err)
@@ -73,6 +83,7 @@ func As(err error) (*serror, bool) {
 	return errors.AsType[*serror](err)
 }
 
+// Create
 func New(str string, args ...any) *serror {
 	return wrap("", fmt.Errorf(str, args...))
 }
@@ -90,7 +101,10 @@ func FromWithCode(code string, err error) *serror {
 }
 
 func wrap(code string, err error) *serror {
-	if err == nil || reflect.ValueOf(err).IsNil() {
+	if err == nil {
+		return nil
+	}
+	if serr, ok := As(err); ok && serr == nil { // handle typed nil *serror
 		return nil
 	}
 	at := caller(maxStackDepth)
@@ -98,7 +112,7 @@ func wrap(code string, err error) *serror {
 		err:   err,
 		code:  code,
 		at:    at,
-		attrs: []slog.Attr{slog.String("err", err.Error()), slog.String("at", at)},
+		Attrs: []slog.Attr{slog.String("err", err.Error()), slog.String("at", at)},
 	}
 }
 

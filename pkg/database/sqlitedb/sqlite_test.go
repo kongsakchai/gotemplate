@@ -18,12 +18,4 @@ func TestNewSQLite(t *testing.T) {
 		New("root:example@(localhost:1111)/example")
 	})
 
-	t.Run("should success when sqlite with memory success", func(t *testing.T) {
-		db, close := NewWithMemory()
-		defer close(t.Context())
-
-		err := db.Ping()
-
-		assert.NoError(t, err)
-	})
 }

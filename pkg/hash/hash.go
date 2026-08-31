@@ -27,7 +27,7 @@ func NewHasher(cost int) Hasher {
 func (h *hasher) HashPassword(pwd string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), h.cost)
 	if err != nil {
-		return "", serror.From(err)
+		return "", err
 	}
 	return string(hash), nil
 }
@@ -37,5 +37,5 @@ func (h *hasher) ComparePassword(pwd, hash string) error {
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return serror.From(ErrMismatched)
 	}
-	return serror.From(err)
+	return err
 }

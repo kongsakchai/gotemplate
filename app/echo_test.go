@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/echotest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type customMarshalerError struct {
@@ -46,8 +47,11 @@ func TestStart(t *testing.T) {
 	t.Run("should start and shutdown gracefully", func(t *testing.T) {
 		cfg := config.Config{}
 		e := NewEchoApp(cfg)
-		e.GET("", "/", func(c *echo.Context) error {
+		GET(e, "", "/", func(c *echo.Context) error {
 			return c.JSON(200, "ok")
+		})
+		e.Add(echo.RouteNotFound, "/not-found", func(c *echo.Context) error {
+			return c.NoContent(http.StatusNotFound)
 		})
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -114,7 +118,7 @@ func TestErrorHandler(t *testing.T) {
 		errorHandler(ctx, echoErr)
 
 		assert.Equal(t, http.StatusNotFound, rec.Code)
-		assert.JSONEq(t, `{"code":"","success":false,"message":"not found"}`, rec.Body.String())
+		assert.JSONEq(t, `{"code":"HTTP_404","success":false,"message":"not found"}`, rec.Body.String())
 	})
 
 	t.Run("should handle unknown error with 500", func(t *testing.T) {
@@ -125,7 +129,7 @@ func TestErrorHandler(t *testing.T) {
 		errorHandler(ctx, errors.New("unknown error"))
 
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
-		assert.JSONEq(t, `{"code":"","success":false,"message":"Internal Server Error"}`, rec.Body.String())
+		assert.JSONEq(t, `{"code":"9999","success":false,"message":"Internal Server Error"}`, rec.Body.String())
 	})
 
 	t.Run("should handle echo HTTPError with empty message", func(t *testing.T) {
@@ -137,7 +141,7 @@ func TestErrorHandler(t *testing.T) {
 		errorHandler(ctx, echoErr)
 
 		assert.Equal(t, http.StatusBadGateway, rec.Code)
-		assert.JSONEq(t, `{"code":"","success":false,"message":"Bad Gateway"}`, rec.Body.String())
+		assert.JSONEq(t, `{"code":"HTTP_502","success":false,"message":"Bad Gateway"}`, rec.Body.String())
 	})
 
 	t.Run("should handle custom marshaler error", func(t *testing.T) {
@@ -172,5 +176,84 @@ func TestDefaultEchoErrorHandler(t *testing.T) {
 		defaultEchoErrorHandler(ctx, nil)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+}
+
+// mockRouter implements Router interface for testing
+type mockRouter struct {
+	LastRoute echo.Route
+	AddErr    error
+}
+
+func (m *mockRouter) AddRoute(routable echo.Route) (echo.RouteInfo, error) {
+	m.LastRoute = routable
+	return echo.RouteInfo{}, m.AddErr
+}
+
+func TestRouterHelpers(t *testing.T) {
+	t.Run("POST registers correct route", func(t *testing.T) {
+		mr := &mockRouter{}
+		handler := func(c *echo.Context) error { return nil }
+		mw := func(next echo.HandlerFunc) echo.HandlerFunc { return next }
+
+		POST(mr, "createUser", "/users", handler, mw)
+
+		assert.Equal(t, http.MethodPost, mr.LastRoute.Method)
+		assert.Equal(t, "/users", mr.LastRoute.Path)
+		assert.Equal(t, "createUser", mr.LastRoute.Name)
+		require.Len(t, mr.LastRoute.Middlewares, 1)
+	})
+
+	t.Run("GET registers correct route", func(t *testing.T) {
+		mr := &mockRouter{}
+		handler := func(c *echo.Context) error { return nil }
+
+		GET(mr, "getUser", "/users/:id", handler)
+
+		assert.Equal(t, http.MethodGet, mr.LastRoute.Method)
+		assert.Equal(t, "/users/:id", mr.LastRoute.Path)
+		assert.Equal(t, "getUser", mr.LastRoute.Name)
+		require.Empty(t, mr.LastRoute.Middlewares)
+	})
+
+	t.Run("PUT registers correct route", func(t *testing.T) {
+		mr := &mockRouter{}
+		handler := func(c *echo.Context) error { return nil }
+
+		PUT(mr, "updateUser", "/users/:id", handler)
+
+		assert.Equal(t, http.MethodPut, mr.LastRoute.Method)
+		assert.Equal(t, "/users/:id", mr.LastRoute.Path)
+		assert.Equal(t, "updateUser", mr.LastRoute.Name)
+	})
+
+	t.Run("DELETE registers correct route", func(t *testing.T) {
+		mr := &mockRouter{}
+		handler := func(c *echo.Context) error { return nil }
+
+		DELETE(mr, "deleteUser", "/users/:id", handler)
+
+		assert.Equal(t, http.MethodDelete, mr.LastRoute.Method)
+		assert.Equal(t, "/users/:id", mr.LastRoute.Path)
+		assert.Equal(t, "deleteUser", mr.LastRoute.Name)
+	})
+
+	t.Run("PATCH registers correct route", func(t *testing.T) {
+		mr := &mockRouter{}
+		handler := func(c *echo.Context) error { return nil }
+
+		PATCH(mr, "patchUser", "/users/:id", handler)
+
+		assert.Equal(t, http.MethodPatch, mr.LastRoute.Method)
+		assert.Equal(t, "/users/:id", mr.LastRoute.Path)
+		assert.Equal(t, "patchUser", mr.LastRoute.Name)
+	})
+
+	t.Run("captures AddRoute error from mock", func(t *testing.T) {
+		mr := &mockRouter{AddErr: assert.AnError}
+
+		GET(mr, "test", "/test", nil)
+
+		assert.ErrorIs(t, mr.AddErr, assert.AnError)
 	})
 }

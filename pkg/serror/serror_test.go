@@ -36,7 +36,7 @@ func TestMessageMethod(t *testing.T) {
 		err := errors.New("wrapped message")
 		e := From(err)
 
-		assert.Equal(t, "wrapped message", e.Message())
+		assert.Equal(t, "wrapped message", e.Msg())
 	})
 }
 
@@ -139,7 +139,7 @@ func TestWithMethod(t *testing.T) {
 	t.Run("should append additional attributes and return self", func(t *testing.T) {
 		e := From(errors.New("test"))
 
-		newErr := e.With(slog.String("key", "value"))
+		newErr := e.WithAttr(slog.String("key", "value"))
 		assert.Same(t, e, newErr)
 
 		attrs := e.LogAttrs()
@@ -157,8 +157,8 @@ func TestWithMethod(t *testing.T) {
 
 	t.Run("should chain multiple With calls", func(t *testing.T) {
 		e := From(errors.New("test")).
-			With(slog.String("a", "1")).
-			With(slog.Int("b", 2))
+			WithAttr(slog.String("a", "1")).
+			WithAttr(slog.Int("b", 2))
 
 		attrs := e.LogAttrs()
 		assert.Len(t, attrs, 4) // err + at + a + b
@@ -166,7 +166,7 @@ func TestWithMethod(t *testing.T) {
 
 	t.Run("should work with With on zero-value-like error", func(t *testing.T) {
 		e := &serror{err: errors.New("minimal")}
-		e = e.With(slog.String("x", "y"))
+		e = e.WithAttr(slog.String("x", "y"))
 
 		attrs := e.LogAttrs()
 		assert.Len(t, attrs, 1) // x
@@ -192,7 +192,7 @@ func TestNewFunction(t *testing.T) {
 		err := New("unit test")
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "unit test", err.Message())
+		assert.Equal(t, "unit test", err.Msg())
 		assert.Equal(t, "", err.Code())
 	})
 
@@ -200,7 +200,7 @@ func TestNewFunction(t *testing.T) {
 		err := New("user %s not found", "alice")
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "user alice not found", err.Message())
+		assert.Equal(t, "user alice not found", err.Msg())
 	})
 }
 
@@ -210,7 +210,7 @@ func TestNewCodeFunction(t *testing.T) {
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "E001", err.Code())
-		assert.Equal(t, "database error", err.Message())
+		assert.Equal(t, "database error", err.Msg())
 	})
 
 	t.Run("should support format arguments with code", func(t *testing.T) {
@@ -218,7 +218,7 @@ func TestNewCodeFunction(t *testing.T) {
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "E002", err.Code())
-		assert.Equal(t, "user bob not found", err.Message())
+		assert.Equal(t, "user bob not found", err.Msg())
 	})
 }
 
@@ -247,7 +247,7 @@ func TestFromCodeFunction(t *testing.T) {
 
 		assert.NotNil(t, err)
 		assert.Equal(t, "E003", err.Code())
-		assert.Equal(t, "from code error", err.Message())
+		assert.Equal(t, "from code error", err.Msg())
 	})
 
 	t.Run("should wrap ErrUnsupported with code", func(t *testing.T) {
@@ -270,7 +270,7 @@ func TestWrapFunction(t *testing.T) {
 
 		assert.NotNil(t, result)
 		assert.Equal(t, "MYCODE", result.Code())
-		assert.Equal(t, "test", result.Message())
+		assert.Equal(t, "test", result.Msg())
 		assert.NotEmpty(t, result.At())
 	})
 
@@ -314,5 +314,48 @@ func TestCallerFunction(t *testing.T) {
 
 		info := caller(maxStackDepth)
 		assert.NotEmpty(t, info)
+	})
+}
+
+func TestWithDataMethod(t *testing.T) {
+	t.Run("should append data and return self", func(t *testing.T) {
+		e := From(errors.New("test"))
+
+		newErr := e.WithData("value")
+		assert.Same(t, e, newErr)
+		assert.Equal(t, []any{"value"}, e.Data)
+	})
+
+	t.Run("should chain multiple WithData calls", func(t *testing.T) {
+		e := From(errors.New("test")).
+			WithData("a", "b").
+			WithData(42)
+
+		assert.Equal(t, []any{"a", "b", 42}, e.Data)
+	})
+
+	t.Run("should work with WithData on zero-value-like error", func(t *testing.T) {
+		e := &serror{err: errors.New("minimal")}
+		e = e.WithData("x")
+
+		assert.Equal(t, []any{"x"}, e.Data)
+	})
+}
+
+func TestCoded(t *testing.T) {
+	t.Run("should create coded with code and message", func(t *testing.T) {
+		c := NewCoded("E500", "internal error")
+
+		assert.Equal(t, "E500", c.Code)
+		assert.Equal(t, "internal error", c.Msg)
+	})
+
+	t.Run("should return wrapped serror from Err", func(t *testing.T) {
+		err := NewCoded("E500", "internal error").Err()
+
+		serr, ok := As(err)
+		assert.True(t, ok)
+		assert.Equal(t, "E500", serr.Code())
+		assert.Equal(t, "internal error", serr.Msg())
 	})
 }

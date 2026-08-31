@@ -11,7 +11,3 @@ import (
 func New(datasource string) (*sqlx.DB, func(context.Context) error) {
 	return sqldb.New("sqlite", datasource)
 }
-
-func NewWithMemory() (*sqlx.DB, func(context.Context) error) {
-	return sqldb.New("sqlite", ":memory:")
-}
