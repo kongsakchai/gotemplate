@@ -26,13 +26,13 @@ func (w *echoResponseWriter) Write(b []byte) (int, error) {
 	url := w.ctx.Request().URL.String()
 
 	if w.status == http.StatusOK || w.status == http.StatusCreated {
-		w.ctx.Logger().InfoContext(ctx, fmt.Sprintf("response %d %s", w.status, url),
+		w.ctx.Logger().InfoContext(ctx, fmt.Sprintf("api response %d %s", w.status, url),
 			"body", body,
 			"latency", time.Since(w.reqTime).String(),
 			"event", "api_response",
 		)
 	} else {
-		w.ctx.Logger().ErrorContext(ctx, fmt.Sprintf("response %d %s", w.status, url),
+		w.ctx.Logger().ErrorContext(ctx, fmt.Sprintf("api response %d %s", w.status, url),
 			"body", body,
 			"latency", time.Since(w.reqTime).String(),
 			"event", "api_response",

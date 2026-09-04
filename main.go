@@ -13,13 +13,17 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kongsakchai/gotemplate/app"
+	"github.com/kongsakchai/gotemplate/app/authapp"
+	"github.com/kongsakchai/gotemplate/app/todoapp"
 	"github.com/kongsakchai/gotemplate/pkg/config"
-	"github.com/kongsakchai/gotemplate/pkg/database/mysqldb"
+	"github.com/kongsakchai/gotemplate/pkg/database/sqlitedb"
+	"github.com/kongsakchai/gotemplate/pkg/hash"
+	"github.com/kongsakchai/gotemplate/pkg/jwttoken"
 	"github.com/kongsakchai/gotemplate/pkg/logger"
 	"github.com/kongsakchai/gotemplate/pkg/migrate"
 	"github.com/labstack/echo/v5"
 
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 )
 
 const gracefulTimeout = time.Second * 10
@@ -43,19 +47,28 @@ func main() {
 	logger := logger.New()
 	cfg := config.Load(config.Env)
 
-	db, close := mysqldb.New(cfg.Database.URL)
+	// init dependencies that need to be closed after use
+	db, close := sqlitedb.New(cfg.Database.URL)
 	defer close(context.Background())
+	migrate.Migrate(cfg.Migration)
 
-	migrate.Migrate(db.DB, cfg.Migration)
-	// clock := clock.New()
+	echoApp := app.NewEchoApp(cfg)
+	echoApp.Logger = logger
+	registerRoutes(cfg, echoApp, db)
 
-	app := app.NewEchoApp(cfg)
-	app.Logger = logger
+	runApp(echoApp, cfg, gracefulTimeout)
+}
 
-	app.GET("/health", healthCheck(db))
-	app.GET("/metrics", metrics())
+func registerRoutes(cfg config.Config, echo *app.EchoApp, db *sqlx.DB) {
+	// init dependencies that are not closed after use
+	jwt := jwttoken.NewJWTToken(cfg.AppJWT)
+	hasher := hash.NewHasher(12)
 
-	runApp(app, cfg, gracefulTimeout)
+	app.GET(echo, "health", "/health", healthCheck(db))
+	app.GET(echo, "metrics", "/metrics", metrics())
+
+	authapp.NewApp(authapp.Deps{DB: db, Hasher: hasher, Signer: jwt}).RegisterRoute(echo)
+	todoapp.NewApp(todoapp.Deps{DB: db, Verifier: jwt}).RegisterRoutes(echo)
 }
 
 func runApp(app *app.EchoApp, cfg config.Config, gracefulTimeout time.Duration) {

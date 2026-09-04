@@ -13,4 +13,4 @@ require-template-schema-exists: true
 template: testify
 template-schema: "{{.Template}}.schema.json"
 packages:
-    github.com/kongsakchai/gotemplate/app:
+    github.com/kongsakchai/gotemplate:

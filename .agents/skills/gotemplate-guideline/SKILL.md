@@ -1,37 +1,31 @@
 ---
 name: gotemplate-guideline
-description: >
-    Go + Echo v5 + sqlx REST API coding conventions for this project. Load this
-    skill when writing or editing handlers, tests, middleware, routing, database
-    queries, or domain modules — then read the relevant sub-skill below.
+description: "Conventions and architecture for the gotemplate Go project. Use when writing, reviewing, or refactoring any Go code in this codebase. Triggers on: internal/{domain}, app/{domain}app, consumer/{domain}consumer, service_{core}.go, adapter_{3party}.go, serror, handleError, app.Error, app.ErrorMiddleware, app.Request, EchoApp.RegisterRoute, mockery, go-sqlmock, echotest, go-swagger/docs annotations, pkg/config env tags, request/response envelope {code, success, message, data}. Use ONLY for this repository's Go code, not for general-purpose Go tips."
+license: MIT
+metadata:
+  version: '1.0.0'
 ---
 
-# Sub-skills
+# Gotemplate Guidelines
 
-| When you are...                                 | Read this file                                       |
-| ----------------------------------------------- | ---------------------------------------------------- |
-| Creating a new domain,                          | [`ref/architecture.md`](./ref/architecture.md)       |
-| Writing handlers, services, or API responses    | [`ref/handler-service.md`](./ref/handler-service.md) |
-| Writing any Go code (pointers, errors, logging) | [`ref/coding.md`](./ref/coding.md)                   |
-| Writing or editing tests                        | [`ref/testing.md`](./ref/testing.md)                 |
+Format that goes with the `gotemplate` project layout (`internal/`, `app/`, `consumer/`, `pkg/`). Follow these conventions when adding or changing Go code in this repo.
 
-## Makefile reference
+## Quick Reference
 
-### Commands
+| Topic | When to Use | Reference |
+|-------|-------------|-----------|
+| **Architecture** | Project layout, domain naming, file prefixes, service file splitting | [architecture.md](references/architecture.md) |
+| **App / Handler** | Building handlers, route registration, request validation, responses | [app-handler.md](references/app-handler.md) |
+| **Middleware** | Global middleware stack, traceID/tag, JWT claims in context | [middleware.md](references/middleware.md) |
+| **Errors** | serror, app.Error, error codes, per-module handleError | [errors.md](references/errors.md) |
+| **Testing** | mockery mocks, go-sqlmock, echotest handler tests, testify | [testing.md](references/testing.md) |
+| **Code Review** | Checking existing code against these conventions | [review.md](references/review.md) |
+| **Tooling** | pkg/ shared infra, config env tags, migrate, makefile, swagger | [tooling.md](references/tooling.md) |
 
-| Command          | Description                                    |
-| ---------------- | ---------------------------------------------- |
-| `make test`      | Run all tests with colorized output            |
-| `make testcover` | Run all tests with coverage                    |
-| `make coverage`  | Generate coverage report and open HTML         |
-| `make init`      | Install mockery v3.7.3 + go-swagger            |
-| `make gen-mock`  | Generate mocks via mockery                     |
-| `make gendocs`   | Generate swagger spec to `./docs/swagger.yaml` |
-| `make docs`      | Serve swagger UI from `./docs/swagger.yaml`    |
+## Rules That Never Change
 
-### Notes
-
-- Test output is piped through `.script/colorize` for readability
-- Init is only needed once per clone; tools are installed globally via `go install`
-- Mockery config is read from `.mockery.yaml` at project root
-- Swagger docs generated with `--tags=docs` — only endpoints tagged `docs` appear
+- Return concrete types, never interfaces. Check existence by returning `bool`, not pointers.
+- Wrap 3rd-party/external errors with `serror` so they can be traced; define business codes with `serror.NewCoded`.
+- Register error handling via `app.ErrorMiddleware` on the group, never per handler.
+- Common code goes in `app/`; business code goes in each module; reusable infra goes in `pkg/`.
+- Log through the echo context logger (`ctx.Logger()`), which already carries traceID/tag.

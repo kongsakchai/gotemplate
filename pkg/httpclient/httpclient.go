@@ -85,7 +85,8 @@ func newRequest(ctx context.Context, client *Client, method, url string, payload
 
 func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], error) {
 	traceID, _ := req.Context().Value(client.refIDKey).(string)
-	if client.logEnable {
+	disableLog := req.Header.Get("Disable-Log") == "true"
+	if client.logEnable && !disableLog {
 		logHTTPRequest(traceID, req)
 	}
 
@@ -107,7 +108,7 @@ func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], err
 	response.Code = resp.StatusCode
 	response.RawData = bytesResponse
 
-	if client.logEnable {
+	if client.logEnable && !disableLog {
 		logHTTPResponse(traceID, string(bytesResponse), resp.StatusCode, req)
 	}
 
@@ -125,12 +126,18 @@ func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], err
 }
 
 func logHTTPRequest(traceID string, req *http.Request) {
+	disableBody := req.Header.Get("Disable-Log-Body") == "true"
+
 	body := []byte{}
-	if req.Body != nil {
-		body, _ = io.ReadAll(req.Body)
+	if !disableBody {
+		if req.Body != nil {
+			body, _ = io.ReadAll(req.Body)
+		}
+		req.Body.Close()
+		req.Body = io.NopCloser(bytes.NewBuffer(body))
+	} else {
+		body = []byte("[hidden]")
 	}
-	req.Body.Close()
-	req.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	slog.Info(
 		"HTTP Client Request",
@@ -164,7 +171,7 @@ func logHTTPResponse(traceID, data string, status int, req *http.Request) {
 }
 
 func callRequest[Resp any](ctx context.Context, client *Client, mathod, url string, payload any, headers ...http.Header) (response Response[Resp], err error) {
-	req, err := newRequest(ctx, client, http.MethodPost, url, payload, headers...)
+	req, err := newRequest(ctx, client, mathod, url, payload, headers...)
 	if err != nil {
 		return response, err
 	}

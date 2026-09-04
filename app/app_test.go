@@ -95,6 +95,21 @@ func TestAppResponse(t *testing.T) {
 		assert.JSONEq(t, expectedResp, rec.Body.String())
 	})
 
+	t.Run("should return 200 OK without message when use Ok without msg", func(t *testing.T) {
+		// arrange
+		ctx, rec := echotest.ContextConfig{}.ToContextRecorder(t)
+
+		expectedStatus := http.StatusOK
+		expectedResp := "{\"code\":\"0000\",\"success\":true,\"data\":\"Success\"}\n"
+
+		// act
+		Ok(ctx, "Success")
+
+		// assert
+		assert.Equal(t, expectedStatus, rec.Code)
+		assert.JSONEq(t, expectedResp, rec.Body.String())
+	})
+
 	t.Run("should return 201 Created when use Created", func(t *testing.T) {
 		// arrange
 		ctx, rec := echotest.ContextConfig{}.ToContextRecorder(t)

@@ -15,6 +15,7 @@ type Config struct {
 	Database  Database
 	Redis     Redis
 	Log       Log
+	AppJWT    JWT
 }
 
 type App struct {
@@ -50,6 +51,15 @@ type Redis struct {
 type Log struct {
 	Enable     bool `env:"LOG_ENABLE"`
 	HttpEnable bool `env:"LOG_HTTP_ENABLE"`
+}
+
+type JWT struct {
+	Method    string        `env:"JWT_METHOD"`
+	SecretKey string        `env:"JWT_SECRET_KEY"`
+	VerifyKey string        `env:"JWT_VERIFY_KEY"`
+	Issuer    string        `env:"JWT_ISSUER"`
+	Audience  string        `env:"JWT_AUDIENCE"`
+	Expired   time.Duration `env:"JWT_EXPIRED" envDefault:"15m"`
 }
 
 var config Config

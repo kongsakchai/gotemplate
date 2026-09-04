@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -27,6 +28,7 @@ func NewEchoApp(cfg config.Config) *EchoApp {
 	e.Use(
 		middleware.Recover(),
 		middleware.CORS("*"),
+		TagMiddleware(),
 		RefIDMiddleware(cfg.Header.RefIDKey),
 		LoggerMiddleware(cfg.Log.Enable),
 	)
@@ -36,6 +38,9 @@ func NewEchoApp(cfg config.Config) *EchoApp {
 
 func (app *EchoApp) Start(ctx context.Context, addr string, gracefulTimeout time.Duration) error {
 	for _, r := range app.Router().Routes() {
+		if r.Method == echo.RouteNotFound {
+			continue
+		}
 		slog.DebugContext(ctx, r.Method, "path", r.Path)
 	}
 
@@ -64,11 +69,12 @@ func errorHandler(ctx *echo.Context, err error) {
 func defaultEchoErrorHandler(ctx *echo.Context, err error) {
 	ctx.Logger().LogAttrs(ctx.Request().Context(), slog.LevelError, "unhandle error", logger.ErrorAttrs(err)...)
 
-	appErr := Error{HTTPCode: http.StatusInternalServerError}
-	var sc echo.HTTPStatusCoder
+	appErr := Error{Code: InternalErrorCode, HTTPCode: http.StatusInternalServerError}
 
+	var sc echo.HTTPStatusCoder
 	if errors.As(err, &sc) {
 		if tmp := sc.StatusCode(); tmp != 0 {
+			appErr.Code = fmt.Sprintf("HTTP_%d", tmp)
 			appErr.HTTPCode = tmp
 		}
 	}
@@ -79,10 +85,9 @@ func defaultEchoErrorHandler(ctx *echo.Context, err error) {
 		appErr.Message = string(b)
 	case *echo.HTTPError:
 		appErr.Message = m.Message
-		if appErr.Message == "" {
-			appErr.Message = http.StatusText(appErr.HTTPCode)
-		}
-	default:
+	}
+
+	if appErr.Message == "" {
 		appErr.Message = http.StatusText(appErr.HTTPCode)
 	}
 

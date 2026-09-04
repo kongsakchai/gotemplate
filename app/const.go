@@ -20,6 +20,8 @@ const (
 	UnauthorizedMsg  = "unauthorized"
 	TokenExpiredCode = "10004"
 	TokenExpiredMsg  = "token expired"
+	InvalidTokenCode = "10005"
+	InvalidTokenMsg  = "invalid token"
 
 	DatabaseNotReadyCode = "9998"
 	DatabaseNotReadyMsg  = "database is not ready"

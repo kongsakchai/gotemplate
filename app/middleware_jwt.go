@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,6 +25,9 @@ func AuthMiddleware(verifier jwttoken.Verifier) echo.MiddlewareFunc {
 			}
 
 			for _, v := range values {
+				if len(v) <= prefixLen {
+					return Unauthorized(InvalidTokenCode, InvalidTokenMsg, nil)
+				}
 				claims, err := verifier.Verify(v[prefixLen:])
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					return Unauthorized(TokenExpiredCode, TokenExpiredMsg, err)
@@ -32,9 +36,12 @@ func AuthMiddleware(verifier jwttoken.Verifier) echo.MiddlewareFunc {
 					return Unauthorized(UnauthorizedCode, UnauthorizedMsg, err)
 				}
 
+				reqCtx := ctx.Request().Context()
 				for key, value := range claims {
 					ctx.Set(key, value)
+					reqCtx = context.WithValue(reqCtx, key, value)
 				}
+				ctx.SetRequest(ctx.Request().WithContext(reqCtx))
 			}
 
 			return next(ctx)

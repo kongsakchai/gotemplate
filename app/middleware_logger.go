@@ -32,7 +32,7 @@ func LoggerMiddleware(enable bool) echo.MiddlewareFunc {
 				return err
 			}
 
-			logger.InfoContext(req.Context(), fmt.Sprintf("request %s", req.URL),
+			logger.InfoContext(req.Context(), fmt.Sprintf("api request %s", req.URL),
 				"method", req.Method,
 				"body", string(b),
 				"event", "api_request",

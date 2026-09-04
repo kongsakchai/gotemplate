@@ -20,10 +20,7 @@ func RefIDMiddleware(key string) echo.MiddlewareFunc {
 
 			ctx.Set(TraceIDKey, refID)
 			ctx.SetRequest(req.WithContext(context.WithValue(req.Context(), TraceIDKey, refID)))
-
-			ctx.SetLogger(ctx.Logger().With(
-				TraceIDKey, refID,
-			))
+			ctx.SetLogger(ctx.Logger().With(TraceIDKey, refID))
 
 			return next(ctx)
 		}

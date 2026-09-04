@@ -1,14 +1,27 @@
 # Ping
 GET http://localhost:8080/health
+
 ###
 GET http://localhost:8080/metrics
+
 ###
-POST http://localhost:8080/api/v1/members
+POST http://localhost:8080/api/v1/auth/register
 Content-Type: application/json
 
 {
-    "birthday": "2029-04-30T10:30:05+07:00",
-	"firstName": "required",
-	"lastName": "required",
-	"username": "required"
+    "username": "",
+    "password": "password"
 }
+
+###
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "username": "kong",
+    "password": "password"
+}
+
+###
+GET http://localhost:8080/api/v1/todos/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIiLCJleHAiOjE3ODgxNzU2MjcsImlhdCI6MTc4ODE3NDcyNywiaXNzIjoiIiwianRpIjoiODY5MDcyYjktMmU2Yi00OTQzLTg2NmYtM2U1ZmNmNjJiODU2Iiwic3ViIjoiMTk5NzBiMDYtMDhkYS00ODg0LWIwMDktOTNhYzhiOTVkODFjIn0.bEig8_POiA-rq17SH2CkN9S77fUVBjSA4dW44arlt7k
