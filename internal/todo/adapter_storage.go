@@ -19,7 +19,7 @@ func NewStorage(db *sqlx.DB) *storage {
 
 func (s *storage) HasUser(ctx context.Context, userID string) (bool, error) {
 	var count int
-	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM users WHERE id = $1", userID)
+	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM user WHERE id = $1", userID)
 	if err != nil {
 		return false, err
 	}
@@ -48,7 +48,7 @@ func (t todoRecord) Todo() Todo {
 
 func (s *storage) GetTodos(ctx context.Context, userID string) ([]Todo, error) {
 	var todos []todoRecord
-	err := s.db.SelectContext(ctx, &todos, "SELECT * FROM todos WHERE user_id = ?", userID)
+	err := s.db.SelectContext(ctx, &todos, "SELECT * FROM todo WHERE user_id = ?", userID)
 	if err != nil {
 		return nil, serror.From(err)
 	}
@@ -60,7 +60,7 @@ func (s *storage) GetTodos(ctx context.Context, userID string) ([]Todo, error) {
 }
 
 func (s *storage) CreateTodo(ctx context.Context, todo Todo) error {
-	_, err := s.db.ExecContext(ctx, "INSERT INTO todos (id, name, description, status, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+	_, err := s.db.ExecContext(ctx, "INSERT INTO todo (id, name, description, status, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 		todo.ID, todo.Name, todo.Description, todo.Status, todo.UserID, todo.CreatedAt)
 	if err != nil {
 		return serror.From(err)
@@ -81,7 +81,7 @@ func (s *storage) FindTodo(ctx context.Context, userID, todoID string) (Todo, bo
 }
 
 func (s *storage) UpdateTodo(ctx context.Context, todo Todo) error {
-	_, err := s.db.ExecContext(ctx, "UPDATE todos SET name = ?, description = ?, status = ? WHERE id = ?",
+	_, err := s.db.ExecContext(ctx, "UPDATE todo SET name = ?, description = ?, status = ? WHERE id = ?",
 		todo.Name, todo.Description, todo.Status, todo.ID)
 	if err != nil {
 		return serror.From(err)
@@ -90,7 +90,7 @@ func (s *storage) UpdateTodo(ctx context.Context, todo Todo) error {
 }
 
 func (s *storage) DeleteTodo(ctx context.Context, todoID string) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM todos WHERE id = ?", todoID)
+	_, err := s.db.ExecContext(ctx, "DELETE FROM todo WHERE id = ?", todoID)
 	if err != nil {
 		return serror.From(err)
 	}
