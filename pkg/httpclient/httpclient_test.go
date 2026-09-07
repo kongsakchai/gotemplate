@@ -100,7 +100,34 @@ func TestDoRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		// act
-		resp, err := doRequest[string](c, req)
+		resp, err := doRequest[string](context.Background(), c, req)
+
+		// assert
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, "success", string(resp.Data))
+	})
+
+	t.Run("should return success and disable log body response", func(t *testing.T) {
+		serve := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			b, _ := io.ReadAll(r.Body)
+
+			assert.Equal(t, "\"some payload\"\n", string(b))
+
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("success"))
+		}))
+		defer serve.Close()
+
+		c := New(Config{})
+		c.logEnable = true
+
+		req, err := newRequest(context.Background(), c, http.MethodPost, serve.URL, "some payload", http.Header{"Disable-Log-Body": []string{"response"}})
+		require.NoError(t, err)
+
+		// act
+		resp, err := doRequest[string](context.Background(), c, req)
 
 		// assert
 		assert.NoError(t, err)
@@ -130,7 +157,7 @@ func TestDoRequest(t *testing.T) {
 		}
 
 		// act
-		resp, err := doRequest[responseStruct](c, req)
+		resp, err := doRequest[responseStruct](context.Background(), c, req)
 
 		// assert
 		assert.NoError(t, err)
@@ -160,7 +187,7 @@ func TestDoRequest(t *testing.T) {
 		}
 
 		// act
-		resp, err := doRequest[responseStruct](c, req)
+		resp, err := doRequest[responseStruct](context.Background(), c, req)
 
 		// assert
 		assert.NoError(t, err)
@@ -187,7 +214,7 @@ func TestDoRequest(t *testing.T) {
 		}
 
 		// act
-		_, err = doRequest[responseStruct](c, req)
+		_, err = doRequest[responseStruct](context.Background(), c, req)
 		t.Log(err.Error())
 
 		// assert
@@ -204,7 +231,7 @@ func TestDoRequest(t *testing.T) {
 		}
 
 		// act
-		_, err = doRequest[responseStruct](c, req)
+		_, err = doRequest[responseStruct](context.Background(), c, req)
 		t.Log(err.Error())
 
 		// assert
@@ -234,7 +261,7 @@ func TestDoRequest(t *testing.T) {
 		}
 
 		// act
-		_, err = doRequest[responseStruct](c, req)
+		_, err = doRequest[responseStruct](context.Background(), c, req)
 		t.Log(err.Error())
 
 		// assert

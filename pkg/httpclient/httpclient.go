@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"maps"
@@ -21,12 +22,14 @@ const (
 
 type Config struct {
 	RefIDKey  string
+	TagKey    string
 	LogEnable bool
 }
 
 type Client struct {
 	*http.Client
 	refIDKey string
+	tagKey   string
 	options  []OptionFunc
 
 	logEnable bool
@@ -83,11 +86,13 @@ func newRequest(ctx context.Context, client *Client, method, url string, payload
 	return req.WithContext(ctx), nil
 }
 
-func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], error) {
-	traceID, _ := req.Context().Value(client.refIDKey).(string)
-	disableLog := req.Header.Get("Disable-Log") == "true"
-	if client.logEnable && !disableLog {
-		logHTTPRequest(traceID, req)
+func doRequest[Resp any](ctx context.Context, client *Client, req *http.Request) (Response[Resp], error) {
+	traceID, _ := ctx.Value(client.refIDKey).(string)
+	tag, _ := ctx.Value(client.tagKey).(string)
+
+	disableLog := req.Header.Get("Disable-Log")
+	if client.logEnable && disableLog != "true" && disableLog != "request" {
+		logHTTPRequest(traceID, tag, req)
 	}
 
 	response := Response[Resp]{}
@@ -108,8 +113,8 @@ func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], err
 	response.Code = resp.StatusCode
 	response.RawData = bytesResponse
 
-	if client.logEnable && !disableLog {
-		logHTTPResponse(traceID, string(bytesResponse), resp.StatusCode, req)
+	if client.logEnable && disableLog != "true" && disableLog != "request" {
+		logHTTPResponse(traceID, tag, string(bytesResponse), resp.StatusCode, req)
 	}
 
 	if err = json.Unmarshal(bytesResponse, &response.Data); err == nil {
@@ -125,18 +130,14 @@ func doRequest[Resp any](client *Client, req *http.Request) (Response[Resp], err
 	return response, err
 }
 
-func logHTTPRequest(traceID string, req *http.Request) {
-	disableBody := req.Header.Get("Disable-Log-Body") == "true"
+func logHTTPRequest(traceID, tag string, req *http.Request) {
+	disableBody := req.Header.Get("Disable-Log-Body")
 
 	body := []byte{}
-	if !disableBody {
-		if req.Body != nil {
-			body, _ = io.ReadAll(req.Body)
-		}
+	if req.Body != nil && disableBody != "true" && disableBody != "request" {
+		body, _ = io.ReadAll(req.Body)
 		req.Body.Close()
 		req.Body = io.NopCloser(bytes.NewBuffer(body))
-	} else {
-		body = []byte("[hidden]")
 	}
 
 	slog.Info(
@@ -145,12 +146,19 @@ func logHTTPRequest(traceID string, req *http.Request) {
 		"method", req.Method,
 		"body", string(body),
 		"trace_id", traceID,
+		"tag", tag,
 	)
 }
 
-func logHTTPResponse(traceID, data string, status int, req *http.Request) {
+func logHTTPResponse(traceID, tag, data string, status int, req *http.Request) {
+	disableLog := req.Header.Get("Disable-Log-Body")
+	fmt.Println(disableLog)
+	if disableLog == "true" || disableLog == "response" {
+		data = ""
+	}
+
 	if status >= http.StatusBadRequest {
-		slog.Info(
+		slog.Error(
 			"HTTP Client Response",
 			"url", req.URL.Path,
 			"method", req.Method,
@@ -159,7 +167,7 @@ func logHTTPResponse(traceID, data string, status int, req *http.Request) {
 			"trace_id", traceID,
 		)
 	} else {
-		slog.Error(
+		slog.Info(
 			"HTTP Client Response",
 			"url", req.URL.Path,
 			"method", req.Method,
@@ -176,7 +184,7 @@ func callRequest[Resp any](ctx context.Context, client *Client, mathod, url stri
 		return response, err
 	}
 
-	return doRequest[Resp](client, req)
+	return doRequest[Resp](ctx, client, req)
 }
 
 func Get[Resp any](ctx context.Context, client *Client, url string, headers ...http.Header) (Response[Resp], error) {
