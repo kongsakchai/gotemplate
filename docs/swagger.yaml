@@ -1,221 +1,12 @@
 basePath: /
 consumes:
     - application/json
-definitions:
-    Todo:
-        properties:
-            createdAt:
-                format: date-time
-                type: string
-                x-go-name: CreatedAt
-            description:
-                type: string
-                x-go-name: Description
-            id:
-                type: string
-                x-go-name: ID
-            name:
-                type: string
-                x-go-name: Name
-            status:
-                type: string
-                x-go-name: Status
-            userId:
-                type: string
-                x-go-name: UserID
-        type: object
-        x-go-package: github.com/kongsakchai/gotemplate/internal/todo
-    createTodoRequest:
-        properties:
-            description:
-                type: string
-                x-go-name: Description
-            name:
-                type: string
-                x-go-name: Name
-            status:
-                type: string
-                x-go-name: Status
-        type: object
-        x-go-package: github.com/kongsakchai/gotemplate/app/todoapp
-    loginRequest:
-        properties:
-            password:
-                type: string
-                x-go-name: Password
-            username:
-                type: string
-                x-go-name: Username
-        type: object
-        x-go-package: github.com/kongsakchai/gotemplate/app/authapp
-    registerRequest:
-        properties:
-            password:
-                type: string
-                x-go-name: Password
-            username:
-                type: string
-                x-go-name: Username
-        type: object
-        x-go-package: github.com/kongsakchai/gotemplate/app/authapp
 host: localhost:8080
 info:
     description: Documentation of our Go Template API.
     title: Go Template.
     version: 1.0.0
 paths:
-    /api/v1/auth/login:
-        post:
-            description: |-
-                Returns a JWT token to be sent in the Authorization header
-                (format: `Bearer <token>`) of protected endpoints.
-            operationId: loginUser
-            parameters:
-                - description: User credentials.
-                  in: body
-                  name: Body
-                  schema:
-                    $ref: '#/definitions/loginRequest'
-            responses:
-                "200":
-                    $ref: '#/responses/authLoginResponse'
-                "400":
-                    $ref: '#/responses/authErrorResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            summary: Login with username and password.
-            tags:
-                - auth
-    /api/v1/auth/register:
-        post:
-            description: |-
-                Creates a user with the given username and password.
-                The password is hashed before storing.
-            operationId: registerUser
-            parameters:
-                - description: User credentials.
-                  in: body
-                  name: Body
-                  schema:
-                    $ref: '#/definitions/registerRequest'
-            responses:
-                "201":
-                    $ref: '#/responses/authRegisterResponse'
-                "400":
-                    $ref: '#/responses/authErrorResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            summary: Register a new user account.
-            tags:
-                - auth
-    /api/v1/todos:
-        get:
-            operationId: listTodos
-            responses:
-                "200":
-                    $ref: '#/responses/todoListResponse'
-                "400":
-                    $ref: '#/responses/todoErrorResponse'
-                "401":
-                    $ref: '#/responses/unauthorizedResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            security:
-                - key:
-                    - '[]'
-            summary: List all todos of the authenticated user.
-            tags:
-                - todo
-        post:
-            operationId: createTodo
-            parameters:
-                - description: Todo properties.
-                  in: body
-                  name: Body
-                  schema:
-                    $ref: '#/definitions/createTodoRequest'
-            responses:
-                "201":
-                    $ref: '#/responses/todoCreatedResponse'
-                "400":
-                    $ref: '#/responses/todoErrorResponse'
-                "401":
-                    $ref: '#/responses/unauthorizedResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            security:
-                - key:
-                    - '[]'
-            summary: Create a new todo for the authenticated user.
-            tags:
-                - todo
-    /api/v1/todos/{id}:
-        delete:
-            operationId: deleteTodo
-            parameters:
-                - description: Todo ID.
-                  in: path
-                  name: id
-                  required: true
-                  type: string
-                  x-go-name: ID
-            responses:
-                "200":
-                    $ref: '#/responses/todoDeletedResponse'
-                "400":
-                    $ref: '#/responses/todoErrorResponse'
-                "401":
-                    $ref: '#/responses/unauthorizedResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            security:
-                - key:
-                    - '[]'
-            summary: Delete an existing todo of the authenticated user.
-            tags:
-                - todo
-        put:
-            operationId: updateTodo
-            parameters:
-                - description: Todo ID.
-                  in: path
-                  name: id
-                  required: true
-                  type: string
-                  x-go-name: ID
-                - description: Todo properties to update (all fields optional).
-                  in: body
-                  name: Body
-                  schema:
-                    properties:
-                        description:
-                            example: Milk and eggs
-                            type: string
-                            x-go-name: Description
-                        name:
-                            example: Buy groceries
-                            type: string
-                            x-go-name: Name
-                        status:
-                            example: pending
-                            type: string
-                            x-go-name: Status
-                    type: object
-            responses:
-                "200":
-                    $ref: '#/responses/todoUpdatedResponse'
-                "400":
-                    $ref: '#/responses/todoErrorResponse'
-                "401":
-                    $ref: '#/responses/unauthorizedResponse'
-                "500":
-                    $ref: '#/responses/errorInternalResponse'
-            security:
-                - key:
-                    - '[]'
-            summary: Update an existing todo of the authenticated user.
-            tags:
-                - todo
     /health:
         get:
             operationId: none
@@ -236,296 +27,408 @@ paths:
             summary: Metrics endpoint.
             tags:
                 - common
+    /api/v1/auth/register:
+        post:
+            consumes:
+                - application/json
+            operationId: registerUser
+            parameters:
+                - in: body
+                  name: body
+                  required: true
+                  schema:
+                      $ref: '#/definitions/RegisterUserParams'
+            responses:
+                "201":
+                    $ref: '#/responses/AuthRegisterResponse'
+                "400":
+                    $ref: '#/responses/AuthErrorResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            summary: Register a new user account.
+            tags:
+                - auth
+    /api/v1/auth/login:
+        post:
+            consumes:
+                - application/json
+            operationId: loginUser
+            parameters:
+                - in: body
+                  name: body
+                  required: true
+                  schema:
+                      $ref: '#/definitions/LoginUserParams'
+            responses:
+                "200":
+                    $ref: '#/responses/AuthLoginResponse'
+                "400":
+                    $ref: '#/responses/AuthErrorResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            summary: Login with username and password.
+            tags:
+                - auth
+    /api/v1/todos:
+        get:
+            operationId: listTodos
+            responses:
+                "200":
+                    $ref: '#/responses/TodoListResponse'
+                "400":
+                    $ref: '#/responses/TodoEndpointError'
+                "401":
+                    $ref: '#/responses/UnauthorizedResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            security:
+                - key: []
+            summary: List all todos of the authenticated user.
+            tags:
+                - todo
+        post:
+            consumes:
+                - application/json
+            operationId: createTodo
+            parameters:
+                - in: body
+                  name: body
+                  required: true
+                  schema:
+                      $ref: '#/definitions/CreateTodoParams'
+            responses:
+                "201":
+                    $ref: '#/responses/TodoCreatedResponse'
+                "400":
+                    $ref: '#/responses/TodoEndpointError'
+                "401":
+                    $ref: '#/responses/UnauthorizedResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            security:
+                - key: []
+            summary: Create a new todo for the authenticated user.
+            tags:
+                - todo
+    /api/v1/todos/{id}:
+        put:
+            consumes:
+                - application/json
+            operationId: updateTodo
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  type: string
+                - in: body
+                  name: body
+                  schema:
+                      type: object
+                      properties:
+                          name:
+                              description: New todo name
+                              type: string
+                          description:
+                              description: New todo description
+                              type: string
+                          status:
+                              description: New todo status (e.g., "pending", "done")
+                              type: string
+            responses:
+                "200":
+                    $ref: '#/responses/TodoUpdatedResponse'
+                "400":
+                    $ref: '#/responses/TodoEndpointError'
+                "401":
+                    $ref: '#/responses/UnauthorizedResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            security:
+                - key: []
+            summary: Update an existing todo of the authenticated user.
+            tags:
+                - todo
+        delete:
+            operationId: deleteTodo
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  type: string
+            responses:
+                "200":
+                    $ref: '#/responses/TodoDeletedResponse'
+                "400":
+                    $ref: '#/responses/TodoEndpointError'
+                "401":
+                    $ref: '#/responses/UnauthorizedResponse'
+                "500":
+                    $ref: '#/responses/ErrorInternalResponse'
+            security:
+                - key: []
+            summary: Delete an existing todo of the authenticated user.
+            tags:
+                - todo
 produces:
     - application/json
+definitions:
+    CreateTodoParams:
+        properties:
+            name:
+                example: Buy groceries
+                type: string
+            description:
+                example: Milk and eggs
+                type: string
+            status:
+                example: pending
+                type: string
+        required:
+            - name
+        type: object
+    LoginUserParams:
+        properties:
+            username:
+                example: admin
+                type: string
+            password:
+                example: secret
+                type: string
+        required:
+            - username
+            - password
+        type: object
+    RegisterUserParams:
+        properties:
+            username:
+                example: admin
+                type: string
+            password:
+                example: secret
+                type: string
+        required:
+            - username
+            - password
+        type: object
+    Todo:
+        properties:
+            id:
+                type: string
+            name:
+                type: string
+            description:
+                type: string
+            status:
+                type: string
+            userId:
+                type: string
+            createdAt:
+                type: string
+                format: date-time
+        type: object
 responses:
-    authErrorResponse:
-        description: |-
-            Error response for auth endpoints.
-
-            Possible codes:
-            1000: bad request (cannot read request body)
-            1001: invalid request (validation failed)
-            2000: user already exists
-            2001: user not found
-            2002: invalid password
-        schema:
-            properties:
-                code:
-                    example: "2002"
-                    type: string
-                    x-go-name: Code
-                message:
-                    example: invalid password
-                    type: string
-                    x-go-name: Message
-                success:
-                    example: false
-                    type: boolean
-                    x-go-name: Success
-            type: object
-    authLoginResponse:
+    AuthLoginResponse:
         description: Login result containing the JWT token.
         schema:
             properties:
                 code:
-                    example: "0000"
+                    example: 0000
                     type: string
-                    x-go-name: Code
+                success:
+                    example: true
+                    type: boolean
                 data:
                     properties:
                         token:
                             example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiJ9.signature
                             type: string
-                            x-go-name: Token
                     type: object
-                    x-go-name: Data
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
             type: object
-    authRegisterResponse:
-        description: User account created successfully (no data payload).
+    AuthRegisterResponse:
+        description: User account created successfully.
         schema:
             properties:
                 code:
-                    example: "0000"
+                    example: 0000
                     type: string
-                    x-go-name: Code
                 success:
                     example: true
                     type: boolean
-                    x-go-name: Success
+                message:
+                    example: Created
+                    type: string
             type: object
-    errorDatabaseResponse:
-        description: ""
+    AuthErrorResponse:
+        description: |
+            Error response for auth endpoints. Possible error codes:
+              - 1000: bad request (cannot read request body)
+              - 1001: invalid request (validation failed)
+              - 2000: user already exists
+              - 2001: user not found
+              - 2002: invalid password
         schema:
             properties:
                 code:
-                    example: "9998"
+                    example: 2000
                     type: string
-                    x-go-name: Code
+                success:
+                    example: false
+                    type: boolean
+                message:
+                    example: user already exists
+                    type: string
+            type: object
+    ErrorDatabaseResponse:
+        description: Database connection error.
+        schema:
+            properties:
+                code:
+                    example: 9998
+                    type: string
+                success:
+                    example: false
+                    type: boolean
                 message:
                     example: database is not ready
                     type: string
-                    x-go-name: Message
-                success:
-                    example: false
-                    type: boolean
-                    x-go-name: Success
             type: object
-    errorInternalResponse:
-        description: ""
+    ErrorInternalResponse:
+        description: Internal server error.
         schema:
             properties:
                 code:
-                    example: "9999"
+                    example: 9999
                     type: string
-                    x-go-name: Code
+                success:
+                    example: false
+                    type: boolean
                 message:
                     example: internal error
                     type: string
-                    x-go-name: Message
+            type: object
+    healthResponse:
+        description: Health check response.
+        schema:
+            properties:
+                code:
+                    example: 0000
+                    type: string
+                message:
+                    example: healthy
+                    type: string
+                success:
+                    example: true
+                    type: boolean
+            type: object
+    metricsResponse:
+        description: System metrics.
+        schema:
+            properties:
+                success:
+                    example: true
+                    type: boolean
+                data:
+                    type: object
+            type: object
+    TodoCreatedResponse:
+        description: Todo created successfully.
+        schema:
+            properties:
+                code:
+                    example: 0000
+                    type: string
+                success:
+                    example: true
+                    type: boolean
+                message:
+                    example: Created
+                    type: string
+            type: object
+    TodoEndpointError:
+        description: |
+            Error response for todo endpoints. Possible error codes:
+              - 1000: bad request (cannot read request body)
+              - 1001: invalid request (validation failed)
+              - 3000: user not found
+              - 3001: todo not found
+        schema:
+            properties:
+                code:
+                    example: 3001
+                    type: string
                 success:
                     example: false
                     type: boolean
-                    x-go-name: Success
-            type: object
-    healthResponse:
-        description: ""
-        schema:
-            properties:
-                code:
-                    example: "0000"
-                    type: string
-                    x-go-name: Code
-                message:
-                    example: health
-                    type: string
-                    x-go-name: Message
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
-            type: object
-    metricsResponse:
-        description: ""
-        schema:
-            properties:
-                code:
-                    example: "0000"
-                    type: string
-                    x-go-name: Code
-                data:
-                    properties:
-                        alloc:
-                            description: |-
-                                {
-                                "code": "0000",
-                                "success": true,
-                                "data": {
-                                "alloc": "0.77 MB",
-                                "heapIdle": "2.34 MB",
-                                "heapInuse": "1.38 MB",
-                                "heapReleased": "2.28 MB",
-                                "stackInuse": "0.28 MB",
-                                "stackSys": "0.28 MB",
-                                "sysAlloc": "8.02 MB",
-                                "totalAlloc": "0.77 MB"
-                                }
-                                }
-                            example: 0.77 MB
-                            type: string
-                            x-go-name: Alloc
-                        heapIdle:
-                            example: 2.34 MB
-                            type: string
-                            x-go-name: HeapIdle
-                        heapInuse:
-                            example: 1.38 MB
-                            type: string
-                            x-go-name: HeapInuse
-                        heapReleased:
-                            example: 2.28 MB
-                            type: string
-                            x-go-name: HeapReleased
-                        stackInuse:
-                            example: 0.28 MB
-                            type: string
-                            x-go-name: StackInuse
-                        stackSys:
-                            example: 0.28 MB
-                            type: string
-                            x-go-name: StackSys
-                        sysAlloc:
-                            example: 0.28 MB
-                            type: string
-                            x-go-name: SysAlloc
-                        totalAlloc:
-                            example: 0.28 MB
-                            type: string
-                            x-go-name: TotalAlloc
-                    type: object
-                    x-go-name: Data
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
-            type: object
-    todoCreatedResponse:
-        description: Todo created successfully (no data payload).
-        schema:
-            properties:
-                code:
-                    example: "0000"
-                    type: string
-                    x-go-name: Code
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
-            type: object
-    todoDeletedResponse:
-        description: Todo deleted successfully (no data payload).
-        schema:
-            properties:
-                code:
-                    example: "0000"
-                    type: string
-                    x-go-name: Code
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
-            type: object
-    todoErrorResponse:
-        description: |-
-            Error response for todo endpoints.
-
-            Possible codes:
-            1000: bad request (cannot read request body)
-            1001: invalid request (validation failed)
-            3000: user not found
-            3001: todo not found
-        schema:
-            properties:
-                code:
-                    example: "3001"
-                    type: string
-                    x-go-name: Code
                 message:
                     example: todo not found
                     type: string
-                    x-go-name: Message
-                success:
-                    example: false
-                    type: boolean
-                    x-go-name: Success
             type: object
-    todoListResponse:
+    TodoListResponse:
         description: List of todos belonging to the authenticated user.
         schema:
             properties:
                 code:
-                    example: "0000"
+                    example: 0000
                     type: string
-                    x-go-name: Code
+                success:
+                    example: true
+                    type: boolean
                 data:
                     items:
                         $ref: '#/definitions/Todo'
                     type: array
-                    x-go-name: Data
-                success:
-                    example: true
-                    type: boolean
-                    x-go-name: Success
             type: object
-    todoUpdatedResponse:
-        description: Todo updated successfully (no data payload).
+    TodoUpdatedResponse:
+        description: Todo updated successfully.
         schema:
             properties:
                 code:
-                    example: "0000"
+                    example: 0000
                     type: string
-                    x-go-name: Code
                 success:
                     example: true
                     type: boolean
-                    x-go-name: Success
-            type: object
-    unauthorizedResponse:
-        description: |-
-            Unauthorized response.
-
-            The Authorization header is missing or the token is invalid/expired.
-
-            Possible codes:
-            10002: missing token
-            10003: unauthorized
-            10004: token expired
-            10005: invalid token
-        schema:
-            properties:
-                code:
-                    example: "10002"
-                    type: string
-                    x-go-name: Code
                 message:
-                    example: missing token
+                    example: Updated
                     type: string
-                    x-go-name: Message
+            type: object
+    TodoDeletedResponse:
+        description: Todo deleted successfully.
+        schema:
+            properties:
+                code:
+                    example: 0000
+                    type: string
+                success:
+                    example: true
+                    type: boolean
+                message:
+                    example: Deleted
+                    type: string
+            type: object
+    UnauthorizedResponse:
+        description: |
+            The Authorization header is missing or the token is invalid/expired.
+            Possible error codes:
+              - 10002: missing token
+              - 10003: unauthorized
+              - 10004: token expired
+              - 10005: invalid token
+        schema:
+            properties:
+                code:
+                    example: 10002
+                    type: string
                 success:
                     example: false
                     type: boolean
-                    x-go-name: Success
+                message:
+                    example: missing token
+                    type: string
             type: object
 schemes:
     - http
     - https
-security:
-    - key:
-        - '[]'
 securityDefinitions:
     key:
         in: header
