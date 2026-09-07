@@ -1,475 +1,444 @@
 # 🚀 Go Template
 
-🎉 This is a template for creating a Go web service API project. Intended to be used as a starting point for creating a new Go web service API project and be a guideline for the project structure.
+A starting point for building Go web service APIs. Use it to scaffold a new project or follow its conventions as a project guideline.
 
-## 🔥 Usage
+## 🔥 Quick Start
 
-- Install `gonew`
+Create a new project from this template:
 
 ```sh
 go install golang.org/x/tools/cmd/gonew@latest
-```
 
-- Create a new project
-
-```sh
 gonew github.com/kongsakchai/gotemplate github.com/yourname/projectname
+cd projectname
+make init   # installs mockery v3, go-swagger, sets up script permissions
 ```
 
 ---
 
-## 🌱 Project structure
+## 🌱 Project Structure
 
-**Common**
-
-```sh
-./
-├── cache
-├── database
-├── errs
-├── httpclient
-├── logger
-├── pkg
-└── validator
+```
+./                          ← main package
+├── internal/               ← business logic per domain
+│   ├── auth/               ← User domain: models, errors, service, storager
+│   └── todo/               ← Todo domain: models, errors, service, storager
+├── app/                    ← shared application infra + per-module handlers
+│   ├── authapp/            ← auth HTTP routes (/api/v1/auth/register, /login)
+│   ├── todoapp/            ← todos HTTP routes (/api/v1/todos — protected by JWT)
+│   ├── echo.go             ← Echo setup, global middleware stack
+│   ├── echo_route.go       ← Route helpers: app.GET/POST/PUT/DELETE
+│   ├── app.go              ← Response envelope {code, success, message?, data?}
+│   ├── error.go            ← app.Error constructors (InternalError, BadRequest, etc.)
+│   ├── const.go            ← Global business codes (0000, 1000, 9999…)
+│   ├── middleware_*.go     ← Global middleware: Recovery, CORS, Tag, RefID, Logger
+│   ├── middleware_jwt.go   ← AuthMiddleware (JWT verification → claims in context)
+│   ├── middleware_error.go ← ErrorMiddleware (handler → app.Error mapping)
+│   └── docs.go             ← Shared swagger:response definitions
+├── docs/                   ← go-swagger output (docs/swagger.yaml)
+├── migrations/             ← SQL migrations: 0001_init.up.sql
+├── pkg/                    ← reusable infrastructure (shared across modules)
+│   ├── cache/              ← Redis client wrapper
+│   ├── clock/              ← time.Time abstraction for testing
+│   ├── config/             ← env-based config loading (see §Config)
+│   ├── database/           ← DB connectors (mysqldb, postgresdb, sqlitedb, sqldb)
+│   ├── hash/               ← Password hashing / comparison
+│   ├── httpclient/         ← Typed external HTTP calls: Get[T], Post[T]…
+│   ├── jwttoken/           ← JWT Signer / Verifier
+│   ├── logger/             ← slog setup (JSON/text), ErrorAttrs
+│   ├── migrate/            ← golang-migrate runner
+│   ├── null/               ← Nullable types helpers
+│   ├── serror/             ← Error tracing + coded business errors
+│   └── validator/          ← go-playground/validator setup
+└── .script/                ← Generator tools
+    ├── colorize            ← Test output colorizer
+    └── example.http        ← HTTP examples
 ```
 
-- **cache** Cache connectors, such as Redis.
-- **database** Database connectors and setup, e.g., MySQL or PostgreSQL.
-- **errs** Custom error types and centralized error handling for error tracking.
-- **httpclient** HTTP client utilities for calling external services or APIs.
-- **logger** Logging configuration and shared logger instances.
-- **pkg** A collection of small helper packages used across the project.
-- **validator** Request data validation logic, e.g., using [go-playground/validator](https://github.com/go-playground/validator).
+### High-level flow
 
-**Template**
-
-```sh
-./
-├── .script
-├── app
-│   ├── apperror
-│   └── middleware
-├── config
-├── docs
-└── migrations
+```
+HTTP handler (app/{domain}app)
+    └─► Service (internal/{domain})
+        └─► Storager adapter (adapter_storage.go)
+            └─► pkg/database/*
 ```
 
-- **app** Application layer and business logic.
-- **app/apperror** Global error handler.
-- **app/middleware** HTTP middleware for request processing, such as authentication, authorization, and logging.
-- **config** Application configuration files and environment variable management.
-- **docs** API documentation, e.g., using [go-swagger](https://github.com/go-swagger/go-swagger).
-- **migrations** Database migration files (.sql) for schema changes, e.g., using [kongsakchai/simple-sql-migrate](https://github.com/kongsakchai/simple-sql-migrate).
+Business code lives in `internal/{domain}`; HTTP layer lives in `app/{domain}app`; shared infrastructure lives in `pkg/`. A module can optionally grow a `consumer/{domain}consumer` for background work — both depend on `internal/{domain}`, never on each other.
 
 ---
 
-## 📚 Guideline Template
+## 💡 Conventions
 
-### Common
+Read the [gotemplate-guideline](.agents/skills/gotemplate-guideline/SKILL.md) skill for the full set of conventions. Key rules:
 
-### Package `cache/`
+| Rule | Detail |
+|------|--------|
+| **Private concrete types** | Service, storage, and app structs are unexported. Constructors return the private pointer directly (never an interface). Export only contracts — interfaces + deps structs. |
+| **Return bool, not nil pointers** | If a function signals existence, return `(Value, bool, error)` instead of `(*Value, error)`. |
+| **Wrap external errors** | Always wrap 3rd-party errors with `serror.From(err)` so they carry trace metadata. |
+| **Error mapping at the boundary** | Map business codes to `app.Error` inside each module's `handleError`. Register it once via `app.ErrorMiddleware(handleError)` on the group — never per handler. |
+| **Log through context** | Use `ctx.Logger()` which already carries traceID and route `tag`. |
 
-A helper package for interacting with caching systems. It includes utilities such as a Redis client factory. You may also integrate other caching solutions, such as [github.com/patrickmn/go-cache](https://github.com/patrickmn/go-cache).
+For more detail see the skill references: **Architecture**, **Private Types**, **Errors**, **App/Handler**, **Middleware**.
 
-### Package `database/`
+---
 
-A package for creating database connectors. Files should be organized by database type, for example:
+## 📦 pkg / Shared Infrastructure
 
-- database/mysql.go
-- database/postgres.go
-- database/mongo.go
+All reusable, non-domain code belongs in `pkg/`:
 
-### Package `errs/`
+| Package | Purpose |
+|---------|---------|
+| `config` | Env-based config loading. Struct fields use `env:"VAR"` + `envDefault:"…"`. Load with `config.Load(config.Env)`. |
+| `logger` | slog setup (JSON/text). Sensitive data masking is configurable. |
+| `serror` | Error tracing + coded business errors. Produces output like `error: <msg>, code: <code>, at: (file.go:line)`. |
+| `validator` | go-playground/validator setup with JSON-field-aware error messages. |
+| `jwttoken` | JWT `Signer` / `Verifier` implementation. |
+| `hash` | Password hashing and comparison. |
+| `httpclient` | Generic typed HTTP wrappers (`Get[T]`, `Post[T]`, `Put[T]`, `Delete[T]`). |
+| `database` | Database connectors: `mysqldb`, `postgresdb`, `sqlitedb`, `sqldb` (base). |
+| `cache` | Redis client wrapper. Also usable with any in-memory cache. |
+| `clock` | Time abstraction — injectable timer for deterministic testing. |
+| `null` | Nullable type utilities. |
+| `migrate` | Runs `golang-migrate` against your database. |
 
-A helper package for error handling and error tracing:
+---
+
+## 🏗️ Domain Architecture
+
+### Inside `internal/{domain}/`
+
+Each business domain gets its own package. Files follow these naming rules:
+
+| Prefix | Meaning | Example |
+|--------|---------|---------|
+| `{domain}.go` | Domain model, exported interfaces, error codes | `auth.go`, `todo.go` |
+| `service.go` | Business logic (≤4 methods). Split into `service_{core}.go` when larger. | `service.go` |
+| `adapter_{target}.go` | External dependency connector | `adapter_storage.go`, `adapter_cache.go` |
+| `service_helper.go` | Cross-cutting utility used by multiple files | `service_helper.go` |
+
+**Interface lifecycle:**
+1. Define the contract in `{domain}.go` (e.g. `Storager`, `Servicer`).
+2. Mark interfaces for mocking: `//mockery:generate: true`.
+3. Implement the concrete struct as **private** (`type service struct`, `type storage struct`).
+4. Constructor returns the private type: `func NewService(deps ServiceDeps) *service`.
+5. Alias external types locally for mocking: `//mockery:generate: true type Hasher = hash.Hasher`.
+
+See the [Private Types](.agents/skills/gotemplate-guideline/references/private-types.md) reference for full examples.
+
+### Inside `app/{domain}app/`
+
+The HTTP handler exposes one constructor and one route-register method:
 
 ```go
-newErr := errs.Wrap(/* normal error */ err)
-// OR
-newErr := errs.New("some error")
-
-fmt.Println(newErr.Error())
-```
-
-```
-error: msg at (file.go:line) package.function
-```
-
-### Package `/httpclient`
-
-A helper package for interact with external API using HTTP client. Contain a function to call external API and return the ressult
-
-```go
-type Response[T any] struct {
-	Code    int // http code
-	Data    T
-	RawData []byte // raw rasponse
+func (a *todoApp) RegisterRoute(echo *app.EchoApp) {
+    g := echo.Group("/api/v1/todos",
+        app.AuthMiddleware(a.verifier),
+        app.ErrorMiddleware(handleError),
+    )
+    app.GET(g, "get-todos", "", a.getTodos)
+    app.POST(g, "create-todo", "", a.createTodo)
+    // …
 }
 ```
 
-```go
-httpclient.Get[Resp any](ctx context.Context, client *Client, url string, headers ...http.Header) (Response[Resp], error)
-httpclient.Post[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Put[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-httpclient.Delete[Resp any](ctx context.Context, client *Client, url string, payload any, headers ...http.Header) (Response[Resp], error)
-```
+- Route helpers live in `app/echo_route.go`: `app.GET`, `app.POST`, `app.PUT`, `app.DELETE`.
+- Signature: `app.METHOD(router, "route_name", path, handler, middlewares…)`. Route names become the `tag` in logs and metrics.
+- Bind + validate with `app.Request[Req](c)` — single call for binding and validation.
 
-### Package `/logger`
+See [App/Handler](.agents/skills/gotemplate-guideline/references/app-handler.md) for details.
 
-A helper package for configuring the application logger.
-You can control the log level, format, and enable/disable logging via environment variables.
+---
 
-```env
-LOG_ENABLE=true
-LOG_HTTP_ENABLE=true
-LOG_LEVEL=debug|info|warning|error|critical
-LOG_FORMAT=text|json
-```
+## 🔐 Authentication
 
-Sensitive data masking (such as passwords, tokens, or PII) can be configured in `logger/replace.go`.
+`app.AuthMiddleware(verifier)` verifies a Bearer JWT and puts every claim into the Echo context.
 
-### Package `/pkg`
+| Header missing | Expired token | Other failure |
+|---------------|---------------|---------------|
+| `Unauthorized(10002, "missing token")` | `Unauthorized(10004, "token expired")` | `Unauthorized(10003, "unauthorized")` / `Unauthorized(10005, "invalid token")` |
 
-- `pkg/timer` — A small package that defines a `Timer` interface and a concrete implementation. Purpose: allow injecting the time source so code that depends on the current time can be tested deterministically.
-- `pkg/mockutil` — Test helpers and mocks used in unit tests to replace real implementations with controllable test doubles.
+Access the current user ID with `sub := c.Get("sub").(string)`.
 
-### Package `/validator`
+---
 
-A package for defining validation rules for requests or structs using validation tags,
-powered by [go-playground/validator](https://github.com/go-playground/validator).
+## ⚠️ Error Handling
 
-### template
+Errors flow in two stages:
 
-### Package `app/`
+### Stage 1 — `serror` (business layer)
 
-This is the main package we will focus on. Business logic and application layers should reside in this package, with each module clearly separated. Example:
-
-```sh
-./
-└── app
-    ├── user
-    └── admin
-        ├── admin.go
-        └── handler.go
-```
-
-- app/register
-- app/booking
-- app/product
-
-> [!CAUTION]
-> Business logic should not be written in any package other than `app/`.
-
-#### API Response
-
-`app/app.go` provides helpers for API responses:
+In `internal/{domain}`, business errors are coded strings defined with `serror.NewCoded`:
 
 ```go
-type Response struct {
-	Code    string `json:"code"` // business code
-	Success  string `json:"success"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
+var ErrUserNotFound = serror.NewCoded("2001", "user not found")
+
+// Return the error with trace metadata:
+return ErrUserNotFound.Err()
+
+// Wrap an external error with a traceable wrapper:
+return serror.From(err)
+
+// Attach data surfaced in the HTTP response:
+ErrNotFound.Err().WithData(user.ID)
+```
+
+Serror produces log output like:
+```
+error: user not found, code: 2001, at: (adapter_storage.go:44) auth.(*storage).FindUserByUsername
+```
+
+### Stage 2 — `app.Error` (HTTP boundary)
+
+Every `app/{domain}app` defines a `handleError` that maps business codes → `app.Error`:
+
+```go
+func handleError(err error) app.Error {
+    if e, ok := serror.As(err); ok {
+        switch e.Code() {
+        case todo.ErrUserNotFound.Code, todo.ErrTodoNotFound.Code:
+            return app.NotFound(e.Code(), e.Msg(), e, e.Data...)
+        }
+    }
+    return app.InternalError(app.InternalErrorCode, app.InternalErrorMsg, err)
 }
 ```
 
-**OK 200**
+Register once per route group: `app.ErrorMiddleware(handleError)`. Handlers simply `return err`.
+
+#### Global Business Codes
+
+| Code | Meaning |
+|------|---------|
+| `0000` | Success |
+| `1000` | Bad request (bind failure) |
+| `1001` | Invalid request (validation failure) |
+| `10002` | Missing Authorization header |
+| `10003` | Unauthorized |
+| `10004` | Token expired |
+| `10005` | Invalid token |
+| `9998` | Database not ready |
+| `9999` | Internal server error |
+
+Module-specific codes live in `internal/{domain}` (e.g. `2000`–`2002` for auth, `3000`–`3001` for todo).
+
+#### Why NotFound → HTTP 400
+
+Missing data is treated as invalid input rather than a missing resource. Using 400 prevents callers from confusing "data not found" with "route not found."
+
+See [Errors](.agents/skills/gotemplate-guideline/references/errors.md) for the complete reference.
+
+---
+
+## 🧭 Middleware Stack
+
+Global middleware runs in this order (defined in `app/echo.go`):
+
+| Order | Middleware | Purpose |
+|-------|-----------|---------|
+| 1 | `Recover()` | Panic recovery → HTTP 500 |
+| 2 | `CORS("*")` | Cross-origin headers |
+| 3 | `TagMiddleware()` | Sets `tag` from the route name (used in logs/metrics) |
+| 4 | `RefIDMiddleware()` | Reads `X-Ref-ID` header; generates UUID if absent. Stored as `traceID` |
+| 5 | `LoggerMiddleware()` | Logs request + response with traceID/tag |
+
+Inside handlers use `ctx.Logger()` — it already carries traceID and tag.
+
+Per-route middleware (like `AuthMiddleware`, `ErrorMiddleware`) is attached during `RegisterRoute`.
+
+See [Middleware](.agents/skills/gotemplate-guideline/references/middleware.md) for details.
+
+---
+
+## 📤 API Responses
+
+Success helpers (`app/app.go`):
+
+| Function | Status | Envelope |
+|----------|--------|----------|
+| `app.Ok(ctx, data, msg?)` | 200 | `{"code":"0000","success":true,"message":msg,"data":data}` |
+| `app.Created(ctx, data, msg?)` | 201 | `{"code":"0000","success":true,"message":msg,"data":data}` |
+
+Error helpers return `app.Error`; the middleware serializes them as:
+`{"code":"<code>","success":false,"message":"<msg>","data":<optional>}`
+
+Request validation failures emit `{"code":"1001","success":false,"message":"invalid request"}`.
+
+---
+
+## 📝 Request Validation
+
+Define request structs with `json` + `validate` tags:
 
 ```go
-app.Ok(ctx echo.Context, data any, msg ...string) error
-// usage
-app.OK(ctx, "data","success")
-```
-
-```yaml
-status: 200
-body: { 'code': '0000', 'success': true, 'data': 'data', 'message': 'success' }
-```
-
-**Created 201**
-
-```go
-app.Created(ctx echo.Context, data any, msg ...string) error
-// usage
-app.Created(ctx, "data","success")
-```
-
-```yaml
-status: 201
-body: { 'code': '0000', 'success': true, 'data': 'data', 'message': 'success' }
-```
-
-**API Error Response — `app/error.go`**
-
-```go
-type Error struct {
-	HTTPCode int    // HTTP status code: 500, 400, 401, 403, 409
-	Code     string // Business code
-	Message  string
-	Data     any
-	Err      error  // Used for server-side logging only
+type createTodoRequest struct {
+    Name        string `json:"name" validate:"required"`
+    Description string `json:"description"`
+    Status      string `json:"status"`
 }
 ```
 
-```go
-app.InternalServer(code string, msg string, err error, data ...any) app.Error
-app.BadRequest(code string, msg string, err error, data ...any) app.Error
-app.NotFound(code string, msg string, err error, data ...any) app.Error
-app.Unauthorized(code string, msg string, err error, data ...any) app.Error
-app.Forbidden(code string, msg string, err error, data ...any) app.Error
-app.Conflict(code string, msg string, err error, data ...any) app.Error
-```
-
-> [!NOTE]
->
-> - Why I do not use HTTP `404` for data not found ? `404` is a standard HTTP error that represents a missing endpoint or resource. Using it for missing data can cause confusion between “data not found” and “route not found”, and it also adds unnecessary complexity on the client side.
-> - Why I use HTTP `400` for data not found ? I see missing data as something that usually results from an invalid or incorrect request from the client, while the system itself is still operating normally.
-
-**500 Internal Server Error**
+Bind + validate in one call:
 
 ```go
-app.Fail(ctx echo.Context, err app.Error) error
-// usage
-app.Fail(ctx, app.InternalServer(app.ErrInternalCode, app.ErrInternalMsg, err))
+req, err := app.Request[createTodoRequest](c)
 ```
 
-```yaml
-status: 500
-body: { 'code': '9999', 'success': false, 'message': 'internal error' }
-```
+Path params use the `param:"id"` tag and are bound automatically.
 
-### Package `/app/apperror`
+---
 
-**Global Error Handler**
+## 📄 API Documentation (Swagger)
 
-```go
-apperror.ErrorHandler(err error, ctx echo.Context)
-// Usage
-echoApp.HTTPErrorHandler = apperror.ErrorHandler // already configured in route.go
-```
+API docs use go-swagger with `//go:build docs` build tags:
 
-You can return an `app.Error` directly from a handler:
+1. Annotate endpoints in `app/{domain}app/docs.go` with `swagger:route`, `swagger:parameters`, `swagger:response`.
+2. Shared responses live in `app/docs.go`; meta declaration is in `docs.go` (root package main).
+3. Run `make gendocs` → writes `docs/swagger.yaml`.
+4. Run `make docs` → serves Swagger UI in the browser.
 
-```go
-func healthCheck(db *sqlx.DB) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		if db.Ping() != nil {
-			return app.InternalServer(app.ErrInternalCode, app.ErrDatabaseMsg, nil)
-		}
-		return app.Ok(ctx, nil, "healthy")
-	}
-}
-```
+---
 
-### Package `/app/middleware`
+## 🧪 Testing
 
-A helper package for HTTP middleware used in request processing,
-such as authentication, authorization, logging, and request tracing.
+Stack: **testify** (assertions), **mockery v3** (interface mocks), **go-sqlmock** (DB tests), **echotest** (handler tests). No `testify/suite` — prefer plain `t.Run` subtests.
 
-**app/middleware/refid.go**
+### Generating Mocks
 
-Middleware for managing a **reference ID** to make log tracing easier.
-The header key can be configured via an environment variable.
-
-```env
-HEADER_REF_ID_KEY=
-```
-
-If the reference ID is not present in the request header, a new one will be generated using [github.com/google/uuid](https://github.com/google/uuid).
-
-**app/middleware/logger.go**
-
-Middleware for logging API request and response data.
-
-### Package `config/`
-
-All configuration should be read and stored as structs within this package. You can differentiate environments using the `ENV` variable and per-environment prefixes:
-
-```env
-ENV=LOCAL|DEV|PROD
-
-LOCAL_DATABASE_URL=
-DEV_DATABASE_URL=
-PROD_DATABASE_URL=
-```
-
-```go
-type Database struct {
-	URL string `env:"DATABASE_URL"`
-}
-```
-
-### Folder `/migrations`
-
-A folder containing SQL files for database migrations or schema updates.
-Migration files follow this naming convention:
-
-```text
-version_name.up.sql
-version_name.down.sql
-```
-
-**Example:**
-
-```text
-0001_init_schema.up.sql
-```
-
-Migration behavior can be configured via environment variables:
-
-```env
-MIGRATION_ENABLE=true
-MIGRATION_DIR=./migrations
-MIGRATION_VERSION=0001
-MIGRATION_REPEAT=none
-```
-
-- If `MIGRATION_VERSION`, `MIGRATION_VERSION` and, `MIGRATION_REPEAT` is not specified, the latest version will be used
-- `MIGRATION_DIR` should not empty
-
-### Recommended patterns
-
-When using this Go template, I recommend the following patterns:
-
-- **Storage pattern / Repository pattern** for managing database or external API interactions to separate concerns and improve testability.
-- **Combine Handler with Service** I don't see the necessity to separate Handler from Service, as it may overcomplicate the code, especially for small to medium projects. Combining them reduces file count and improves code clarity and maintainability. However, I recommend breaking down Handler into smaller functions for better organization:
-    - `Handle` function: manages HTTP requests
-    - `Process` function: handles business logic (Service layer)
-
-Example:
-
-```go
-type handler struct {
-	storage Storager
-}
-
-func (h *handler) GetUserByID(ctx echo.Context) error {
-	userID := ctx.Param("id")
-	_, err := h.processGetUserByID(userID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (h *handler) processGetUserByID(userID string) (*User, error) {
-	// business logic here
-}
-```
-
-- **One file per endpoint** for clarity and easier maintenance. In larger projects, organizing files by endpoint improves code organization and makes features easier to locate and modify.
-- **Separate modules by business domain** for better organization and maintainability. Domain-driven module separation improves code clarity and reduces cognitive load.
-- **File naming** should represent the responsibility and purpose of the file.
-- **Error handling** Use centralized error handling by creating custom error types and leveraging the global error handler to manage all errors in one place. This keeps code clean and simplifies maintenance.
-
-### Testing
-
-This project uses [testify](https://github.com/stretchr/testify) for testing. The `app` package provides a helper for mocking Echo context.
-
-**Mocking Echo Context — `github.com/labstack/echo/v5/echotest`**
-
-```go
-ctx := echotest.ContextConfig{
-	Headers: http.Header{
-		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
-	},
-	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
-}.ToContext(t)
-
-ctx, rec := echotest.ContextConfig{
-	Headers: http.Header{
-		echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
-	},
-	JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
-}.ToContextRecorder(t)
-```
-
-The function returns:
-
-- `echo.Context` — for passing to handlers
-- `*httptest.ResponseRecorder` — for asserting HTTP response
-
-**Example**
-
-```go
-func TestGetUser(t *testing.T) {
-    ctx, rec := echotest.ContextConfig{
-        Headers: http.Header{
-            echo.HeaderContentType: []string{echo.MIMEApplicationJSON},
-        },
-        JSONBody: []byte(`{"firstName":"john","lastName":"doe"}`),
-    }.ToContextRecorder(t)
-
-    handler := NewHandler(mockStorage)
-    err := handler.GetUser(ctx)
-
-    require.NoError(t, err)
-    assert.Equal(t, 200, rec.Code)
-    assert.JSONEq(t, `{"code":"0000","success":true,"data":{...}}`, rec.Body.String())
-}
-```
-
-**Dependecy injection**
-
-Use `mockery` for generating mocks of interfaces. This allows you to easily create mock implementations of your interfaces for testing.
-
-- add directive `//mockery:generate: true` to interface:
+Mark an interface with a comment:
 
 ```go
 //mockery:generate: true
 type Storager interface {
-    Users() ([]User, error)
-    UserByName(name string) (User, error)
-    CreateUser(user User) error
+    FindUser(ctx context.Context, id string) (User, bool, error)
 }
 ```
 
-- Install mockery:
+Generate: `make genmock` (writes `mock_test.go` next to the interface).
 
-```bash
-
-go install github.com/vektra/mockery/v2@latest
-```
-
-- Run mock generation: `mockery`
-
-**Database testing**
-
-- Use `modernc.org/sqlite` for testing database interactions. This allows you to create an in-memory SQLite database for testing purposes, which is fast and does not require any setup.
+To mock an interface from another package, alias and re-mark:
 
 ```go
-import (
-		_ "modernc.org/sqlite"
-		"github.com/jmoiron/sqlx"
-)
-
-func TestDatabase(t *testing.T) {
-	db, err := sqlx.Open("sqlite", ":memory:")
-	require.NoError(t, err)
-	defer db.Close()
-
-	// Run migrations or setup schema here
-
-	// Perform database operations and assertions
-}
+//mockery:generate: true
+type Servicer = auth.Servicer
 ```
 
-- Use `github.com/DATA-DOG/go-sqlmock` for testing database interactions without an actual database. This allows you to mock database queries and responses, making it easier to test your database logic in isolation.
+Generated mocks come with helpers like `newMockStorager(t)` pre-registered with `*testing.T`.
+
+### Service Tests
+
+Build a service with mocked dependencies:
 
 ```go
-import (
-		"github.com/DATA-DOG/go-sqlmock"
-)
+mock := newMockStorager(t)
+sv := auth.NewService(auth.ServiceDeps{Storager: mock})
+```
 
-func TestDatabase(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer db.Close()
+Verify business errors with `serror.As`:
 
-	// Setup expected queries and responses here
+```go
+serr, ok := serror.As(err)
+assert.True(t, ok)
+assert.Equal(t, serr.Code(), auth.ErrUserNotFound.Code)
+```
 
-	// Perform database operations and assertions
+### Storage Tests
+
+Use go-sqlmock:
+
+```go
+db, mock, _ := sqlmock.New()
+sqlxDB := sqlx.NewDb(db, "sqlmock")
+mock.ExpectQuery("SELECT.*FROM user WHERE username = ?").WithArgs("admin").
+    WillReturnRows(sqlmock.NewRows([]string{"id","username"}).AddRow("u1","admin"))
+```
+
+### Handler Tests
+
+Use echotest with `ContextConfig`:
+
+```go
+ctx, rec := echotest.ContextConfig{
+    Headers: http.Header{echo.HeaderContentType: []string{echo.MIMEApplicationJSON}},
+    PathValues: map[string]string{"id": "u1"},
+}.ToContextRecorder(t)
+
+ctx.Set("sub", "user-1")  // replicate middleware injection
+
+handler := &todoApp{sv: mock}
+err := handler.getTodos(&ctx)
+
+require.NoError(t, err)
+assert.Equal(t, http.StatusOK, rec.Code)
+
+var resp app.Response
+json.Unmarshal(rec.Body.Bytes(), &resp)
+assert.True(t, resp.Success)
+```
+
+Run: `make test` (colorized). See [Testing](.agents/skills/gotemplate-guideline/references/testing.md) for full conventions.
+
+---
+
+## ⚙️ Configuration
+
+Config lives in `pkg/config`. Struct fields use `env:"VAR"` and `envDefault:"value"` tags:
+
+```go
+type Config struct {
+    App    AppConfig    `envPrefix:"APP_"`
+    Database DatabaseConfig `envPrefix:"DATABASE_"`
+    Log    LogConfig    `envPrefix:"LOG_"`
 }
 ```
 
-> https://github.com/DATA-DOG/go-sqlmock
+Env vars are parsed twice — unprefixed first, then with the `{ENV}_` prefix:
+
+| Precedence | Example | Source |
+|------------|---------|--------|
+| Highest | `DEV_DATABASE_URL=…` | Prefixed by ENV |
+| Middle | `DATABASE_URL=…` | Unprefixed |
+| Lowest | `envDefault:"sqlite:///dev.db"` | Default value |
+
+Load: `cfg := config.Load(config.Env)` where `config.Env` holds the current `ENV` value.
+
+---
+
+## 🔄 Migrations
+
+SQL migration files live in `migrations/` following the `golang-migrate` convention:
+
+```
+migrations/
+├── 0001_init_schema.up.sql
+├── 0001_init_schema.down.sql
+└── 0002_add_status.up.sql
+```
+
+Environment variables control behavior:
+
+| Variable | Purpose |
+|----------|---------|
+| `MIGRATION_ENABLE` | `"true"` / `"false"` — enable/disable migrations at startup |
+| `MIGRATION_SRC` | Path to migration files directory |
+| `MIGRATION_DATABASE_URL` | Target database URL |
+| `MIGRATION_VERSION` | Specific version to run |
+
+---
+
+## 🛠️ Makefile Commands
+
+| Command | Purpose |
+|---------|---------|
+| `make init` | Install tooling (mockery v3, go-swagger), set script permissions |
+| `make test` | Run all tests with colorized output |
+| `make testcover` | Run tests showing coverage inline |
+| `make coverage` | Write `coverage.out` + open HTML report in browser |
+| `make genmock` | Regenerate all mocks (mockery v3) |
+| `make gendocs` | Generate `docs/swagger.yaml` from annotations |
+| `make docs` | Serve Swagger UI (`localhost:8080/docs` by default) |
+
+---
+
+*For deep-dive conventions, read the [gotemplate-guideline](.agents/skills/gotemplate-guideline/SKILL.md) skill.*
